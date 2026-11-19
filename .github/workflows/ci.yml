@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: sh
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Cache Go dependencies and tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            _output/go/pkg/mod
+            _output/gocache
+            _output/xdg-cache
+          key: ${{ runner.os }}-${{ runner.arch }}-go-${{ hashFiles('go.mod', 'go.sum', 'Makefile', 'Containerfile.integration') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-go-
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test
+
+      - name: Vet
+        run: make vet
+
+      - name: Lint
+        run: make lint
+
+      - name: Run Kubernetes integration tests
+        id: integration
+        run: |
+          mkdir -p _output/ci
+          status=0
+          make test-integration-kind > _output/ci/integration.log 2>&1 || status=${?}
+          cat _output/ci/integration.log
+          exit "${status}"
+
+      - name: Prepare integration diagnostics
+        if: failure() && steps.integration.outcome == 'failure'
+        run: |
+          for logs in _output/integration/kind-*/kind-logs; do
+              if [ -d "${logs}" ]; then
+                  sudo chown -R "$(id -u):$(id -g)" "${logs}"
+              fi
+          done
+
+      - name: Upload integration diagnostics
+        if: failure() && steps.integration.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-${{ github.run_attempt }}
+          path: |
+            _output/ci/integration.log
+            _output/integration/kind-*/kind-logs/
+          if-no-files-found: warn
+          retention-days: 7
