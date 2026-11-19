@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Config
+current-context: dev
+contexts:
+- name: dev
+  context: {cluster: dev, user: dev, namespace: app}
+clusters:
+- name: dev
+  cluster: {server: 'https://dev.example', certificate-authority: ca.pem}

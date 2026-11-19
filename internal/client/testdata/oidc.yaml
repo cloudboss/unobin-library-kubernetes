@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Config
+current-context: dev
+contexts:
+- name: dev
+  context: {cluster: dev, user: dev}
+clusters:
+- name: dev
+  cluster:
+    server: https://cluster.example
+users:
+- name: dev
+  user:
+    auth-provider:
+      name: oidc
+      config:
+        idp-issuer-url: https://issuer.example
+        client-id: test-client

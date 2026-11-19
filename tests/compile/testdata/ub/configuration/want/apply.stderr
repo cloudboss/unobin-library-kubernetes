@@ -1,0 +1,7 @@
+notice: github.com/cloudboss/unobin is replaced; this factory runs <repo>, not v0.0.0-unobin-replaced
+[<time>] running action.get-token
+[<time>] ran action.get-token (<elapsed>)
+[<time>] eval library-config.kubernetes
+[<time>] eval library-config.kubernetes (<elapsed>)
+[<time>] reading data-source.connection
+[<time>] read data-source.connection (<elapsed>)

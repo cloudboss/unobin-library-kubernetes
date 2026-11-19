@@ -1,0 +1,7 @@
+  ↺ action.get-token
+      value: <sensitive>
+
+Deferred reads (1):
+  data-source.connection    library-config.kubernetes pending; read deferred to apply
+
+Plan: 0 to create, 0 to update, 0 to replace, 0 to destroy, 1 to rerun.

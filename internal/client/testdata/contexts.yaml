@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Config
+current-context: dev
+contexts:
+- name: dev
+  context: {cluster: dev, user: dev}
+- name: prod
+  context: {cluster: prod, user: prod}
+clusters:
+- name: dev
+  cluster: {server: 'https://dev.example', insecure-skip-tls-verify: true}
+- name: prod
+  cluster: {server: 'https://prod.example'}
+users:
+- name: dev
+  user: {token: dev-token}
+- name: prod
+  user: {token: prod-token}
