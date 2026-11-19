@@ -1,0 +1,5 @@
+ARG FROM=ghcr.io/cloudboss/docker.io/library/golang:1.26.2-alpine3.23
+FROM ${FROM}
+ARG KIND_VERSION=v0.31.0
+RUN apk add --no-cache docker-cli
+RUN go install sigs.k8s.io/kind@${KIND_VERSION}

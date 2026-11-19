@@ -1,0 +1,54 @@
+#!/bin/sh
+set -eu
+
+root=$(CDPATH= cd -- "$(dirname -- "${0}")/.." && pwd)
+cd "${root}"
+mkdir -p "${root}/_output/integration"
+work=$(mktemp -d "${root}/_output/integration/kind-XXXXXXXX")
+cluster="${PROJECT}-$(basename "${work}" | tr '[:upper:]' '[:lower:]')"
+
+kind_command() {
+    docker run --rm --network host \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        --security-opt label=type:container_runtime_t \
+        -v "${work}:/output:z" "${CTR_IMAGE_KIND}" "${@}"
+}
+
+clusters=$(kind_command kind get clusters)
+for existing in ${clusters}; do
+    [ "${existing}" != "${cluster}" ] || {
+        echo "cluster already exists: ${cluster}" >&2
+        exit 1
+    }
+done
+cleanup() {
+    status=${?}
+    trap - EXIT INT TERM
+    if [ "${status}" -ne 0 ]; then
+        kind_command kind export logs --name "${cluster}" /output/kind-logs || true
+    fi
+    kind_command kind delete cluster --name "${cluster}" || status=1
+    if [ "${status}" = 0 ]; then
+        rm -rf "${work}"
+    else
+        echo "failed run retained at ${work}" >&2
+    fi
+    exit "${status}"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+kind_command kind create cluster --name "${cluster}" --image "${KIND_NODE}" \
+    --wait 120s --kubeconfig /output/host.config
+kind_command sh -ec '
+    kind get kubeconfig --internal --name "${1}" > /output/kubeconfig
+    chmod 600 /output/kubeconfig /output/host.config
+    chown "${2}:${3}" /output/kubeconfig /output/host.config' sh "${cluster}" "${UID}" "${GID}"
+docker run --rm --network kind \
+    -v "${root}:/code:z" -u "${UID}:${GID}" -w /code \
+    -e GOPATH=/code/_output/go -e GOCACHE=/code/_output/gocache \
+    -e XDG_CACHE_HOME=/code/_output/xdg-cache \
+    -e KUBECONFIG="/code/${work#${root}/}/kubeconfig" \
+    -e UNOBIN=/code/_output/go/bin/unobin -e SCENARIO \
+    "${CTR_IMAGE_GO}" ./tests/integration/run kind

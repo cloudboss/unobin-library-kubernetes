@@ -1,3 +1,4 @@
+PROJECT := unobin-library-kubernetes
 DIR_ROOT := $(realpath $(CURDIR))
 DIR_OUT := _output
 UID := $(shell id -u)
@@ -5,6 +6,14 @@ GID := $(shell id -g)
 
 CTR_IMAGE_GO := ghcr.io/cloudboss/docker.io/library/golang:1.26.2-alpine3.23
 CTR_IMAGE_LINT := ghcr.io/cloudboss/docker.io/golangci/golangci-lint:v2.11.4-alpine
+KIND_VERSION := v0.31.0
+KIND_NODE := kindest/node:v1.33.7@sha256:d26ef333bdb2cbe9862a0f7c3803ecc7b4303d8cea8e814b481b09949d353040
+SHA256 ?= $(shell command -v sha256sum >/dev/null 2>&1 && echo sha256sum || echo 'shasum -a 256')
+KIND_IMAGE_HASH := $(shell { printf '%s\n' '$(CTR_IMAGE_GO)' '$(KIND_VERSION)'; \
+	cat Containerfile.integration; } | $(SHA256) | cut -c 1-40)
+CTR_IMAGE_KIND := $(PROJECT)-kind:$(KIND_IMAGE_HASH)
+HAS_IMAGE_KIND := $(DIR_OUT)/.image-kind-$(KIND_IMAGE_HASH)
+UNOBIN_VERSION := $(shell awk '/github.com[/]cloudboss[/]unobin v/{print $$2}' go.mod)
 
 HAS_COMMAND_DOCKER := $(DIR_OUT)/.command-docker
 BUILD_INPUTS := $(shell find . \
@@ -20,7 +29,7 @@ RUN_GO = docker run --rm \
 
 .DEFAULT_GOAL := help
 
-.PHONY: help deps build test vet lint
+.PHONY: help deps build test vet lint test-integration-kind test-integration-live
 
 help:
 	@echo 'Targets (run in Docker):'
@@ -29,6 +38,8 @@ help:
 	@echo '  test   Run Go tests.'
 	@echo '  vet    Run go vet.'
 	@echo '  lint   Run golangci-lint.'
+	@echo '  test-integration-kind Run scenarios in a temporary kind cluster.'
+	@echo '  test-integration-live Run scenarios against KUBECONFIG (UNOBIN_KUBERNETES_LIVE=1).'
 
 $(DIR_OUT):
 	@mkdir -p $(@)
@@ -71,3 +82,21 @@ lint:
 		-e GOCACHE=/code/$(DIR_OUT)/gocache \
 		-e XDG_CACHE_HOME=/code/$(DIR_OUT)/xdg-cache \
 		$(CTR_IMAGE_LINT) golangci-lint run -v ./...
+
+$(DIR_OUT)/go/bin/unobin: go.mod Makefile | $(HAS_COMMAND_DOCKER) $(DIR_OUT)/go/ $(DIR_OUT)/gocache/
+	@rm -f $(@)
+	@$(RUN_GO) go install github.com/cloudboss/unobin/cmd/unobin@$(UNOBIN_VERSION)
+
+$(HAS_IMAGE_KIND): Containerfile.integration | $(HAS_COMMAND_DOCKER) $(DIR_OUT)/dockerbuild/
+	@rm -f $(@)
+	@docker build --build-arg FROM=$(CTR_IMAGE_GO) --build-arg KIND_VERSION=$(KIND_VERSION) \
+		-f $(DIR_ROOT)/Containerfile.integration -t $(CTR_IMAGE_KIND) $(DIR_OUT)/dockerbuild
+	@touch $(@)
+
+test-integration-kind: $(DIR_OUT)/go/bin/unobin | $(HAS_IMAGE_KIND)
+	@./hack/test-integration-kind
+
+test-integration-live: $(DIR_OUT)/go/bin/unobin
+	@./hack/test-integration-live
+
+export PROJECT CTR_IMAGE_GO CTR_IMAGE_KIND KIND_NODE UID GID SCENARIO

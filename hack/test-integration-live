@@ -1,0 +1,47 @@
+#!/bin/sh
+set -eu
+
+if [ "${UNOBIN_KUBERNETES_LIVE:-0}" != 1 ]; then
+    echo 'live scenarios require UNOBIN_KUBERNETES_LIVE=1' >&2
+    exit 2
+fi
+: "${KUBECONFIG:?KUBECONFIG must select an explicit test cluster}"
+root=$(CDPATH= cd -- "$(dirname -- "${0}")/.." && pwd)
+cd "${root}"
+mkdir -p "${root}/_output/integration"
+work=$(mktemp -d "${root}/_output/integration/live-XXXXXXXX")
+mkdir "${work}/tmp"
+trap 'rm -rf "${work}"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# Pass environment names so Docker resolves values without writing secrets to disk.
+env | sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' |
+    sed '/^PATH$/d; /^GOROOT$/d; /^GOPATH$/d; /^GOCACHE$/d; /^GOMODCACHE$/d; /^GOBIN$/d' \
+    > "${work}/environment"
+set -- docker run --rm --env-file "${work}/environment" \
+    -v "${HOME}:${HOME}:ro" -v "${root}:${root}:z" \
+    -u "${UID}:${GID}" -w "${root}" \
+    -e GOPATH="${root}/_output/go" -e GOCACHE="${root}/_output/gocache" \
+    -e XDG_CACHE_HOME="${root}/_output/xdg-cache" \
+    -e TMPDIR="${work}/tmp" \
+    -e UNOBIN="${root}/_output/go/bin/unobin"
+
+config_paths=${KUBECONFIG}
+mounted="${root}:${HOME}"
+previous_ifs=${IFS}
+IFS=:
+for file in ${config_paths}; do
+    [ -n "${file}" ] || continue
+    directory=$(CDPATH= cd -- "$(dirname -- "${file}")" && pwd)
+    case "${directory}/" in
+        "${HOME}/"*|"${root}/"*) continue ;;
+    esac
+    case ":${mounted}:" in
+        *":${directory}:"*) continue ;;
+    esac
+    set -- "${@}" -v "${directory}:${directory}:ro,z"
+    mounted="${mounted}:${directory}"
+done
+IFS=${previous_ifs}
+"${@}" "${CTR_IMAGE_GO}" ./tests/integration/run live

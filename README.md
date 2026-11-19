@@ -71,5 +71,9 @@ Successful dependency downloads and builds create `_output/.deps` and
 Module changes trigger dependency downloads; project file changes trigger a
 build. Tests, vet, and lint run each time they are requested.
 
+Run `make test-integration-kind` for a temporary Kubernetes cluster or
+`make test-integration-live` for an explicitly selected cluster. See
+[Integration tests](tests/integration/README.md) for configuration and scenarios.
+
 See [AGENTS.md](AGENTS.md) for repository conventions and [LICENSE](LICENSE) for
 the MIT license.

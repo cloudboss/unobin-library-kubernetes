@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+step="verify-${VERIFY_PHASE}"
+printf '%s\n' "${step}" >> "${TRACE}"
+[ "${FAIL_STEP:-}" != "${step}" ] || exit 42
