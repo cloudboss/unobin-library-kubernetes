@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
 )
@@ -47,6 +48,15 @@ func TestConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, created.UID, read.UID)
 	require.Equal(t, map[string]string{"value": "created"}, read.Data)
+	dynamic, err := client.NewDynamic(nil)
+	require.NoError(t, err)
+	resource, resolvedNamespace, err := dynamic.Resolve(
+		schema.GroupVersionKind{Version: "v1", Kind: "ConfigMap"}, "")
+	require.NoError(t, err)
+	require.Equal(t, namespace, resolvedNamespace)
+	object, err := resource.Get(ctx, created.Name, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, created.UID, object.GetUID())
 	read.Data["value"] = "updated"
 	_, err = maps.Update(ctx, read, metav1.UpdateOptions{})
 	require.NoError(t, err)
