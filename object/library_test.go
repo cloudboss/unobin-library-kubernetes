@@ -31,6 +31,11 @@ func TestLibrary(t *testing.T) {
 		"manifest": `{"apiVersion":"v1","kind":"ConfigMap","metadata":{"name":"example"}}`,
 	}))
 	require.NoError(t, lib.Resources["object"].ValidateInputs(t.Context(), receiver, nil))
+	equal, err := lib.Resources["object"].InputsEqual(receiver, map[string]any{
+		"manifest": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: example\n",
+	})
+	require.NoError(t, err)
+	require.True(t, equal)
 }
 
 func TestLibrarySchema(t *testing.T) {

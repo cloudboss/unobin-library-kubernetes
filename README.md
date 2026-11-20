@@ -61,6 +61,7 @@ factory: {
   imports: {
     kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//object'
   }
+  library-configs: { kubernetes: {} }
   resources: {
     settings: kubernetes.object {
       manifest: @core.to-json({

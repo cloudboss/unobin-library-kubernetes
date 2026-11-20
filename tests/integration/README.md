@@ -4,6 +4,16 @@ The `kind` and `live` tiers run the same scenarios. The configuration scenario
 uses the shared client loader to discover the server version, then create, read,
 update, and delete a temporary ConfigMap in the kubeconfig's namespace.
 
+The `object` scenario tests server-side apply, field conflicts, field removal,
+UID protection, and deletion with finalizers. It also compiles a factory and
+checks create, unchanged plans, update, drift correction, replacement, outputs,
+and destroy. Unobin fixtures are in the scenario's `testdata/ub/` directory.
+
+The custom-object test creates a temporary cluster-scoped CRD, waits for it to be
+established, then manages a namespaced custom object. It checks server defaults,
+status updates, and shared ownership of keyed lists. The custom object and CRD
+are deleted during cleanup.
+
 ## Run with kind
 
 ```sh
@@ -29,7 +39,11 @@ UNOBIN_KUBERNETES_LIVE=1 KUBECONFIG="${HOME}/.kube/test" make test-integration-l
 
 `KUBECONFIG` must be explicit and can contain a colon-separated list of files.
 Its current context selects the cluster and namespace. The configuration scenario
-needs permission to create, get, update, and delete ConfigMaps there.
+needs permission to create, get, update, and delete ConfigMaps there. The `object`
+scenario also needs patch access to ConfigMaps, create/get/patch/delete access to
+CustomResourceDefinitions, and create/get/patch/update/delete access to the test
+custom API group and its status subresource. Set `SCENARIO=configuration` to run
+only the client configuration check.
 
 The container receives the caller's environment except for PATH and Go tool and
 cache paths. The home directory and additional kubeconfig directories are mounted
