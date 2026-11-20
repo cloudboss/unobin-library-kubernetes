@@ -51,6 +51,57 @@ value is a snapshot; use an exec helper or token file when refresh is required.
 Tokens, private key data, and exec environment values are marked sensitive. Treat
 plans and state as sensitive too, and configure Unobin state encryption.
 
+## Objects
+
+Import `github.com/cloudboss/unobin-library-kubernetes//object` to manage built-in
+or custom Kubernetes objects:
+
+```ub
+factory: {
+  imports: {
+    kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//object'
+  }
+  resources: {
+    settings: kubernetes.object {
+      manifest: @core.to-json({
+        apiVersion: 'v1'
+        kind: 'ConfigMap'
+        metadata: { name: 'settings' }
+        data: { greeting: 'hello' }
+      })
+    }
+  }
+  outputs: {
+    name: { value: resource.settings.name }
+  }
+}
+```
+
+`manifest` accepts one JSON or YAML object with `apiVersion`, `kind`, and
+`metadata.name`. Namespaced objects use `metadata.namespace`, or the configured
+namespace when it is absent. Cluster-scoped objects must omit the namespace.
+CRDs must be established and discoverable before their custom objects are applied.
+
+The resource uses server-side apply. `field-manager` defaults to `unobin`, and
+`force-conflicts` defaults to `false`. Apply can adopt an existing object; conflicts
+with another manager fail unless `force-conflicts` is enabled. Fields omitted
+from an updated manifest follow Kubernetes field-ownership rules.
+
+Changes to the API version, kind, name, namespace, or field manager require
+replacement. Changes to explicit `server`, `kubeconfig`, `current-context`, or
+configuration `namespace` also require replacement. Prior objects retain their
+saved server and namespace for reads and deletion; current credentials are used.
+Updates and deletes enforce the saved UID to protect a new object with the same
+name. Deletion waits for the original object to disappear, including finalizers;
+`delete-timeout` defaults to `2m` and accepts a positive Go duration such as `30s`.
+
+Outputs include `server`, `api-version`, `kind`, `name`, `namespace`, and `uid`.
+The sensitive `fields` and `values` outputs store the applied field selection and
+its observed values for drift detection. Resource versions, timestamps, status,
+and other managers' fields are excluded. The saved selection also detects changes
+when another manager takes ownership of a field. Manifest text is sensitive too;
+configure Unobin state encryption for manifests that contain secrets.
+
 ## Development
 
 Run the development targets with Docker and Make:
