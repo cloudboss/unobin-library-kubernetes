@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/structured-merge-diff/v4/value"
 )
 
-func ownedFields(obj *unstructured.Unstructured, manager string) (string, error) {
+func OwnedFields(obj *unstructured.Unstructured, manager string) (string, error) {
 	fields := fieldpath.NewSet()
 	for _, entry := range obj.GetManagedFields() {
 		if entry.Manager != manager || entry.Operation != metav1.ManagedFieldsOperationApply ||
@@ -32,7 +32,7 @@ func ownedFields(obj *unstructured.Unstructured, manager string) (string, error)
 	return string(encoded), err
 }
 
-func fieldValues(obj *unstructured.Unstructured, fields string) (map[string]any, error) {
+func FieldValues(obj *unstructured.Unstructured, fields string) (map[string]any, error) {
 	selection := fieldpath.NewSet()
 	if err := selection.FromJSON(bytes.NewBufferString(fields)); err != nil {
 		return nil, fmt.Errorf("decode saved Kubernetes field selection: %w", err)

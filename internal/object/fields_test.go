@@ -33,9 +33,9 @@ func TestOwnedFieldValues(t *testing.T) {
 			}
 		}`)},
 	}})
-	fields, err := ownedFields(obj, "unobin")
+	fields, err := OwnedFields(obj, "unobin")
 	require.NoError(t, err)
-	values, err := fieldValues(obj, fields)
+	values, err := FieldValues(obj, fields)
 	require.NoError(t, err)
 	require.Equal(t, map[string]any{
 		`["f:spec","f:containers","k:{\"name\":\"app\"}","f:name"]`:  "app",
@@ -49,29 +49,29 @@ func TestOwnedFieldValues(t *testing.T) {
 	containers := changed.Object["spec"].(map[string]any)["containers"].([]any)
 	containers[0], containers[1] = containers[1], containers[0]
 	containers[1].(map[string]any)["image"] = "other"
-	observed, err := fieldValues(changed, fields)
+	observed, err := FieldValues(changed, fields)
 	require.NoError(t, err)
 	require.Equal(t, values, observed)
 	containers[0].(map[string]any)["image"] = "drift"
 	changed.SetManagedFields(nil)
-	observed, err = fieldValues(changed, fields)
+	observed, err = FieldValues(changed, fields)
 	require.NoError(t, err)
 	require.NotEqual(t, values, observed)
 	delete(changed.Object, "spec")
-	observed, err = fieldValues(changed, fields)
+	observed, err = FieldValues(changed, fields)
 	require.NoError(t, err)
 	require.Empty(t, observed)
 }
 
 func TestInvalidFieldSelection(t *testing.T) {
-	_, err := fieldValues(&unstructured.Unstructured{}, "invalid")
+	_, err := FieldValues(&unstructured.Unstructured{}, "invalid")
 	require.Error(t, err)
 	obj := &unstructured.Unstructured{}
 	obj.SetManagedFields([]metav1.ManagedFieldsEntry{{
 		Manager: "unobin", Operation: metav1.ManagedFieldsOperationApply,
 		FieldsType: "FieldsV1", FieldsV1: &metav1.FieldsV1{Raw: []byte(`{"f:data":{}}`)},
 	}})
-	fields, err := ownedFields(obj, "another-manager")
+	fields, err := OwnedFields(obj, "another-manager")
 	require.NoError(t, err)
 	require.JSONEq(t, `{}`, fields)
 }

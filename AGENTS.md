@@ -1,5 +1,11 @@
 # Repository guidance
 
+- Follow `docs/architecture.md` for public library paths, implementation ownership,
+  and shared lifecycle helpers.
+- Register typed constructs in `api/<group>/<version>/library.go` and implement
+  them in `internal/api/<group>/<version>/`.
+- Keep common helper changes separate from resource implementations. Resource
+  waits and mutations must follow their lifecycle contracts.
 - Follow `../unobin-library-aws` closely for build, test, documentation, and CI
   conventions. Preserve its names where they apply.
 - Keep the Makefile concise. Put any build helper scripts in `hack/`.

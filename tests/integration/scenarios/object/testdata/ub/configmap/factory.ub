@@ -1,6 +1,6 @@
 factory: {
   imports: {
-    kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//object'
+    kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
   }
   library-configs: { kubernetes: {} }
   inputs: {

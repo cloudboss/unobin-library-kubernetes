@@ -1,4 +1,4 @@
-package object
+package dynamic
 
 import (
 	"os/exec"
@@ -19,7 +19,7 @@ import (
 
 func TestLibrary(t *testing.T) {
 	lib := Library()
-	require.Equal(t, "kubernetes-object", lib.Name)
+	require.Equal(t, "kubernetes-dynamic", lib.Name)
 	require.Equal(t, reflect.TypeFor[*config.Configuration](), lib.Configuration.ValueType())
 	require.Equal(t, reflect.TypeFor[*svc.ObjectResourceOutput](),
 		lib.Resources["object"].OutputType())

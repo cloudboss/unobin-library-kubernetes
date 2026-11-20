@@ -8,6 +8,9 @@ The shared Kubernetes configuration is available at
 The Go module is `github.com/cloudboss/unobin-library-kubernetes`. It uses Go
 1.26.2, matching `unobin-library-aws`.
 
+See [Architecture](docs/architecture.md) for public package ownership and API
+group/version boundaries.
+
 ## Configuration
 
 Configuration uses client-go's loading rules: `KUBECONFIG` is a list of files
@@ -51,15 +54,15 @@ value is a snapshot; use an exec helper or token file when refresh is required.
 Tokens, private key data, and exec environment values are marked sensitive. Treat
 plans and state as sensitive too, and configure Unobin state encryption.
 
-## Objects
+## Dynamic objects
 
-Import `github.com/cloudboss/unobin-library-kubernetes//object` to manage built-in
+Import `github.com/cloudboss/unobin-library-kubernetes//dynamic` to manage built-in
 or custom Kubernetes objects:
 
 ```ub
 factory: {
   imports: {
-    kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//object'
+    kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
   }
   library-configs: { kubernetes: {} }
   resources: {

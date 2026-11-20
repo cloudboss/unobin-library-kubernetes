@@ -1,4 +1,4 @@
-package object
+package dynamic
 
 import (
 	"github.com/cloudboss/unobin/pkg/runtime"
@@ -9,7 +9,7 @@ import (
 
 func Library() *runtime.Library {
 	return &runtime.Library{
-		Name:        "kubernetes-object",
+		Name:        "kubernetes-dynamic",
 		Description: "Kubernetes objects for Unobin.",
 		Compatibility: runtime.LibraryCompatibility{
 			RequiredAPI:            "1.0",
