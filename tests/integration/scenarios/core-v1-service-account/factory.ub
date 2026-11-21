@@ -1,9 +1,9 @@
 factory: {
-  description: 'Creates ServiceAccounts with explicit and default token automount settings.'
-  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  description:     'Creates ServiceAccounts with explicit and default token automount settings.'
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
   library-configs: { core: {} }
   inputs: {
-    value: { type: string }
+    value:     { type: string }
     automount: { type: boolean }
   }
   resources: {
@@ -11,11 +11,15 @@ factory: {
       object: {
         metadata: {
           generate-name: 'unobin-it-service-account-'
-          labels: { 'test.unobin.cloudboss.io/scenario': 'core-v1-service-account' role: 'explicit' value: input.value }
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-service-account'
+            role:                                'explicit'
+            value:                               input.value
+          }
           annotations: { 'example.com/value': input.value }
         }
-        image-pull-secrets: [{ name: input.value }]
-        secrets: [{ name: input.value }]
+        image-pull-secrets:              [{ name: input.value }]
+        secrets:                         [{ name: input.value }]
         automount-service-account-token: input.automount
       }
     }
@@ -23,19 +27,23 @@ factory: {
       object: {
         metadata: {
           generate-name: 'unobin-it-service-account-'
-          labels: { 'test.unobin.cloudboss.io/scenario': 'core-v1-service-account' role: 'defaulted' value: input.value }
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-service-account'
+            role:                                'defaulted'
+            value:                               input.value
+          }
           annotations: { 'example.com/value': input.value }
         }
         image-pull-secrets: [{ name: input.value }]
-        secrets: [{ name: input.value }]
+        secrets:            [{ name: input.value }]
       }
     }
   }
   outputs: {
-    explicit-name: { value: resource.explicit.object.metadata.name }
-    explicit-uid: { value: resource.explicit.object.metadata.uid }
-    defaulted-name: { value: resource.defaulted.object.metadata.name }
-    defaulted-uid: { value: resource.defaulted.object.metadata.uid }
+    explicit-name:       { value: resource.explicit.object.metadata.name }
+    explicit-uid:        { value: resource.explicit.object.metadata.uid }
+    defaulted-name:      { value: resource.defaulted.object.metadata.name }
+    defaulted-uid:       { value: resource.defaulted.object.metadata.uid }
     default-secret-name: { value: resource.defaulted.default-secret-name }
   }
 }

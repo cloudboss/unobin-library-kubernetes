@@ -4,26 +4,28 @@ factory: {
   }
   library-configs: { kubernetes: {} }
   inputs: {
-    name: { type: string }
-    value: { type: string }
-    force-conflicts: { type: boolean default: false }
+    name:            { type: string }
+    value:           { type: string }
+    force-conflicts: { type: boolean, default: false }
   }
   resources: {
     settings: kubernetes.object {
-      manifest: @core.to-json({
-        apiVersion: 'v1'
-        kind: 'ConfigMap'
-        metadata: { name: input.name }
-        data: { value: input.value }
-      })
+      manifest: @core.to-json(
+        {
+          apiVersion: 'v1'
+          kind:       'ConfigMap'
+          metadata:   { name: input.name }
+          data:       { value: input.value }
+        },
+      )
       force-conflicts: input.force-conflicts
-      delete-timeout: '5s'
+      delete-timeout:  '5s'
     }
   }
   outputs: {
     api-version: { value: resource.settings.api-version }
-    name: { value: resource.settings.name }
-    namespace: { value: resource.settings.namespace }
-    uid: { value: resource.settings.uid }
+    name:        { value: resource.settings.name }
+    namespace:   { value: resource.settings.namespace }
+    uid:         { value: resource.settings.uid }
   }
 }

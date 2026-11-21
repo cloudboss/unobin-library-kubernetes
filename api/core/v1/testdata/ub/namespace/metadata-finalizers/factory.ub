@@ -10,6 +10,6 @@ factory: {
   }
   outputs: {
     name: { value: resource.project.object.metadata.name }
-    uid: { value: resource.project.object.metadata.uid }
+    uid:  { value: resource.project.object.metadata.uid }
   }
 }

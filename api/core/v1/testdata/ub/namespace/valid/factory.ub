@@ -5,15 +5,21 @@ factory: {
   library-configs: { kubernetes: {} }
   resources: {
     project: kubernetes.namespace {
-      object: { metadata: { generate-name: 'example-' annotations: { 'EXAMPLE.COM/KEY': '' } labels: { app: 'test' } } }
+      object: {
+        metadata: {
+          generate-name: 'example-'
+          annotations:   { 'EXAMPLE.COM/KEY': '' }
+          labels:        { app: 'test' }
+        }
+      }
       wait-for-default-service-account: true
-      delete-timeout: '5m'
-      ignore-annotations: ['ignored']
-      ignore-labels: []
+      delete-timeout:                   '5m'
+      ignore-annotations:               ['ignored']
+      ignore-labels:                    []
     }
   }
   outputs: {
     name: { value: resource.project.object.metadata.name }
-    uid: { value: resource.project.object.metadata.uid }
+    uid:  { value: resource.project.object.metadata.uid }
   }
 }

@@ -6,20 +6,20 @@ factory: {
   resources: {
     settings: kubernetes.config-map {
       object: {
-        metadata: { name: 'example' namespace: 'default' labels: { app: 'test' } }
-        data: { value: 'text' }
+        metadata:    { name: 'example', namespace: 'default', labels: { app: 'test' } }
+        data:        { value: 'text' }
         binary-data: { bytes: 'AAE=' }
-        immutable: false
+        immutable:   false
       }
       ignore-annotations: ['ignored']
-      ignore-labels: []
+      ignore-labels:      []
     }
   }
   outputs: {
-    name: { value: resource.settings.object.metadata.name }
-    uid: { value: resource.settings.object.metadata.uid }
-    data: { value: resource.settings.object.data }
+    name:        { value: resource.settings.object.metadata.name }
+    uid:         { value: resource.settings.object.metadata.uid }
+    data:        { value: resource.settings.object.data }
     binary-data: { value: resource.settings.object.binary-data }
-    immutable: { value: resource.settings.object.immutable }
+    immutable:   { value: resource.settings.object.immutable }
   }
 }

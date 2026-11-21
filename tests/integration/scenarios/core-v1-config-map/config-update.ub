@@ -1,9 +1,11 @@
 stack: {
   factory: {
-    inputs: { value: 'updated' binary-value: 'AgM=' immutable: true }
+    inputs: { value: 'updated', binary-value: 'AgM=', immutable: true }
   }
 
-  state: local { path: '.unobin/state' }
+  state: local {
+    path: '.unobin/state'
+  }
 
   encryption: noop {}
 }

@@ -1,13 +1,15 @@
 stack: {
   factory: {
     inputs: {
-      server: 'SERVICE_TEST_SERVER'
-      port: 80
-      node-port: -4294936295
+      server:                 'SERVICE_TEST_SERVER'
+      port:                   80
+      node-port:              -4294936295
       health-check-node-port: 31002
-      timeout-seconds: 60
+      timeout-seconds:        60
     }
   }
-  state: local { path: '.unobin/state' }
+  state: local {
+    path: '.unobin/state'
+  }
   encryption: noop {}
 }

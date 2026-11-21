@@ -1,5 +1,9 @@
 factory: {
-  inputs: { server: { type: string } }
-  library-configs: { core: { server: input.server insecure-skip-tls-verify: true } }
-  resources: { credentials: core.secret { object: { metadata: { name: 'actual' } } } }
+  inputs:          { server: { type: string } }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    credentials: core.secret {
+      object: { metadata: { name: 'actual' } }
+    }
+  }
 }

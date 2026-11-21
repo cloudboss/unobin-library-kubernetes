@@ -6,11 +6,11 @@ factory: {
   resources: {
     project: kubernetes.namespace {
       object: { metadata: { name: 'example' } }
-      adopt: true
+      adopt:  true
     }
   }
   outputs: {
     name: { value: resource.project.object.metadata.name }
-    uid: { value: resource.project.object.metadata.uid }
+    uid:  { value: resource.project.object.metadata.uid }
   }
 }

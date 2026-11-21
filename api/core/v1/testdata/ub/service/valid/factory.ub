@@ -1,47 +1,62 @@
 factory: {
-  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
   library-configs: { core: {} }
   resources: {
     endpoint: core.service {
       metadata: {
         generate-name: 'example-'
-        namespace: 'default'
-        annotations: { 'EXAMPLE.COM/Key': '' }
-        labels: { app: 'test' }
+        namespace:     'default'
+        annotations:   { 'EXAMPLE.COM/Key': '' }
+        labels:        { app: 'test' }
       }
       spec: {
-        type: 'LoadBalancer'
+        type:                              'LoadBalancer'
         allocate-load-balancer-node-ports: false
-        cluster-ip: '192.0.2.1'
-        cluster-ips: ['192.0.2.1', '2001:db8::1']
-        external-ips: ['192.0.2.2']
-        external-name: 'example.com'
-        external-traffic-policy: 'Local'
-        internal-traffic-policy: 'Cluster'
-        ip-families: ['IPv4', 'IPv6']
-        ip-family-policy: 'PreferDualStack'
-        load-balancer-class: 'example.com/class'
-        load-balancer-ip: '192.0.2.3'
-        load-balancer-source-ranges: ['192.0.2.3/24']
-        health-check-node-port: 31001
-        publish-not-ready-addresses: true
-        selector: { app: 'test' }
-        session-affinity: 'ClientIP'
-        session-affinity-config: { client-ip: { timeout-seconds: 60 } }
-        port: [{ port: 80 name: 'http' app-protocol: 'http' protocol: 'TCP' node-port: 0 target-port: '8080' }]
+        cluster-ip:                        '192.0.2.1'
+        cluster-ips:                       ['192.0.2.1', '2001:db8::1']
+        external-ips:                      ['192.0.2.2']
+        external-name:                     'example.com'
+        external-traffic-policy:           'Local'
+        internal-traffic-policy:           'Cluster'
+        ip-families:                       ['IPv4', 'IPv6']
+        ip-family-policy:                  'PreferDualStack'
+        load-balancer-class:               'example.com/class'
+        load-balancer-ip:                  '192.0.2.3'
+        load-balancer-source-ranges:       ['192.0.2.3/24']
+        health-check-node-port:            31001
+        publish-not-ready-addresses:       true
+        selector:                          { app: 'test' }
+        session-affinity:                  'ClientIP'
+        session-affinity-config:           { client-ip: { timeout-seconds: 60 } }
+        port: [
+          {
+            port:         80
+            name:         'http'
+            app-protocol: 'http'
+            protocol:     'TCP'
+            node-port:    0
+            target-port:  '8080'
+          },
+        ]
       }
       wait-for-load-balancer: false
-      create-timeout: '10m'
-      ignore-annotations: ['ignored']
-      ignore-labels: []
+      create-timeout:         '10m'
+      ignore-annotations:     ['ignored']
+      ignore-labels:          []
     }
-    empty: core.service { metadata: {} spec: {} }
-    zero-ports: core.service { metadata: {} spec: { port: [] } }
+    empty: core.service {
+      metadata: {}
+      spec:     {}
+    }
+    zero-ports: core.service {
+      metadata: {}
+      spec:     { port: [] }
+    }
   }
   outputs: {
-    ip: { value: resource.endpoint.spec.cluster-ip }
-    ips: { value: resource.endpoint.spec.cluster-ips }
+    ip:        { value: resource.endpoint.spec.cluster-ip }
+    ips:       { value: resource.endpoint.spec.cluster-ips }
     endpoints: { value: resource.endpoint.status.load-balancer.ingress }
-    uid: { value: resource.endpoint.uid }
+    uid:       { value: resource.endpoint.uid }
   }
 }

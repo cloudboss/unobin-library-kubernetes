@@ -1,22 +1,22 @@
 factory: {
   inputs: {
     server: { type: string }
-    value: { type: string }
-    wait: { type: boolean }
+    value:  { type: string }
+    wait:   { type: boolean }
   }
   library-configs: {
-    core: { server: input.server insecure-skip-tls-verify: true }
+    core: { server: input.server, insecure-skip-tls-verify: true }
   }
   resources: {
     project: core.namespace {
       object: {
         metadata: {
           generate-name: 'generated-'
-          labels: { value: input.value }
+          labels:        { value: input.value }
         }
       }
       wait-for-default-service-account: input.wait
-      ignore-annotations: ['^ignored']
+      ignore-annotations:               ['^ignored']
     }
   }
 }

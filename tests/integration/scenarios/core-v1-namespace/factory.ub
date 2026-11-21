@@ -1,5 +1,7 @@
 factory: {
-  description: 'Creates a generated Namespace, waits for its default ServiceAccount, and updates metadata.'
+  description: '''>-
+    Creates a generated Namespace, waits for its default ServiceAccount, and updates metadata.
+    '''
 
   imports: {
     kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
@@ -18,18 +20,18 @@ factory: {
           generate-name: 'unobin-it-namespace-'
           labels: {
             'test.unobin.cloudboss.io/scenario': 'core-v1-namespace'
-            value: input.value
+            value:                               input.value
           }
           annotations: { 'example.com/value': input.value }
         }
       }
       wait-for-default-service-account: true
-      delete-timeout: '30s'
+      delete-timeout:                   '30s'
     }
   }
 
   outputs: {
     name: { value: resource.project.object.metadata.name }
-    uid: { value: resource.project.object.metadata.uid }
+    uid:  { value: resource.project.object.metadata.uid }
   }
 }

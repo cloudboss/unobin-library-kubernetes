@@ -1,7 +1,13 @@
 stack: {
   factory: {
-    inputs: { value: 'updated' target-port: '8081' replacement-prefix: 'unobin-it-service-updated-' }
+    inputs: {
+      value:              'updated'
+      target-port:        '8081'
+      replacement-prefix: 'unobin-it-service-updated-'
+    }
   }
-  state: local { path: '.unobin/state' }
+  state: local {
+    path: '.unobin/state'
+  }
   encryption: noop {}
 }

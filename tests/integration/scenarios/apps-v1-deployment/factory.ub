@@ -1,57 +1,57 @@
 factory: {
-  imports: { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
   library-configs: { apps: {} }
   inputs: {
-    name: { type: string }
-    no-wait-name: { type: string default: 'unobin-it-deployment-no-wait' }
-    image: { type: string }
-    replicas: { type: string }
-    wait-for-rollout: { type: boolean default: true }
+    name:             { type: string }
+    no-wait-name:     { type: string, default: 'unobin-it-deployment-no-wait' }
+    image:            { type: string }
+    replicas:         { type: string }
+    wait-for-rollout: { type: boolean, default: true }
   }
   resources: {
     workload: apps.deployment {
       metadata: {
-        name: input.name
+        name:      input.name
         namespace: 'default'
-        labels: { app: input.name }
+        labels:    { app: input.name }
       }
       spec: {
         replicas: input.replicas
         selector: { match-labels: { app: input.name } }
         template: {
           metadata: { labels: { app: input.name } }
-          spec: { container: [{ name: 'app' image: input.image }] }
+          spec:     { container: [{ name: 'app', image: input.image }] }
         }
       }
       wait-for-rollout: input.wait-for-rollout
-      create-timeout: '3m'
-      update-timeout: '3m'
-      delete-timeout: '30s'
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
     }
     without-wait: apps.deployment {
       metadata: {
-        name: input.no-wait-name
+        name:      input.no-wait-name
         namespace: 'default'
-        labels: { app: input.no-wait-name }
+        labels:    { app: input.no-wait-name }
       }
       spec: {
         replicas: input.replicas
         selector: { match-labels: { app: input.no-wait-name } }
         template: {
           metadata: { labels: { app: input.no-wait-name } }
-          spec: { container: [{ name: 'app' image: input.image }] }
+          spec:     { container: [{ name: 'app', image: input.image }] }
         }
       }
       wait-for-rollout: false
-      create-timeout: '3m'
-      update-timeout: '3m'
-      delete-timeout: '30s'
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
     }
   }
   outputs: {
-    name: { value: resource.workload.name }
-    uid: { value: resource.workload.uid }
-    replicas: { value: resource.workload.spec.replicas }
+    name:        { value: resource.workload.name }
+    uid:         { value: resource.workload.uid }
+    replicas:    { value: resource.workload.spec.replicas }
     no-wait-uid: { value: resource.without-wait.uid }
   }
 }

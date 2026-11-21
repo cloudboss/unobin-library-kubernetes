@@ -1,8 +1,11 @@
 factory: {
-  imports: { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
   library-configs: { rbac: {} }
-  resources: { reader: rbac.role {
-      metadata: {} rule: [{ api-groups: [''] resources: ['pods'] verbs: [null] }]
-  } }
-  outputs: { name: { value: resource.reader.name } uid: { value: resource.reader.uid } }
+  resources: {
+    reader: rbac.role {
+      metadata: {}
+      rule:     [{ api-groups: [''], resources: ['pods'], verbs: [null] }]
+    }
+  }
+  outputs: { name: { value: resource.reader.name }, uid: { value: resource.reader.uid } }
 }

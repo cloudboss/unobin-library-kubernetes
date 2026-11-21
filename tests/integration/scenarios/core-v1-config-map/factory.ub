@@ -8,9 +8,9 @@ factory: {
   library-configs: { kubernetes: {} }
 
   inputs: {
-    value: { type: string }
+    value:        { type: string }
     binary-value: { type: string }
-    immutable: { type: boolean }
+    immutable:    { type: boolean }
   }
 
   resources: {
@@ -18,21 +18,21 @@ factory: {
       object: {
         metadata: {
           generate-name: 'unobin-it-config-map-'
-          labels: { 'test.unobin.cloudboss.io/scenario': 'core-v1-config-map' }
+          labels:        { 'test.unobin.cloudboss.io/scenario': 'core-v1-config-map' }
         }
-        data: { value: input.value }
-        binary-data: { bytes: input.binary-value empty: '' }
-        immutable: input.immutable
+        data:        { value: input.value }
+        binary-data: { bytes: input.binary-value, empty: '' }
+        immutable:   input.immutable
       }
     }
   }
 
   outputs: {
-    name: { value: resource.settings.object.metadata.name }
-    namespace: { value: resource.settings.object.metadata.namespace }
-    uid: { value: resource.settings.object.metadata.uid }
-    data: { value: resource.settings.object.data }
+    name:        { value: resource.settings.object.metadata.name }
+    namespace:   { value: resource.settings.object.metadata.namespace }
+    uid:         { value: resource.settings.object.metadata.uid }
+    data:        { value: resource.settings.object.data }
     binary-data: { value: resource.settings.object.binary-data }
-    immutable: { value: resource.settings.object.immutable }
+    immutable:   { value: resource.settings.object.immutable }
   }
 }

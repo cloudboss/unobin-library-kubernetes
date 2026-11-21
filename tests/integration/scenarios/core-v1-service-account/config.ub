@@ -1,5 +1,7 @@
 stack: {
- factory: { inputs: { value: 'first' automount: false } }
- state: local { path: '.unobin/state' }
- encryption: noop {}
+  factory: { inputs: { value: 'first', automount: false } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
 }

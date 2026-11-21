@@ -1,5 +1,7 @@
 stack: {
-  factory: { inputs: { name: 'OBJECT_NAME-renamed' value: 'updated' force-conflicts: true } }
-  state: local { path: '.unobin/state' }
+  factory: { inputs: { name: 'OBJECT_NAME-renamed', value: 'updated', force-conflicts: true } }
+  state: local {
+    path: '.unobin/state'
+  }
   encryption: noop {}
 }

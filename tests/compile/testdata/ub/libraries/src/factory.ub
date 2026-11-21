@@ -1,32 +1,32 @@
 factory: {
   imports: {
-    dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
-    core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
-    apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1'
-    batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1'
-    networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1'
-    rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1'
-    storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1'
-    autoscaling: 'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2'
-    policy: 'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1'
+    dynamic:       'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+    core:          'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    apps:          'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1'
+    batch:         'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1'
+    networking:    'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1'
+    rbac:          'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1'
+    storage:       'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1'
+    autoscaling:   'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2'
+    policy:        'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1'
     apiextensions: 'github.com/cloudboss/unobin-library-kubernetes//api/apiextensions/v1'
   }
   inputs: {
     cluster: {
-      type: library-config('github.com/cloudboss/unobin-library-kubernetes//config')
+      type:    library-config('github.com/cloudboss/unobin-library-kubernetes//config')
       default: { server: 'https://cluster.example' }
     }
   }
   library-configs: {
-    dynamic: input.cluster
-    core: input.cluster
-    apps: input.cluster
-    batch: input.cluster
-    networking: input.cluster
-    rbac: input.cluster
-    storage: input.cluster
-    autoscaling: input.cluster
-    policy: input.cluster
+    dynamic:       input.cluster
+    core:          input.cluster
+    apps:          input.cluster
+    batch:         input.cluster
+    networking:    input.cluster
+    rbac:          input.cluster
+    storage:       input.cluster
+    autoscaling:   input.cluster
+    policy:        input.cluster
     apiextensions: input.cluster
   }
   outputs: {

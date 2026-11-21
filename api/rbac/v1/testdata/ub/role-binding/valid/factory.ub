@@ -1,10 +1,12 @@
 factory: {
-  imports: { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
   library-configs: { rbac: {} }
-  resources: { binding: rbac.role-binding {
-    metadata: { name: 'system:reader' }
-    role-ref: { api-group: 'rbac.authorization.k8s.io' kind: 'Role' name: 'reader' }
-    subject: [{ kind: 'User' name: 'alice' namespace: '' api-group: '' }]
-  } }
+  resources: {
+    binding: rbac.role-binding {
+      metadata: { name: 'system:reader' }
+      role-ref: { api-group: 'rbac.authorization.k8s.io', kind: 'Role', name: 'reader' }
+      subject:  [{ kind: 'User', name: 'alice', namespace: '', api-group: '' }]
+    }
+  }
   outputs: { name: { value: resource.binding.name } }
 }
