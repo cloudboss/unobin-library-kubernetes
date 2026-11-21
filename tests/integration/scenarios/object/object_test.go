@@ -171,9 +171,11 @@ func TestDeletionWaitsForFinalizers(t *testing.T) {
 		if !apierrors.IsNotFound(err) {
 			require.NoError(t, err)
 		}
-		require.NoError(t, r.Delete(context.Background(), nil, p))
+		cleanupPrior := p
+		cleanupPrior.Inputs.DeleteTimeout = new("10s")
+		require.NoError(t, r.Delete(context.Background(), nil, cleanupPrior))
 	})
-	p.Inputs.DeleteTimeout = new("100ms")
+	p.Inputs.DeleteTimeout = new("5s")
 	err = r.Delete(t.Context(), nil, p)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 	live, err := api.Get(t.Context(), created.Name, metav1.GetOptions{})
