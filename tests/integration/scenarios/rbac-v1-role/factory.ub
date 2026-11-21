@@ -1,0 +1,29 @@
+factory: {
+  description: 'Creates a generated Role and updates its permissions in place.'
+  imports: { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: {} }
+  inputs: {
+    verbs: { type: list(string) }
+    resource-names: { type: list(string) }
+  }
+  resources: {
+    reader: rbac.role {
+      metadata: {
+        generate-name: 'unobin-it-role-'
+        labels: { 'test.unobin.cloudboss.io/scenario': 'rbac-v1-role' }
+      }
+      rule: [{
+        api-groups: ['']
+        resources: ['pods']
+        verbs: input.verbs
+        resource-names: input.resource-names
+      }]
+    }
+  }
+  outputs: {
+    name: { value: resource.reader.name }
+    namespace: { value: resource.reader.namespace }
+    uid: { value: resource.reader.uid }
+    rule: { value: resource.reader.rule }
+  }
+}
