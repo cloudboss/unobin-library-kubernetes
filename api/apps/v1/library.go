@@ -4,6 +4,7 @@ import (
 	"github.com/cloudboss/unobin/pkg/runtime"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
+	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/apps/v1"
 )
 
 func Library() *runtime.Library {
@@ -15,6 +16,10 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.12.0",
 		},
 		Configuration: config.LibraryConfiguration(),
-		Resources:     map[string]runtime.ResourceRegistration{},
+		Resources: map[string]runtime.ResourceRegistration{
+			"deployment": runtime.MakeResource[
+				svc.DeploymentResource, *svc.DeploymentResourceOutput, *config.Configuration,
+			]((&svc.DeploymentResource{}).ResourceDefinition()),
+		},
 	}
 }

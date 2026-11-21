@@ -4,9 +4,16 @@ The `kind` and `live` tiers run the same scenarios. The configuration scenario
 uses the shared client loader to discover the server version, then create, read,
 update, and delete a temporary ConfigMap in the kubeconfig's namespace.
 
-The `core-v1-config-map` scenario uses the shared compile, pin, plan, apply,
-update, and destroy lifecycle. It has a `factory.ub`, two configurations, and a
-read-only Kubernetes verifier that checks immutable-content replacement.
+The `core-v1-config-map` and `apps-v1-deployment` scenarios use the shared
+compile, pin, plan, apply, update, and destroy lifecycle. Each has a `factory.ub`,
+two configurations, and a read-only Kubernetes verifier. The ConfigMap scenario
+checks immutable-content replacement. The Deployment scenario uses default
+rollout waits and checks ready Pods after replica and container-image updates.
+It requires a cluster with working nodes.
+
+The `apps-v1-deployment-api` scenario checks Deployment creation, updates with a
+stable UID, and deletion with rollout waiting disabled. It can run against an API
+server without workload controllers or nodes.
 
 The `object` scenario tests server-side apply, field conflicts, field removal,
 UID protection, and deletion with finalizers. It also compiles a factory and
@@ -48,6 +55,10 @@ scenario also needs patch access to ConfigMaps, create/get/patch/delete access t
 CustomResourceDefinitions, and create/get/patch/update/delete access to the test
 custom API group and its status subresource. Set `SCENARIO=configuration` to run
 only the client configuration check.
+
+The typed scenarios use the `default` namespace. They need create, get, list,
+patch, and delete access to ConfigMaps; create, get, patch, and delete access to
+Deployments; and list access to Pods and ReplicaSets.
 
 The container receives the caller's environment except for PATH and Go tool and
 cache paths. The home directory and additional kubeconfig directories are mounted

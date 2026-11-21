@@ -59,6 +59,7 @@ plans and state as sensitive too, and configure Unobin state encryption.
 | Import | Resource |
 | --- | --- |
 | `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/apps/v1` | `deployment` |
 
 Typed resources use Kubernetes create and JSON Patch operations. Their metadata
 namespace defaults to `default`; set it explicitly to use another namespace.
@@ -89,6 +90,13 @@ ConfigMap `binary-data` values use standard base64. With `immutable: true`,
 changing text or binary data, or disabling immutability, replaces the ConfigMap.
 Metadata changes remain updates. Deletion returns when the API accepts the
 request; finalizers can delay actual removal.
+
+Deployment takes `metadata` and `spec` inputs, including a typed pod template.
+It waits for rollout after create and update unless `wait-for-rollout` is false.
+`create-timeout`, `update-timeout`, and `delete-timeout` accept positive Go
+durations and default to `10m`. Deletion waits for the saved object to disappear.
+Selector and other immutable-field changes require replacement; normal container
+and replica changes update the existing Deployment.
 
 ## Dynamic objects
 

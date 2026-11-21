@@ -1,0 +1,36 @@
+factory: {
+  imports: { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: {} }
+  inputs: {
+    name: { type: string }
+    image: { type: string }
+    replicas: { type: string }
+    wait-for-rollout: { type: boolean default: true }
+  }
+  resources: {
+    workload: apps.deployment {
+      metadata: {
+        name: input.name
+        namespace: 'default'
+        labels: { app: input.name }
+      }
+      spec: {
+        replicas: input.replicas
+        selector: { match-labels: { app: input.name } }
+        template: {
+          metadata: { labels: { app: input.name } }
+          spec: { container: [{ name: 'app' image: input.image }] }
+        }
+      }
+      wait-for-rollout: input.wait-for-rollout
+      create-timeout: '3m'
+      update-timeout: '3m'
+      delete-timeout: '30s'
+    }
+  }
+  outputs: {
+    name: { value: resource.workload.name }
+    uid: { value: resource.workload.uid }
+    replicas: { value: resource.workload.spec.replicas }
+  }
+}

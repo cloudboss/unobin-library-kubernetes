@@ -1,0 +1,148 @@
+package v1
+
+import (
+	"fmt"
+	"reflect"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func visitFields(
+	v reflect.Value, prefix string, visit func(reflect.StructField, reflect.Value, string),
+) {
+	v = indirect(v)
+	if !v.IsValid() {
+		return
+	}
+	switch v.Kind() {
+	case reflect.Struct:
+		for i := range v.NumField() {
+			field, value := v.Type().Field(i), v.Field(i)
+			key := prefix + "." + field.Name
+			visit(field, value, key)
+			visitFields(value, key, visit)
+		}
+	case reflect.Slice:
+		for i := range v.Len() {
+			visitFields(v.Index(i), fmt.Sprintf("%s[%d]", prefix, i), visit)
+		}
+	}
+}
+
+func TestValidationMatrix(t *testing.T) {
+	type invalid struct {
+		path  string
+		value any
+	}
+	var cases []invalid
+	visitFields(reflect.ValueOf(fullInput(t)).Elem(), "", func(
+		field reflect.StructField, value reflect.Value, key string,
+	) {
+		if choices := field.Tag.Get("enum"); choices != "" {
+			cases = append(cases, invalid{key, "invalid"})
+			if !strings.HasPrefix(choices, ",") {
+				cases = append(cases, invalid{key, ""})
+			}
+		}
+		if field.Tag.Get("min") != "" {
+			cases = append(cases, invalid{key, int64(-1)})
+		}
+		switch field.Tag.Get("format") {
+		case "int32", "int64", "mode", "threshold", "quantity", "quantities":
+			cases = append(cases, invalid{key, "malformed"})
+			if field.Tag.Get("format") == "mode" || field.Tag.Get("format") == "quantity" {
+				if field.Tag.Get("omit") != "true" {
+					cases = append(cases, invalid{key, ""})
+				}
+			}
+		case "relative-path":
+			for _, text := range []string{"/absolute", "a/../b", "..prefix"} {
+				cases = append(cases, invalid{key, text})
+			}
+		case "ip", "ips":
+			cases = append(cases, invalid{key, "invalid-IP"})
+		case "names":
+			cases = append(cases, invalid{key, "INVALID_DNS"})
+		case "port-number":
+			cases = append(cases, invalid{key, int64(65536)}, invalid{key, int64(0)})
+		case "port", "port-name":
+			cases = append(cases, invalid{key, "invalid_port"}, invalid{key, ""})
+		}
+	})
+	for _, tc := range cases {
+		t.Run(fmt.Sprintf("%s=%v", tc.path, tc.value), func(t *testing.T) {
+			r := fullInput(t)
+			visitFields(reflect.ValueOf(r).Elem(), "", func(
+				field reflect.StructField, value reflect.Value, key string,
+			) {
+				if key != tc.path {
+					return
+				}
+				value = indirect(value)
+				switch value.Kind() {
+				case reflect.String:
+					value.SetString(tc.value.(string))
+				case reflect.Int64:
+					value.SetInt(tc.value.(int64))
+				case reflect.Slice:
+					if value.Type().Elem().Kind() == reflect.String {
+						value.Index(0).SetString(tc.value.(string))
+					} else {
+						value.SetLen(0)
+					}
+				case reflect.Map:
+					value.SetMapIndex(reflect.ValueOf("cpu"), reflect.ValueOf(tc.value.(string)))
+				}
+			})
+			_, err := r.expand(nil)
+			require.Error(t, err)
+		})
+	}
+}
+
+func TestQuantityModeSetSemantics(t *testing.T) {
+	for _, mode := range []string{"0", "00", "0644", "0777"} {
+		r := deployment()
+		r.Spec.Template.Spec.Volume = new([]Volume{{
+			Name: new("data"), ConfigMap: &ConfigMapVolume{DefaultMode: &mode},
+		}})
+		obj, err := r.expand(nil)
+		require.NoError(t, err)
+		obj.UID = "uid"
+		observed, err := r.output(obj, "server")
+		require.NoError(t, err)
+		want := mode
+		if mode == "0" {
+			want = "00"
+		}
+		require.Equal(t, want, *(*observed.Spec.Template.Spec.Volume)[0].ConfigMap.DefaultMode)
+	}
+	for _, mode := range []string{"644", "0788", "01000", "999999999999999999999"} {
+		r := deployment()
+		r.Spec.Template.Spec.Volume = new([]Volume{{ConfigMap: &ConfigMapVolume{DefaultMode: &mode}}})
+		_, err := r.expand(nil)
+		require.Error(t, err)
+	}
+	a, b := fullInput(t), fullInput(t)
+	(*a.Spec.Template.Spec.Container)[0].Resources.Requests = new(map[string]string{"cpu": "0.1"})
+	(*b.Spec.Template.Spec.Container)[0].Resources.Requests = new(map[string]string{"cpu": "100m"})
+	a.Spec.Selector.MatchExpressions = new([]SelectorRequirement{{
+		Values: new([]string{"b", "a", "a"}),
+	}})
+	b.Spec.Selector.MatchExpressions = new([]SelectorRequirement{{
+		Values: new([]string{"a", "b"}),
+	}})
+	require.True(t, equivalentSpec(a.Spec, b.Spec))
+	(*b.Spec.Template.Spec.Container)[0].Resources.Requests = new(map[string]string{"cpu": "200m"})
+	require.False(t, equivalentSpec(a.Spec, b.Spec))
+	a, b = fullInput(t), fullInput(t)
+	(*a.Spec.Template.Spec.Volume)[0].Ephemeral.VolumeClaimTemplate.Spec.Resources.Limits =
+		new(map[string]string{"storage": "1Gi"})
+	(*b.Spec.Template.Spec.Volume)[0].Ephemeral.VolumeClaimTemplate.Spec.Resources.Limits =
+		new(map[string]string{"storage": "1024Mi"})
+	require.True(t, equivalentSpec(a.Spec, b.Spec))
+	require.Equal(t, replacementValues(reflect.ValueOf(a.Spec), ""),
+		replacementValues(reflect.ValueOf(b.Spec), ""))
+}

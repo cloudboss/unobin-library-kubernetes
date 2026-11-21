@@ -1,0 +1,10 @@
+factory: {
+  imports: { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: {} }
+  resources: {
+    workload: apps.deployment {
+      metadata: { generate-name: 'example--' }
+      spec: { template: { metadata: { generate-name: 'template-' } spec: {} } }
+    }
+  }
+}
