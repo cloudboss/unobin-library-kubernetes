@@ -1,0 +1,38 @@
+factory: {
+  description: 'Creates sensitive Secrets, updates a mutable payload, and replaces immutable content.'
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  inputs: {
+    value: { type: string }
+    binary-value: { type: string }
+    immutable: { type: boolean }
+  }
+  resources: {
+    mutable: core.secret {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-secret-mutable-'
+          labels: { 'test.unobin.cloudboss.io/scenario': 'core-v1-secret' role: 'mutable' }
+        }
+        data: { value: input.value }
+        binary-data: { bytes: input.binary-value empty: '' }
+        immutable: input.immutable
+      }
+    }
+    locked: core.secret {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-secret-locked-'
+          labels: { 'test.unobin.cloudboss.io/scenario': 'core-v1-secret' role: 'locked' }
+        }
+        data: { value: input.value }
+        binary-data: { bytes: input.binary-value empty: '' }
+        immutable: true
+      }
+    }
+  }
+  outputs: {
+    mutable-name: { value: resource.mutable.object.metadata.name }
+    locked-name: { value: resource.locked.object.metadata.name }
+  }
+}

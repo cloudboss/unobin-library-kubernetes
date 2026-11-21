@@ -59,7 +59,7 @@ plans and state as sensitive too, and configure Unobin state encryption.
 
 | Import | Resource |
 | --- | --- |
-| `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map`, `namespace`, `service` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map`, `namespace`, `secret`, `service` |
 | `github.com/cloudboss/unobin-library-kubernetes//api/apps/v1` | `deployment` |
 
 Typed resources use Kubernetes create and JSON Patch operations. Namespaced
@@ -91,6 +91,12 @@ factory: {
 
 ConfigMap `binary-data` values use standard base64. With `immutable: true`,
 changing text or binary data, or disabling immutability, replaces the ConfigMap.
+
+Secret `object` inputs and outputs are sensitive ordinary state values. Text
+`data` is computed when omitted and cleared by an explicit empty map. Selected
+`binary-data` values use standard base64. Payload updates replace the complete
+remote data map; immutable payload changes replace the Secret. Creation waits
+for a service account token by default when the returned Secret has that type.
 Metadata changes remain updates. Deletion returns when the API accepts the
 request; finalizers can delay actual removal.
 

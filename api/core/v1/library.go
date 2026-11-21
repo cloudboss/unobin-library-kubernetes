@@ -17,6 +17,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{
+			"secret": runtime.MakeResource[
+				svc.SecretResource, *svc.SecretResourceOutput, *config.Configuration,
+			]((&svc.SecretResource{}).ResourceDefinition()),
 			"service": runtime.MakeResource[
 				svc.ServiceResource, *svc.ServiceResourceOutput, *config.Configuration,
 			]((&svc.ServiceResource{}).ResourceDefinition()),
