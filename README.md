@@ -2,11 +2,12 @@
 
 Kubernetes libraries for [Unobin](https://github.com/cloudboss/unobin).
 
+Read the [full documentation](https://cloudboss.co/docs/unobin-library-kubernetes/).
+
 The shared Kubernetes configuration is available at
 `github.com/cloudboss/unobin-library-kubernetes//config`.
 
-The Go module is `github.com/cloudboss/unobin-library-kubernetes`. It uses Go
-1.26.2, matching `unobin-library-aws`.
+The Go module is `github.com/cloudboss/unobin-library-kubernetes`.
 
 See [Architecture](docs/architecture.md) for public package ownership and API
 group/version boundaries.
@@ -164,6 +165,10 @@ make lint
 
 The targets use pinned Go and golangci-lint images. Containers run with the
 current user's UID and GID, and keep their caches in `_output/`.
+
+Run `make docs` to generate the reference manual from library schemas and Go
+documentation comments. It uses the Cloudboss MkDocs theme. Generated files
+under `docs/reference/` are excluded from Git.
 
 Successful dependency downloads and builds create `_output/.deps` and
 `_output/.build`. Make skips these commands while their inputs are unchanged.

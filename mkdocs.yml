@@ -1,0 +1,38 @@
+site_name: unobin Kubernetes library
+site_url: https://cloudboss.co/docs/unobin-library-kubernetes/
+repo_url: https://github.com/cloudboss/unobin-library-kubernetes
+repo_name: cloudboss/unobin-library-kubernetes
+copyright: Copyright (c) 2026 cloudboss
+
+theme:
+  name: cloudboss
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+
+plugins:
+  - search
+  - literate-nav:
+      nav_file: SUMMARY.md
+
+extra:
+  google_analytics_property: G-MZGMN4NWS2
+  unobin_reference: true
+  version:
+    provider: mike
+    default: latest
+
+nav:
+  - Kubernetes libraries: index.md
+  - Reference: reference/
+  - Development:
+      - Architecture: architecture.md

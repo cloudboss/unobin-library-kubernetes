@@ -14,6 +14,7 @@ KIND_IMAGE_HASH := $(shell { printf '%s\n' '$(CTR_IMAGE_GO)' '$(KIND_VERSION)'; 
 CTR_IMAGE_KIND := $(PROJECT)-kind:$(KIND_IMAGE_HASH)
 HAS_IMAGE_KIND := $(DIR_OUT)/.image-kind-$(KIND_IMAGE_HASH)
 UNOBIN_VERSION := $(shell awk '/github.com[/]cloudboss[/]unobin v/{print $$2}' go.mod)
+DOCGEN ?= go run github.com/cloudboss/cloudboss-docs/unobin/cmd/docgen@v0.2.1
 
 HAS_COMMAND_DOCKER := $(DIR_OUT)/.command-docker
 BUILD_INPUTS := $(shell find . \
@@ -29,12 +30,13 @@ RUN_GO = docker run --rm \
 
 .DEFAULT_GOAL := help
 
-.PHONY: help deps build test vet lint test-integration-kind test-integration-live
+.PHONY: help deps build docs test vet lint test-integration-kind test-integration-live
 
 help:
-	@echo 'Targets (run in Docker):'
+	@echo 'Targets:'
 	@echo '  deps   Download Go module dependencies.'
 	@echo '  build  Build library packages.'
+	@echo '  docs   Generate the reference manual.'
 	@echo '  test   Run Go tests.'
 	@echo '  vet    Run go vet.'
 	@echo '  lint   Run golangci-lint.'
@@ -46,6 +48,9 @@ $(DIR_OUT):
 
 $(DIR_OUT)/%/: | $(DIR_OUT)
 	@mkdir -p $(@)
+
+docs:
+	@$(DOCGEN) --root $(DIR_ROOT) --collection docs/reference-libraries.json --out docs/reference
 
 $(DIR_OUT)/.command-%: | $(DIR_OUT)
 	@command -v $(*) >/dev/null 2>&1 && touch $(@) || \
