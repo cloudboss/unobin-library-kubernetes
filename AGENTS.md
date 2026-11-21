@@ -4,10 +4,15 @@
   and shared lifecycle helpers.
 - Register typed constructs in `api/<group>/<version>/library.go` and implement
   them in `internal/api/<group>/<version>/`.
+- Name Go construct entry files `*_rsrc.go` for resources, `*_dsrc.go` for data
+  sources, and `*_action.go` for actions. Matching tests use `*_rsrc_test.go`,
+  `*_dsrc_test.go`, and `*_action_test.go`; helpers keep descriptive filenames.
 - Keep common helper changes separate from resource implementations. Resource
   waits and mutations must follow their lifecycle contracts.
 - Follow `../unobin-library-aws` closely for build, test, documentation, and CI
   conventions. Preserve its names where they apply.
+- Keep `docs/` for end users. Put contributor and porting instructions in
+  `AGENTS.md` or `.agents/`.
 - Keep the Makefile concise. Put any build helper scripts in `hack/`.
 - Use Kubernetes and client-go configuration concepts and standard environment
   variables. Use strict kebab case for all Unobin fields and let the SDK derive
