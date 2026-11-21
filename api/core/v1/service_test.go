@@ -1,0 +1,375 @@
+package v1
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+
+	"github.com/cloudboss/unobin/pkg/compile"
+	"github.com/cloudboss/unobin/pkg/goschema"
+	"github.com/cloudboss/unobin/pkg/runtime"
+	"github.com/cloudboss/unobin/pkg/typecheck"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/cloudboss/unobin-library-kubernetes/config"
+	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/core/v1"
+)
+
+func TestServiceRegistrationAndSchema(t *testing.T) {
+	lib := Library()
+	reg, ok := lib.Resources["service"]
+	require.True(t, ok)
+	require.Equal(t, reflect.TypeFor[*svc.ServiceResourceOutput](), reg.OutputType())
+	require.IsType(t, &svc.ServiceResource{}, reg.NewReceiver())
+	require.Equal(t, 1, reg.SchemaVersion())
+	require.True(t, reg.HasStableID())
+	id, err := reg.StableID(map[string]any{"metadata": map[string]any{}, "spec": map[string]any{}},
+		map[string]any{"server": "https://saved", "uid": "uid"})
+	require.NoError(t, err)
+	require.Equal(t, "https://saved/uid", *id)
+	module, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
+		"github.com/cloudboss/unobin").Output()
+	require.NoError(t, err)
+	root, err := filepath.Abs("../../..")
+	require.NoError(t, err)
+	schema, warnings, err := goschema.Read(".", goschema.ModuleRoot{
+		Path: "github.com/cloudboss/unobin-library-kubernetes", Dir: root,
+	}, goschema.ModuleRoot{
+		Path: "github.com/cloudboss/unobin", Dir: strings.TrimSpace(string(module)),
+	})
+	require.NoError(t, err)
+	require.Empty(t, warnings)
+	resource := schema.Resources["service"]
+	require.ElementsMatch(t, []string{"metadata", "spec", "wait-for-load-balancer", "create-timeout",
+		"ignore-annotations", "ignore-labels"}, mapKeys(resource.Inputs))
+	require.Equal(t, typecheck.Object, resource.Inputs["metadata"].Kind)
+	require.Equal(t, typecheck.Object, resource.Inputs["spec"].Kind)
+	require.ElementsMatch(t, []string{"name", "generate-name", "namespace", "annotations", "labels"},
+		mapKeys(objectFields(resource.Inputs["metadata"])))
+	spec := objectFields(resource.Inputs["spec"])
+	require.ElementsMatch(t, []string{
+		"type", "allocate-load-balancer-node-ports", "cluster-ip", "cluster-ips", "external-ips",
+		"external-name", "external-traffic-policy", "internal-traffic-policy", "ip-families",
+		"ip-family-policy", "load-balancer-class", "load-balancer-ip", "load-balancer-source-ranges",
+		"health-check-node-port", "publish-not-ready-addresses", "selector", "session-affinity",
+		"session-affinity-config", "port"}, mapKeys(spec))
+	require.Equal(t, typecheck.TOptional(typecheck.TList(typecheck.TString())), spec["cluster-ips"])
+	require.Equal(t, spec["cluster-ips"], spec["external-ips"])
+	require.Equal(t, typecheck.TOptional(typecheck.TMap(typecheck.TString())), spec["selector"])
+	port := objectFields(*spec["port"].Elem.Elem)
+	require.ElementsMatch(t, []string{
+		"port", "name", "app-protocol", "protocol", "node-port", "target-port",
+	}, mapKeys(port))
+	require.Equal(t, typecheck.TOptional(typecheck.TString()), port["target-port"])
+	require.Equal(t, typecheck.TInteger(), port["port"])
+	require.Equal(t, typecheck.TOptional(typecheck.TInteger()), port["node-port"])
+	require.Equal(t, typecheck.TOptional(typecheck.TInteger()), spec["health-check-node-port"])
+	affinity := objectFields(*spec["session-affinity-config"].Elem)
+	clientIP := objectFields(*affinity["client-ip"].Elem)
+	require.Equal(t, typecheck.TOptional(typecheck.TInteger()), clientIP["timeout-seconds"])
+	require.ElementsMatch(t, []string{
+		"server", "api-version", "kind", "name", "namespace", "uid", "metadata", "spec", "status",
+	}, mapKeys(resource.Outputs))
+	outputSpec := objectFields(resource.Outputs["spec"])
+	outputPort := objectFields(*outputSpec["port"].Elem)
+	require.Equal(t, typecheck.TInteger(), outputPort["port"])
+	require.Equal(t, typecheck.TInteger(), outputPort["node-port"])
+	require.Equal(t, typecheck.TInteger(), outputSpec["health-check-node-port"])
+	outputAffinity := objectFields(*outputSpec["session-affinity-config"].Elem)
+	outputClientIP := objectFields(*outputAffinity["client-ip"].Elem)
+	require.Equal(t, typecheck.TOptional(typecheck.TInteger()), outputClientIP["timeout-seconds"])
+	require.Empty(t, resource.SensitiveInputs)
+	require.Empty(t, resource.SensitiveOutputs)
+}
+
+func TestServiceReplacementAndEquality(t *testing.T) {
+	reg := Library().Resources["service"]
+	before := map[string]any{"metadata": map[string]any{}, "spec": map[string]any{}}
+	defaulted := map[string]any{
+		"metadata": map[string]any{"namespace": "default", "labels": map[string]any{}},
+		"spec": map[string]any{"type": "ClusterIP", "port": []any{}, "session-affinity": "None",
+			"allocate-load-balancer-node-ports": true, "publish-not-ready-addresses": false},
+		"wait-for-load-balancer": true, "create-timeout": "600s", "ignore-labels": []any{}}
+	receiver := reg.NewReceiver()
+	require.NoError(t, runtime.Decode(receiver, defaulted))
+	equal, err := reg.InputsEqual(receiver, before)
+	require.NoError(t, err)
+	require.True(t, equal)
+	require.Empty(t, replacementReasons(t, reg, defaulted, before, nil, nil, nil, nil))
+	for _, field := range []string{
+		"name", "generate-name", "namespace", "cluster-ip", "cluster-ips",
+		"load-balancer-class", "health-check-node-port",
+	} {
+		desired := map[string]any{"metadata": map[string]any{}, "spec": map[string]any{}}
+		group := "spec"
+		value := any("changed")
+		if field == "name" || field == "generate-name" || field == "namespace" {
+			group = "metadata"
+		}
+		if field == "cluster-ip" {
+			value = "10.0.0.1"
+		}
+		if field == "cluster-ips" {
+			value = []any{"10.0.0.1"}
+		}
+		if field == "health-check-node-port" {
+			value = int64(31001)
+		}
+		desired[group].(map[string]any)[field] = value
+		require.Equal(t, []string{group}, replacementReasons(t, reg, desired, before, nil, nil, nil, nil))
+	}
+	for _, field := range []string{"server", "kubeconfig", "current-context"} {
+		current := &config.Configuration{}
+		require.NoError(t, runtime.Decode(current, map[string]any{field: "new"}))
+		require.Equal(t, []string{field}, replacementReasons(t, reg, before, before,
+			nil, nil, map[string]any{field: "old"}, current))
+	}
+	require.Empty(t, replacementReasons(t, reg, before, before, nil, nil,
+		map[string]any{"token": "old"}, &config.Configuration{Token: new("new")}))
+	computed := map[string]any{"metadata": map[string]any{}, "spec": map[string]any{
+		"cluster-ip": "10.0.0.1", "cluster-ips": []any{"10.0.0.1"},
+		"health-check-node-port": int64(31001),
+	}}
+	require.Empty(t, replacementReasons(t, reg, before, computed, nil, nil, nil, nil))
+	for _, explicit := range []map[string]any{{"node-port": int64(0)}, {"target-port": "0"}} {
+		old := map[string]any{"metadata": map[string]any{}, "spec": map[string]any{
+			"port": []any{map[string]any{"port": int64(80)}},
+		}}
+		explicit["port"] = int64(80)
+		desired := map[string]any{"metadata": map[string]any{}, "spec": map[string]any{
+			"port": []any{explicit},
+		}}
+		receiver := reg.NewReceiver()
+		require.NoError(t, runtime.Decode(receiver, desired))
+		equal, err := reg.InputsEqual(receiver, old)
+		require.NoError(t, err)
+		require.False(t, equal)
+	}
+}
+
+func TestCompiledServiceFixtures(t *testing.T) {
+	root, err := filepath.Abs("../../..")
+	require.NoError(t, err)
+	base := filepath.Join(root, "_output/tests/core-v1-service")
+	require.NoError(t, os.MkdirAll(base, 0o700))
+	fixtures, err := filepath.Glob("testdata/ub/service/*/factory.ub")
+	require.NoError(t, err)
+	require.NotEmpty(t, fixtures)
+	for _, fixture := range fixtures {
+		name := filepath.Base(filepath.Dir(fixture))
+		t.Run(name, func(t *testing.T) {
+			work, err := os.MkdirTemp(base, name+"-")
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
+			factory, err := filepath.Abs(fixture)
+			require.NoError(t, err)
+			var log bytes.Buffer
+			result, err := compile.RunResult(compile.Options{
+				FactoryPath: factory, OutDir: work, StackName: "service-test", Version: "v0.0.0",
+				CLIVersion: "v0.12.0", GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
+					"github.com/cloudboss/unobin-library-kubernetes": root,
+				}, Build: name == "valid", Stdout: &log, Stderr: &log,
+			})
+			if name != "valid" {
+				require.Error(t, err, "%s", log.String())
+				return
+			}
+			require.NoError(t, err, "%s", log.String())
+			require.True(t, result.Built)
+			body, err := os.ReadFile(filepath.Join(filepath.Dir(fixture), "config.ub"))
+			require.NoError(t, err)
+			require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), body, 0o600))
+			for _, args := range [][]string{{"pin", "-c", "config.ub"}, {"validate", "-c", "config.ub"}} {
+				cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
+				cmd.Dir = work
+				out, err := cmd.CombinedOutput()
+				require.NoError(t, err, "%s", out)
+			}
+		})
+	}
+}
+
+func TestServiceScenarioFactory(t *testing.T) {
+	root, err := filepath.Abs("../../..")
+	require.NoError(t, err)
+	base := filepath.Join(root, "_output/tests/core-v1-service")
+	require.NoError(t, os.MkdirAll(base, 0o700))
+	work, err := os.MkdirTemp(base, "scenario-")
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
+	var log bytes.Buffer
+	_, err = compile.RunResult(compile.Options{
+		FactoryPath: filepath.Join(root, "tests/integration/scenarios/core-v1-service/factory.ub"),
+		OutDir:      work, StackName: "service-scenario", Version: "v0.0.0", CLIVersion: "v0.12.0",
+		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
+			"github.com/cloudboss/unobin-library-kubernetes": root,
+		}, Stdout: &log, Stderr: &log,
+	})
+	require.NoError(t, err, "%s", log.String())
+}
+
+func TestServiceIntegerRegistrationValidation(t *testing.T) {
+	reg := Library().Resources["service"]
+	for _, field := range []string{"port", "node-port", "health-check-node-port", "timeout-seconds"} {
+		for _, offset := range []int64{1 << 32, -(1 << 32)} {
+			t.Run(fmt.Sprintf("%s/%d", field, offset), func(t *testing.T) {
+				requests := 0
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					requests++
+					http.Error(w, "unexpected API request", http.StatusInternalServerError)
+				}))
+				t.Cleanup(server.Close)
+				port := map[string]any{"port": int64(80)}
+				spec := map[string]any{"port": []any{port}}
+				switch field {
+				case "port":
+					port[field] = offset + 80
+				case "node-port":
+					port[field] = offset + 31001
+				case "health-check-node-port":
+					spec[field] = offset + 31001
+				case "timeout-seconds":
+					spec["session-affinity-config"] = map[string]any{
+						"client-ip": map[string]any{field: offset + 60},
+					}
+				}
+				receiver := reg.NewReceiver()
+				require.NoError(t, runtime.Decode(receiver, map[string]any{
+					"metadata": map[string]any{"name": "range-test"}, "spec": spec,
+				}))
+				c := &config.Configuration{Server: &server.URL}
+				err := reg.ValidateInputs(t.Context(), receiver, c)
+				require.ErrorContains(t, err, field+" must be in")
+				out, err := reg.Create(t.Context(), receiver, c)
+				require.ErrorContains(t, err, field+" must be in")
+				require.Nil(t, out)
+				require.Zero(t, requests)
+			})
+		}
+	}
+}
+
+func TestCompiledServiceIntegerValidation(t *testing.T) {
+	root, err := filepath.Abs("../../..")
+	require.NoError(t, err)
+	base := filepath.Join(root, "_output/tests/core-v1-service")
+	require.NoError(t, os.MkdirAll(base, 0o700))
+	work, err := os.MkdirTemp(base, "integer-range-")
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
+	fixture, err := filepath.Abs("testdata/ub/service-integer-range")
+	require.NoError(t, err)
+	var log bytes.Buffer
+	result, err := compile.RunResult(compile.Options{
+		FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
+		StackName: "service-integer-test", Version: "v0.0.0", CLIVersion: "v0.12.0",
+		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
+			"github.com/cloudboss/unobin-library-kubernetes": root,
+		}, Build: true, Stdout: &log, Stderr: &log,
+	})
+	require.NoError(t, err, "%s", log.String())
+	require.True(t, result.Built)
+	for _, field := range []string{"port", "node-port", "health-check-node-port", "timeout-seconds"} {
+		for _, sign := range []string{"positive", "negative"} {
+			t.Run(field+"/"+sign, func(t *testing.T) {
+				requests := 0
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					requests++
+					http.Error(w, "unexpected API request", http.StatusInternalServerError)
+				}))
+				t.Cleanup(server.Close)
+				body, err := os.ReadFile(filepath.Join(fixture, field+"-"+sign+".ub"))
+				require.NoError(t, err)
+				body = bytes.ReplaceAll(body, []byte("SERVICE_TEST_SERVER"), []byte(server.URL))
+				require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), body, 0o600))
+				pin := exec.CommandContext(t.Context(), result.BinaryPath, "pin", "-c", "config.ub")
+				pin.Dir = work
+				out, err := pin.CombinedOutput()
+				require.NoError(t, err, "%s", out)
+				plan := exec.CommandContext(t.Context(), result.BinaryPath,
+					"plan", "-c", "config.ub", "-o", "plan.ub")
+				plan.Dir = work
+				out, err = plan.CombinedOutput()
+				require.NoError(t, err, "%s", out)
+				apply := exec.CommandContext(t.Context(), result.BinaryPath, "apply", "plan.ub")
+				apply.Dir = work
+				out, err = apply.CombinedOutput()
+				require.Error(t, err, "%s", out)
+				require.Contains(t, string(out), field+" must be in")
+				require.Zero(t, requests)
+			})
+		}
+	}
+	t.Run("saved-state", func(t *testing.T) {
+		var stored *corev1.Service
+		var mutations []string
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			switch req.Method {
+			case http.MethodPost:
+				mutations = append(mutations, req.Method)
+				stored = &corev1.Service{}
+				require.NoError(t, json.NewDecoder(req.Body).Decode(stored))
+				stored.UID = "range-uid"
+			case http.MethodGet:
+				require.Equal(t, "/api/v1/namespaces/default/services/range-test", req.URL.Path)
+			default:
+				mutations = append(mutations, req.Method)
+				http.Error(w, "unexpected mutation", http.StatusInternalServerError)
+				return
+			}
+			require.NoError(t, json.NewEncoder(w).Encode(stored))
+		}))
+		t.Cleanup(server.Close)
+		configure := func(name string) {
+			t.Helper()
+			body, err := os.ReadFile(filepath.Join(fixture, name+".ub"))
+			require.NoError(t, err)
+			body = bytes.ReplaceAll(body, []byte("SERVICE_TEST_SERVER"), []byte(server.URL))
+			require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), body, 0o600))
+			for _, args := range [][]string{
+				{"pin", "-c", "config.ub"}, {"plan", "-c", "config.ub", "-o", "plan.ub"},
+			} {
+				cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
+				cmd.Dir = work
+				out, err := cmd.CombinedOutput()
+				require.NoError(t, err, "%s", out)
+			}
+		}
+		apply := func() ([]byte, error) {
+			t.Helper()
+			cmd := exec.CommandContext(t.Context(), result.BinaryPath, "apply", "plan.ub")
+			cmd.Dir = work
+			return cmd.CombinedOutput()
+		}
+		configure("valid")
+		out, err := apply()
+		require.NoError(t, err, "%s", out)
+		require.Equal(t, []string{http.MethodPost}, mutations)
+		require.Equal(t, int32(80), stored.Spec.Ports[0].Port)
+		require.Equal(t, int32(31001), stored.Spec.Ports[0].NodePort)
+		require.Equal(t, int32(60), *stored.Spec.SessionAffinityConfig.ClientIP.TimeoutSeconds)
+		before := stored.DeepCopy()
+		for _, field := range []string{"port", "node-port", "timeout-seconds"} {
+			for _, sign := range []string{"positive", "negative"} {
+				t.Run(field+"/"+sign, func(t *testing.T) {
+					configure(field + "-" + sign)
+					out, err := apply()
+					require.Error(t, err, "%s", out)
+					require.Contains(t, string(out), field+" must be in")
+					require.Equal(t, []string{http.MethodPost}, mutations)
+					require.Equal(t, before, stored)
+				})
+			}
+		}
+	})
+}

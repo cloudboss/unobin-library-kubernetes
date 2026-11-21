@@ -1,0 +1,7 @@
+stack: {
+  factory: {
+    inputs: { value: 'first' target-port: '8080' replacement-prefix: 'unobin-it-service-first-' }
+  }
+  state: local { path: '.unobin/state' }
+  encryption: noop {}
+}

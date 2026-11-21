@@ -59,13 +59,15 @@ plans and state as sensitive too, and configure Unobin state encryption.
 
 | Import | Resource |
 | --- | --- |
-| `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map`, `namespace` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map`, `namespace`, `service` |
 | `github.com/cloudboss/unobin-library-kubernetes//api/apps/v1` | `deployment` |
 
 Typed resources use Kubernetes create and JSON Patch operations. Namespaced
 resources default to `default`; set metadata namespace to use another namespace.
 Reads and deletion use the saved server and object identity with current
-credentials. Resource outputs exclude status and volatile server metadata.
+credentials. Resource outputs exclude volatile server metadata. Service outputs
+include current load-balancer ingress endpoints; changes to those endpoints
+refresh outputs without mutating the Service.
 
 ```ub
 factory: {

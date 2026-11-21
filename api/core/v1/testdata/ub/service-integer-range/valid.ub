@@ -1,0 +1,13 @@
+stack: {
+  factory: {
+    inputs: {
+      server: 'SERVICE_TEST_SERVER'
+      port: 80
+      node-port: 31001
+      health-check-node-port: 31002
+      timeout-seconds: 60
+    }
+  }
+  state: local { path: '.unobin/state' }
+  encryption: noop {}
+}
