@@ -2,6 +2,8 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"testing"
@@ -16,6 +18,7 @@ import (
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 )
@@ -78,8 +81,7 @@ func TestRoleStateBackedPlanApply(t *testing.T) {
 	lib := &runtime.Library{
 		Name: "kubernetes-rbac-v1", Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{
-			"role": runtime.MakeResource[RoleResource, *RoleResourceOutput, *config.Configuration](
-				(&RoleResource{}).ResourceDefinition()),
+			"role": roleResourceRegistration(),
 		},
 	}
 	libs := map[string]*runtime.Library{"rbac": lib}
@@ -182,4 +184,98 @@ func TestRoleStateBackedPlanApply(t *testing.T) {
 	lastMutation := len(calls)
 	plan(runtime.DecisionCreate, nil)
 	require.Equal(t, []string{"GET"}, calls[lastMutation:])
+}
+
+func TestRoleStateBackedNameRestoration(t *testing.T) {
+	var stored *rbacv1.Role
+	var calls []string
+	creates := 0
+	c := roleAPI(t, func(w http.ResponseWriter, req *http.Request) {
+		calls = append(calls, req.Method)
+		switch req.Method {
+		case http.MethodPost:
+			stored = &rbacv1.Role{}
+			require.NoError(t, json.NewDecoder(req.Body).Decode(stored))
+			creates++
+			stored.UID = types.UID(fmt.Sprintf("uid-%d", creates))
+		case http.MethodGet:
+			require.NotNil(t, stored)
+		case http.MethodPatch:
+			body, err := io.ReadAll(req.Body)
+			require.NoError(t, err)
+			patch, err := jsonpatch.DecodePatch(body)
+			require.NoError(t, err)
+			body, err = json.Marshal(stored)
+			require.NoError(t, err)
+			body, err = patch.Apply(body)
+			require.NoError(t, err)
+			stored = &rbacv1.Role{}
+			require.NoError(t, json.Unmarshal(body, stored))
+		case http.MethodDelete:
+			stored = nil
+			respond(t, w, metav1.Status{Status: "Success"})
+			return
+		default:
+			t.Errorf("unexpected method %s", req.Method)
+		}
+		respond(t, w, stored)
+	})
+	body, err := os.ReadFile("testdata/ub/state/factory.ub")
+	require.NoError(t, err)
+	parsed, err := syntax.ParseSource("factory.ub", body)
+	require.NoError(t, err)
+	reg := roleResourceRegistration()
+	libs := map[string]*runtime.Library{"rbac": {
+		Name: "kubernetes-rbac-v1", Configuration: config.LibraryConfiguration(),
+		Resources: map[string]runtime.ResourceRegistration{"role": reg},
+	}}
+	dir := t.TempDir()
+	metadata := map[string]any{"name": "system:reader"}
+	rules := []any{map[string]any{"api-groups": []any{""}, "resources": []any{"pods"},
+		"verbs": []any{"get"}}}
+	inputs := map[string]any{"server": *c.Server, "token": "first",
+		"metadata": metadata, "rule": rules}
+	plan := func(want runtime.Decision, apply bool) {
+		t.Helper()
+		store, err := local.NewStore(dir, "role", "test", encrypters.Noop{})
+		require.NoError(t, err)
+		exec := &runtime.Executor{
+			DAG: runtime.BuildSyntaxDAG(parsed.Factory.Body, libs), SyntaxSource: &parsed.Factory.Body,
+			Libraries: libs, Inputs: inputs, Store: store,
+			Factory: state.FactoryInfo{Name: "role", Version: "v0", ContentRevision: "c0"},
+		}
+		p, err := exec.Plan(t.Context())
+		require.NoError(t, err)
+		found := false
+		for _, step := range p.Steps {
+			if step.Address == "resource.reader" {
+				require.Equal(t, want, step.Decision)
+				found = true
+			}
+		}
+		require.True(t, found)
+		if apply {
+			encoded, err := runtime.EncodePlan(p)
+			require.NoError(t, err)
+			file, err := runtime.DecodePlan(encoded)
+			require.NoError(t, err)
+			_, err = exec.ApplyPlan(t.Context(), file)
+			require.NoError(t, err)
+		}
+	}
+	plan(runtime.DecisionCreate, true)
+	delete(metadata, "name")
+	rules[0].(map[string]any)["verbs"] = []any{"get", "list"}
+	plan(runtime.DecisionUpdate, true)
+	require.Equal(t, []string{"get", "list"}, stored.Rules[0].Verbs)
+	metadata["name"] = "system:reader"
+	before := len(calls)
+	plan(runtime.DecisionUpdate, true)
+	require.Equal(t, []string{"GET", "GET"}, calls[before:])
+	require.Equal(t, "uid-1", string(stored.UID))
+	plan(runtime.DecisionNoOp, false)
+	metadata["name"] = "system:renamed"
+	plan(runtime.DecisionReplace, true)
+	require.Equal(t, "system:renamed", stored.Name)
+	require.Equal(t, "uid-2", string(stored.UID))
 }

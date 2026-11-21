@@ -215,6 +215,13 @@ func TestRoleNormalizedPlanning(t *testing.T) {
 		require.Equal(t, []string{"metadata"},
 			replacementReasons(t, changed, before, outputs, nil, nil))
 	}
+	restored := map[string]any{"metadata": map[string]any{"name": "system:reader-actual"}}
+	omitted := map[string]any{"metadata": map[string]any{}}
+	require.Empty(t, replacementReasons(t, restored, omitted, outputs, nil, nil))
+	require.NoError(t, runtime.Decode(receiver, restored))
+	equal, err = reg.InputsEqual(receiver, omitted)
+	require.NoError(t, err)
+	require.False(t, equal)
 	named := map[string]any{"metadata": map[string]any{"name": "system:reader"}}
 	require.Empty(t, replacementReasons(t, map[string]any{"metadata": map[string]any{}},
 		named, outputs, nil, nil))

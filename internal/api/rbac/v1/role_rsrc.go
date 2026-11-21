@@ -24,6 +24,8 @@ import (
 // objects use saved server and UID identity with current credentials. Delete
 // completes when the API accepts one request, without waiting for disappearance.
 type RoleResource struct {
+	capturePrior *rolePrior `ub:"-"`
+
 	Metadata RoleMetadata
 	// Rule requires at least one rule. Rule order and duplicate rules are retained.
 	Rule []RoleRule
@@ -124,6 +126,10 @@ func (r *RoleResource) Create(
 func (r *RoleResource) Read(
 	ctx context.Context, c *config.Configuration, p rolePrior,
 ) (*RoleResourceOutput, error) {
+	if r.capturePrior != nil {
+		*r.capturePrior = p
+		return p.Outputs, nil
+	}
 	observed, err := readRole(ctx, c, p.Outputs)
 	if err != nil {
 		return nil, err

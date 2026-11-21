@@ -8,6 +8,9 @@ import (
 )
 
 func Library() *runtime.Library {
+	role := runtime.MakeResource[
+		svc.RoleResource, *svc.RoleResourceOutput, *config.Configuration,
+	]((&svc.RoleResource{}).ResourceDefinition())
 	roleBinding := runtime.MakeResource[
 		svc.RoleBindingResource, *svc.RoleBindingResourceOutput, *config.Configuration,
 	]((&svc.RoleBindingResource{}).ResourceDefinition())
@@ -23,9 +26,9 @@ func Library() *runtime.Library {
 			"role-binding": svc.RoleBindingRegistration[
 				svc.RoleBindingResource, *svc.RoleBindingResourceOutput,
 			](roleBinding, roleBinding.Read, roleBinding.KnownReplacementReasons),
-			"role": runtime.MakeResource[
-				svc.RoleResource, *svc.RoleResourceOutput, *config.Configuration,
-			]((&svc.RoleResource{}).ResourceDefinition()),
+			"role": svc.RoleRegistration[
+				svc.RoleResource, *svc.RoleResourceOutput,
+			](role, role.Read, role.KnownReplacementReasons),
 		},
 	}
 }
