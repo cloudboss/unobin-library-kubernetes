@@ -34,11 +34,17 @@ type Client struct {
 func Connect(
 	c *config.Configuration, gvk schema.GroupVersionKind, namespace string,
 ) (*Client, error) {
+	return connect(context.Background(), c, gvk, namespace)
+}
+
+func connect(
+	ctx context.Context, c *config.Configuration, gvk schema.GroupVersionKind, namespace string,
+) (*Client, error) {
 	resolved, err := client.Load(c)
 	if err != nil {
 		return nil, err
 	}
-	api, err := client.NewDynamic(c)
+	api, err := client.NewDynamicContext(ctx, c)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +56,10 @@ func Connect(
 }
 
 func TargetClient(c *config.Configuration, target Target) (*Client, error) {
+	return targetClient(context.Background(), c, target)
+}
+
+func targetClient(ctx context.Context, c *config.Configuration, target Target) (*Client, error) {
 	if target.Server == "" || target.APIVersion == "" || target.Kind == "" ||
 		target.Name == "" || target.UID == "" {
 		return nil, fmt.Errorf("missing Kubernetes object identity in prior state")
@@ -59,7 +69,7 @@ func TargetClient(c *config.Configuration, target Target) (*Client, error) {
 		current = *c
 	}
 	current.Server = &target.Server
-	connection, err := Connect(&current,
+	connection, err := connect(ctx, &current,
 		schema.FromAPIVersionAndKind(target.APIVersion, target.Kind), target.Namespace)
 	if err != nil {
 		return nil, err
@@ -88,12 +98,15 @@ func Delete(
 	if timeout <= 0 {
 		return fmt.Errorf("deletion timeout must be positive")
 	}
-	connection, err := TargetClient(c, target)
-	if err != nil {
-		return err
-	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+	connection, err := targetClient(ctx, c, target)
+	if err != nil {
+		if ctx.Err() != nil {
+			return fmt.Errorf("discover Kubernetes object for deletion: %w", ctx.Err())
+		}
+		return err
+	}
 	uid := types.UID(target.UID)
 	preconditions := metav1.Preconditions{UID: &uid}
 	if options.Preconditions != nil {

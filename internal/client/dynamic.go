@@ -1,13 +1,16 @@
 package client
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
@@ -20,6 +23,10 @@ type DynamicClient struct {
 }
 
 func NewDynamic(c *config.Configuration) (*DynamicClient, error) {
+	return NewDynamicContext(context.Background(), c)
+}
+
+func NewDynamicContext(ctx context.Context, c *config.Configuration) (*DynamicClient, error) {
 	resolved, err := Load(c)
 	if err != nil {
 		return nil, err
@@ -28,7 +35,13 @@ func NewDynamic(c *config.Configuration) (*DynamicClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create Kubernetes dynamic client: %w", err)
 	}
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(resolved)
+	discoveryConfig := rest.CopyConfig(resolved)
+	if ctx.Done() != nil {
+		discoveryConfig.Wrap(func(base http.RoundTripper) http.RoundTripper {
+			return discoveryTransport{context: ctx, base: base}
+		})
+	}
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(discoveryConfig)
 	if err != nil {
 		return nil, fmt.Errorf("create Kubernetes discovery client: %w", err)
 	}

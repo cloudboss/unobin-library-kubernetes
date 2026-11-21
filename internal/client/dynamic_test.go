@@ -48,7 +48,8 @@ func TestDynamicDiscovery(t *testing.T) {
 		require.NoError(t, json.NewEncoder(w).Encode(body))
 	}))
 	t.Cleanup(server.Close)
-	c, err := NewDynamic(&config.Configuration{Server: &server.URL, Namespace: new("team")})
+	c, err := NewDynamicContext(t.Context(),
+		&config.Configuration{Server: &server.URL, Namespace: new("team")})
 	require.NoError(t, err)
 	for _, tt := range []struct {
 		kind      schema.GroupVersionKind
