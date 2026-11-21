@@ -4,6 +4,10 @@ The `kind` and `live` tiers run the same scenarios. The configuration scenario
 uses the shared client loader to discover the server version, then create, read,
 update, and delete a temporary ConfigMap in the kubeconfig's namespace.
 
+The `core-v1-config-map` scenario uses the shared compile, pin, plan, apply,
+update, and destroy lifecycle. It has a `factory.ub`, two configurations, and a
+read-only Kubernetes verifier that checks immutable-content replacement.
+
 The `object` scenario tests server-side apply, field conflicts, field removal,
 UID protection, and deletion with finalizers. It also compiles a factory and
 checks create, unchanged plans, update, drift correction, replacement, outputs,

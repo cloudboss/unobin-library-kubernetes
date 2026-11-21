@@ -54,6 +54,42 @@ value is a snapshot; use an exec helper or token file when refresh is required.
 Tokens, private key data, and exec environment values are marked sensitive. Treat
 plans and state as sensitive too, and configure Unobin state encryption.
 
+## Typed API resources
+
+| Import | Resource |
+| --- | --- |
+| `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map` |
+
+Typed resources use Kubernetes create and JSON Patch operations. Their metadata
+namespace defaults to `default`; set it explicitly to use another namespace.
+Reads and deletion use the saved server, namespace, name, and UID with current
+credentials. Resource outputs exclude status and volatile server metadata.
+
+```ub
+factory: {
+  imports: {
+    core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+  }
+  library-configs: { core: {} }
+  resources: {
+    settings: core.config-map {
+      object: {
+        metadata: { name: 'settings' }
+        data: { greeting: 'hello' }
+      }
+    }
+  }
+  outputs: {
+    name: { value: resource.settings.object.metadata.name }
+  }
+}
+```
+
+ConfigMap `binary-data` values use standard base64. With `immutable: true`,
+changing text or binary data, or disabling immutability, replaces the ConfigMap.
+Metadata changes remain updates. Deletion returns when the API accepts the
+request; finalizers can delay actual removal.
+
 ## Dynamic objects
 
 Import `github.com/cloudboss/unobin-library-kubernetes//dynamic` to manage built-in

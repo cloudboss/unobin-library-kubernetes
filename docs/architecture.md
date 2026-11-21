@@ -108,9 +108,15 @@ checks exercise the public SDK contract. Behavior tests cover lifecycle choices;
 they do not inspect documentation or tooling text.
 
 Construct integration scenarios belong under
-`tests/integration/scenarios/<scenario>/`. The integration driver accepts Go API
-tests with the `integration` build tag. Compiled-factory fixtures for those tests
-belong in that scenario's `testdata/ub/` directory.
+`tests/integration/scenarios/<scenario>/`. Follow the AWS scenario layout:
+`factory.ub`, `config.ub`, `config-update.ub`, and `verify/main.go`. The shared
+driver compiles the factory with the local library, pins both configurations,
+plans and applies them, and destroys the stack. The verifier reads Kubernetes
+objects after each apply and after destroy. It can save object identities in
+`VERIFY_BUILD_DIR` to check whether an update preserved or replaced an object.
+
+Go API tests use the `integration` build tag. Unobin fixtures used by Go tests
+belong in package-local `testdata/ub/` files.
 
 Final construct validation includes build, unit and compiled-factory tests, vet,
 lint, and the focused kind scenario:

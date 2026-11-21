@@ -1,0 +1,9 @@
+stack: {
+  factory: {
+    inputs: { value: 'first' binary-value: 'AAE=' immutable: true }
+  }
+
+  state: local { path: '.unobin/state' }
+
+  encryption: noop {}
+}
