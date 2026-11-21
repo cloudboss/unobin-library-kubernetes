@@ -1,0 +1,34 @@
+factory: {
+  imports: { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: {
+    rbac: { server: input.server token: input.token insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server: { type: string }
+    token: { type: string default: 'first' }
+    prefix: { type: string default: 'system:reader-' }
+    binding-namespace: { type: string default: 'default' }
+    subject-kind: { type: string default: 'User' }
+    subject-name: { type: string default: 'alice' }
+    subject-namespace: { type: string default: 'default' }
+    ref-kind: { type: string default: 'Role' }
+    ref-name: { type: string default: 'reader' }
+    labels: { type: map(string) default: {} }
+  }
+  resources: { binding: rbac.role-binding {
+    metadata: {
+      generate-name: input.prefix
+      namespace: input.binding-namespace
+      labels: input.labels
+    }
+    role-ref: {
+      api-group: 'rbac.authorization.k8s.io'
+      kind: input.ref-kind
+      name: input.ref-name
+    }
+    subject: [
+      { kind: input.subject-kind name: input.subject-name namespace: input.subject-namespace },
+      { kind: 'Group' name: 'team' api-group: '' namespace: '' }
+    ]
+  } }
+}

@@ -61,6 +61,7 @@ plans and state as sensitive too, and configure Unobin state encryption.
 | --- | --- |
 | `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map`, `namespace`, `secret`, `service`, `service-account` |
 | `github.com/cloudboss/unobin-library-kubernetes//api/apps/v1` | `deployment` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1` | `role`, `role-binding` |
 
 Typed resources use Kubernetes create and JSON Patch operations. Namespaced
 resources default to `default`; set metadata namespace to use another namespace.

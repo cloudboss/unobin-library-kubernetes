@@ -8,6 +8,9 @@ import (
 )
 
 func Library() *runtime.Library {
+	roleBinding := runtime.MakeResource[
+		svc.RoleBindingResource, *svc.RoleBindingResourceOutput, *config.Configuration,
+	]((&svc.RoleBindingResource{}).ResourceDefinition())
 	return &runtime.Library{
 		Name:        "kubernetes-rbac-v1",
 		Description: "Kubernetes rbac/v1 objects for Unobin.",
@@ -17,6 +20,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{
+			"role-binding": svc.RoleBindingRegistration[
+				svc.RoleBindingResource, *svc.RoleBindingResourceOutput,
+			](roleBinding, roleBinding.Read, roleBinding.KnownReplacementReasons),
 			"role": runtime.MakeResource[
 				svc.RoleResource, *svc.RoleResourceOutput, *config.Configuration,
 			]((&svc.RoleResource{}).ResourceDefinition()),

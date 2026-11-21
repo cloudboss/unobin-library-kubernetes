@@ -1,0 +1,5 @@
+stack: {
+  factory: { inputs: { user: 'bob' account: 'reader-updated' } }
+  state: local { path: '.unobin/state' }
+  encryption: noop {}
+}
