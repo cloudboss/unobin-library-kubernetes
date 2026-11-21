@@ -1,0 +1,15 @@
+factory: {
+  imports: {
+    kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+  }
+  library-configs: { kubernetes: {} }
+  resources: {
+    project: kubernetes.namespace {
+      object: { metadata: [{ name: 'example' }] }
+    }
+  }
+  outputs: {
+    name: { value: resource.project.object.metadata.name }
+    uid: { value: resource.project.object.metadata.uid }
+  }
+}

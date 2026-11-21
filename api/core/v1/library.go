@@ -17,6 +17,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{
+			"namespace": runtime.MakeResource[
+				svc.NamespaceResource, *svc.NamespaceResourceOutput, *config.Configuration,
+			]((&svc.NamespaceResource{}).ResourceDefinition()),
 			"config-map": runtime.MakeResource[
 				svc.ConfigMapResource, *svc.ConfigMapResourceOutput, *config.Configuration,
 			]((&svc.ConfigMapResource{}).ResourceDefinition()),
