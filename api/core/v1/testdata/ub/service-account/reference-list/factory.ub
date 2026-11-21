@@ -1,0 +1,6 @@
+factory: {
+ imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+ library-configs: { core: {} }
+ resources: { account: core.service-account { object: { metadata: {} secrets: ['name'] } } }
+ outputs: { name: { value: resource.account.object.metadata.name } token-name: { value: resource.account.default-secret-name } }
+}

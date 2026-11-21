@@ -1,0 +1,25 @@
+factory: {
+  inputs: {
+    server: { type: string }
+    value: { type: string }
+    prefix: { type: string }
+    namespace: { type: string }
+    automount: { type: boolean }
+  }
+  library-configs: { core: { server: input.server insecure-skip-tls-verify: true } }
+  resources: {
+    account: core.service-account {
+      object: {
+        metadata: {
+          generate-name: input.prefix
+          namespace: input.namespace
+          labels: { value: input.value }
+        }
+        image-pull-secrets: [{ name: 'alpha' }, { name: 'beta' }]
+        secrets: [{ name: 'alpha' }, { name: 'beta' }]
+        automount-service-account-token: input.automount
+      }
+      ignore-annotations: ['^ignored']
+    }
+  }
+}

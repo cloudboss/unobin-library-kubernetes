@@ -59,7 +59,7 @@ plans and state as sensitive too, and configure Unobin state encryption.
 
 | Import | Resource |
 | --- | --- |
-| `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map`, `namespace`, `secret`, `service` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map`, `namespace`, `secret`, `service`, `service-account` |
 | `github.com/cloudboss/unobin-library-kubernetes//api/apps/v1` | `deployment` |
 
 Typed resources use Kubernetes create and JSON Patch operations. Namespaced
