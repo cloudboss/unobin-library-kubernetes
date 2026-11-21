@@ -35,8 +35,8 @@ func TestVerifyPresentRejectsIncompleteRollout(t *testing.T) {
 			deployment := readyDeployment()
 			tt.change(deployment)
 			api := fake.NewClientset(deployment, readyPod())
-			_, err := verifyPresent(t.Context(), api,
-				1, "registry.k8s.io/pause:3.9", "deployment-uid")
+			_, err := verifyPresent(t.Context(), api, deploymentName,
+				1, "registry.k8s.io/pause:3.9", "deployment-uid", true)
 			require.Error(t, err)
 		})
 	}
@@ -68,8 +68,8 @@ func TestVerifyPresentChecksReadyPods(t *testing.T) {
 				tt.change(pod)
 			}
 			api := fake.NewClientset(readyDeployment(), pod)
-			_, err := verifyPresent(t.Context(), api,
-				1, "registry.k8s.io/pause:3.9", "deployment-uid")
+			_, err := verifyPresent(t.Context(), api, deploymentName,
+				1, "registry.k8s.io/pause:3.9", "deployment-uid", true)
 			if tt.valid {
 				require.NoError(t, err)
 			} else {
@@ -89,13 +89,13 @@ func TestVerifyDestroyedWaitsForAllObjects(t *testing.T) {
 			api := fake.NewClientset(obj)
 			ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
 			defer cancel()
-			require.ErrorIs(t, verifyDestroyed(ctx, api), context.DeadlineExceeded)
+			require.ErrorIs(t, verifyDestroyed(ctx, api, deploymentName), context.DeadlineExceeded)
 		})
 	}
 	api := fake.NewClientset(&corev1.Pod{ObjectMeta: metav1.ObjectMeta{
 		Name: "unrelated", Namespace: "default", Labels: map[string]string{"app": "other"},
 	}})
-	require.NoError(t, verifyDestroyed(t.Context(), api))
+	require.NoError(t, verifyDestroyed(t.Context(), api, deploymentName))
 
 	api = fake.NewClientset(readyPod())
 	reads := 0
@@ -107,7 +107,7 @@ func TestVerifyDestroyedWaitsForAllObjects(t *testing.T) {
 		}
 		return false, nil, nil
 	})
-	require.NoError(t, verifyDestroyed(t.Context(), api))
+	require.NoError(t, verifyDestroyed(t.Context(), api, deploymentName))
 	require.Equal(t, 2, reads)
 }
 
@@ -120,7 +120,7 @@ func TestVerifyDestroyedPropagatesAPIErrors(t *testing.T) {
 				func(k8stesting.Action) (bool, runtime.Object, error) {
 					return true, nil, sentinel
 				})
-			require.ErrorIs(t, verifyDestroyed(t.Context(), api), sentinel)
+			require.ErrorIs(t, verifyDestroyed(t.Context(), api, deploymentName), sentinel)
 		})
 	}
 }
@@ -161,4 +161,26 @@ func readyDeployment() *appsv1.Deployment {
 			AvailableReplicas: 1,
 		},
 	}
+}
+
+func TestVerifyWithoutWaitChecksAPIWithoutRollout(t *testing.T) {
+	d := readyDeployment()
+	d.Name = noWaitDeploymentName
+	d.Labels["app"] = noWaitDeploymentName
+	d.Spec.Selector.MatchLabels["app"] = noWaitDeploymentName
+	d.Spec.Template.Labels["app"] = noWaitDeploymentName
+	d.Status = appsv1.DeploymentStatus{}
+	api := fake.NewClientset(d)
+	api.PrependReactor("list", "pods", func(k8stesting.Action) (bool, runtime.Object, error) {
+		t.Error("no-wait verification requested Pod readiness")
+		return true, nil, errors.New("unexpected Pod request")
+	})
+	_, err := verifyPresent(t.Context(), api, noWaitDeploymentName, 1,
+		"registry.k8s.io/pause:3.9", "deployment-uid", false)
+	require.NoError(t, err)
+	d.Spec.Template.Spec.Containers[0].Image = "wrong-image"
+	api = fake.NewClientset(d)
+	_, err = verifyPresent(t.Context(), api, noWaitDeploymentName, 1,
+		"registry.k8s.io/pause:3.9", "deployment-uid", false)
+	require.Error(t, err)
 }

@@ -38,7 +38,14 @@ export UNOBIN_KUBERNETES_INTEGRATION=1
 run_scenario() (
     name=${1}
     source_dir="${scenarios}/${name}"
-    for file in config.ub config-update.ub verify/main.go; do
+    initial_config=config.ub
+    updated_config=config-update.ub
+    if [ "${UNOBIN_KUBERNETES_API_ONLY:-0}" = 1 ] &&
+        [ -f "${source_dir}/config-api.ub" ]; then
+        initial_config=config-api.ub
+        updated_config=config-api-update.ub
+    fi
+    for file in "${initial_config}" "${updated_config}" verify/main.go; do
         [ -f "${source_dir}/${file}" ] || {
             echo "missing scenario file: ${source_dir}/${file}" >&2
             exit 2
@@ -78,9 +85,9 @@ run_scenario() (
 
     "${unobin}" compile -p "${source_dir}" -o "${work}" --name "${name}" \
         --replace-go-module "github.com/cloudboss/unobin-library-kubernetes=${root}" --build
-    cp "${source_dir}/config.ub" "${work}/config.ub"
+    cp "${source_dir}/${initial_config}" "${work}/config.ub"
     mkdir "${work}/update"
-    cp "${source_dir}/config-update.ub" "${work}/update/config.ub"
+    cp "${source_dir}/${updated_config}" "${work}/update/config.ub"
     (cd "${work}" && "./${name}" pin -c config.ub && "./${name}" pin -c update/config.ub)
     (cd "${work}" && "./${name}" plan -c config.ub -o plan.ubp)
     applied=1
@@ -96,9 +103,12 @@ run_scenario() (
 
 for name in "${@}"; do
     echo "==> ${name}"
+    for test_file in "${scenarios}/${name}/"*_test.go; do
+        [ -f "${test_file}" ] || continue
+        go test -tags integration -timeout 5m -count=1 -v "./tests/integration/scenarios/${name}"
+        break
+    done
     if [ -f "${scenarios}/${name}/factory.ub" ]; then
         run_scenario "${name}"
-    else
-        go test -tags integration -timeout 5m -count=1 -v "./tests/integration/scenarios/${name}"
     fi
 done

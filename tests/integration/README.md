@@ -9,11 +9,13 @@ compile, pin, plan, apply, update, and destroy lifecycle. Each has a `factory.ub
 two configurations, and a read-only Kubernetes verifier. The ConfigMap scenario
 checks immutable-content replacement. The Deployment scenario uses default
 rollout waits and checks ready Pods after replica and container-image updates.
-It requires a cluster with working nodes.
+The same factory also manages a second Deployment with waiting disabled. Both
+cases run together and require a cluster with working nodes.
 
-The `apps-v1-deployment-api` scenario checks Deployment creation, updates with a
-stable UID, and deletion with rollout waiting disabled. It can run against an API
-server without workload controllers or nodes.
+For an isolated API server without nodes, set `UNOBIN_KUBERNETES_API_ONLY=1`.
+The driver selects `config-api.ub` and `config-api-update.ub` when the scenario
+provides them. These inputs disable rollout waits; API, UID, update and deletion
+checks still run. Tests that require running Pods are skipped.
 
 The `object` scenario tests server-side apply, field conflicts, field removal,
 UID protection, and deletion with finalizers. It also compiles a factory and
@@ -75,9 +77,10 @@ UNOBIN_KUBERNETES_LIVE=1 KUBECONFIG="${HOME}/.kube/test" ./tests/integration/run
 
 ## Add a scenario
 
-Put each scenario in `tests/integration/scenarios/<name>/`. A Go API scenario uses
-tests with the `integration` build tag. The driver runs them with a five-minute
-timeout and disables test-result caching.
+Put each scenario in `tests/integration/scenarios/<name>/`. A scenario can manage
+multiple related resources and include both Go tests and a factory lifecycle.
+Go tests use the `integration` build tag. The driver runs them with a five-minute
+timeout and disables test-result caching, then runs the factory when present.
 
 A factory scenario follows the AWS integration layout:
 

@@ -84,6 +84,9 @@ func TestDeploymentAPILifecycle(t *testing.T) {
 }
 
 func TestDeploymentControllerRollout(t *testing.T) {
+	if os.Getenv("UNOBIN_KUBERNETES_API_ONLY") == "1" {
+		t.Skip("requires a cluster with working nodes")
+	}
 	api := deploymentAPI(t)
 	r := deploymentInput(t)
 	created, err := r.Create(t.Context(), nil)

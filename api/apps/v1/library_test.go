@@ -92,3 +92,43 @@ func TestLibrarySchemaAndFixtures(t *testing.T) {
 	})
 	require.NoError(t, err, "%s", log.String())
 }
+
+func TestDeploymentIntegrationFactory(t *testing.T) {
+	root, err := filepath.Abs("../../..")
+	require.NoError(t, err)
+	scenario := filepath.Join(root, "tests", "integration", "scenarios", "apps-v1-deployment")
+	outputRoot := filepath.Join(root, "_output", "deployment-schema")
+	require.NoError(t, os.MkdirAll(outputRoot, 0o700))
+	directory, err := os.MkdirTemp(outputRoot, "integration-")
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, os.RemoveAll(directory)) })
+	var log bytes.Buffer
+	err = compile.Run(compile.Options{
+		FactoryPath: scenario, OutDir: directory, StackName: "deployment-integration",
+		GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "v0.12.0",
+		ReplaceGoModules: map[string]string{
+			"github.com/cloudboss/unobin-library-kubernetes": root,
+		},
+		Build: true, Stdout: &log, Stderr: &log,
+	})
+	require.NoError(t, err, "%s", log.String())
+	for _, name := range []string{
+		"config.ub", "config-update.ub", "config-api.ub", "config-api-update.ub",
+	} {
+		t.Run(name, func(t *testing.T) {
+			configDir := filepath.Join(directory, name+"-inputs")
+			require.NoError(t, os.Mkdir(configDir, 0o700))
+			data, err := os.ReadFile(filepath.Join(scenario, name))
+			require.NoError(t, err)
+			configPath := filepath.Join(configDir, "config.ub")
+			require.NoError(t, os.WriteFile(configPath, data, 0o600))
+			for _, command := range []string{"pin", "validate"} {
+				cmd := exec.Command(filepath.Join(directory, "deployment-integration"),
+					command, "-c", configPath)
+				cmd.Dir = directory
+				out, err := cmd.CombinedOutput()
+				require.NoError(t, err, "%s", out)
+			}
+		})
+	}
+}
