@@ -19,7 +19,7 @@ import (
 
 func TestConfiguration(t *testing.T) {
 	require.Equal(t, "1", os.Getenv("UNOBIN_KUBERNETES_INTEGRATION"),
-		"use tests/integration/run to select the test environment")
+		"use tests/integration/run.sh to select the test environment")
 	require.NotEmpty(t, os.Getenv("KUBECONFIG"))
 	api, err := client.New(nil)
 	require.NoError(t, err)

@@ -44,4 +44,4 @@ for file in ${config_paths}; do
     mounted="${mounted}:${directory}"
 done
 IFS=${previous_ifs}
-"${@}" "${CTR_IMAGE_GO}" ./tests/integration/run live
+"${@}" "${CTR_IMAGE_GO}" ./tests/integration/run.sh live

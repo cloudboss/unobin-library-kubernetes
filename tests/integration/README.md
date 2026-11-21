@@ -70,7 +70,7 @@ helper with `CTR_IMAGE_GO=...`.
 The driver can also run on the host with Go on PATH:
 
 ```sh
-UNOBIN_KUBERNETES_LIVE=1 KUBECONFIG="${HOME}/.kube/test" ./tests/integration/run live
+UNOBIN_KUBERNETES_LIVE=1 KUBECONFIG="${HOME}/.kube/test" ./tests/integration/run.sh live
 ```
 
 ## Add a scenario
