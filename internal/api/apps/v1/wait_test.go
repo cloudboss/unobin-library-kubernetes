@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -123,15 +124,21 @@ func TestRolloutDefaultAndDisabled(t *testing.T) {
 func TestWaitFailuresPreserveMutation(t *testing.T) {
 	for _, cause := range []string{"timeout", "cancellation", "deadline", "GET error"} {
 		t.Run(cause, func(t *testing.T) {
+			var methodsMu sync.Mutex
 			var methods []string
 			obj := readyDeployment(t)
 			obj.Status.UpdatedReplicas = 0
 			ctx, cancel := context.WithCancel(t.Context())
 			defer cancel()
 			c := testAPI(t, func(w http.ResponseWriter, req *http.Request) {
+				methodsMu.Lock()
 				methods = append(methods, req.Method)
+				methodsMu.Unlock()
 				if req.Method == "GET" {
 					switch cause {
+					case "timeout":
+						<-req.Context().Done()
+						return
 					case "cancellation":
 						cancel()
 					case "deadline":
@@ -146,13 +153,21 @@ func TestWaitFailuresPreserveMutation(t *testing.T) {
 				require.NoError(t, json.NewEncoder(w).Encode(obj))
 			})
 			r := deployment()
-			r.CreateTimeout = new("30ms")
+			r.CreateTimeout = new("5s")
+			if cause == "timeout" {
+				r.CreateTimeout = new("1s")
+			}
 			out, err := r.Create(ctx, c)
 			require.Error(t, err)
 			require.Nil(t, out)
+			methodsMu.Lock()
+			defer methodsMu.Unlock()
 			require.Equal(t, []string{"POST", "GET"}, methods)
 			if cause == "timeout" {
 				require.ErrorIs(t, err, context.DeadlineExceeded)
+			}
+			if cause == "deadline" {
+				require.ErrorContains(t, err, "progress deadline")
 			}
 		})
 	}
