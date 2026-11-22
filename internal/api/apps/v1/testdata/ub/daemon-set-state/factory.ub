@@ -1,0 +1,21 @@
+factory: {
+  imports: { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: {
+    apps: { server: input.server, token: input.token, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server: { type: string }
+    token:  { type: string, default: 'first' }
+    name:   { type: string, default: 'example' }
+    labels: { type: map(string), default: { app: 'example' } }
+    spec:   { type: opaque }
+  }
+  resources: {
+    workload: apps.daemon-set {
+      metadata:         { name: input.name, labels: input.labels }
+      spec:             input.spec
+      wait-for-rollout: false
+      delete-timeout:   '2s'
+    }
+  }
+}

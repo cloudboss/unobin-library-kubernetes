@@ -23,6 +23,9 @@ func Library() *runtime.Library {
 			"stateful-set": svc.StatefulSetRegistration[
 				svc.StatefulSetResource, *svc.StatefulSetResourceOutput,
 			](statefulSet, statefulSet.Read, statefulSet.KnownReplacementReasons),
+			"daemon-set": runtime.MakeResource[
+				svc.DaemonSetResource, *svc.DaemonSetResourceOutput, *config.Configuration,
+			]((&svc.DaemonSetResource{}).ResourceDefinition()),
 			"deployment": runtime.MakeResource[
 				svc.DeploymentResource, *svc.DeploymentResourceOutput, *config.Configuration,
 			]((&svc.DeploymentResource{}).ResourceDefinition()),
