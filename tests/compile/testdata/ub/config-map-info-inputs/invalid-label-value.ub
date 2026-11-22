@@ -1,0 +1,12 @@
+stack: {
+  factory: {
+    inputs: {
+      server:   'CONFIG_MAP_INFO_SERVER'
+      metadata: { name: 'cm', namespace: 'default', annotations: {}, labels: { app: 'bad value' } }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
