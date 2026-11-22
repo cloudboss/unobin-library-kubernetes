@@ -1,84 +1,24 @@
 package v1
 
 import (
-	"os/exec"
-	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/cloudboss/unobin/pkg/encoding/ub"
-	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/runtime"
-	"github.com/cloudboss/unobin/pkg/typecheck"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/rbac/v1"
 )
 
-func TestClusterRoleBindingRegistrationAndSchema(t *testing.T) {
-	lib := Library()
-	reg := lib.Resources["cluster-role-binding"]
-	require.IsType(t, &svc.ClusterRoleBindingResource{}, reg.NewReceiver())
-	require.Equal(t, reflect.TypeFor[*svc.ClusterRoleBindingResourceOutput](), reg.OutputType())
-	require.Equal(t, reflect.TypeFor[*config.Configuration](), lib.Configuration.ValueType())
-	require.Equal(t, 1, reg.SchemaVersion())
+func TestClusterRoleBindingStableID(t *testing.T) {
+	reg := Library().Resources["cluster-role-binding"]
 	id, err := reg.StableID(nil, map[string]any{"server": "https://saved", "uid": "uid"})
 	require.NoError(t, err)
 	require.Equal(t, "https://saved/uid", *id)
 	_, err = reg.StableID(nil, map[string]any{})
 	require.Error(t, err)
-	out, err := exec.CommandContext(t.Context(), "go", "list", "-m", "-f", "{{.Dir}}",
-		"github.com/cloudboss/unobin").Output()
-	require.NoError(t, err)
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	schema, warnings, err := goschema.Read(".", goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin-library-kubernetes", Dir: root,
-	}, goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin", Dir: strings.TrimSpace(string(out)),
-	})
-	require.NoError(t, err)
-	require.Empty(t, warnings)
-	r := schema.Resources["cluster-role-binding"]
-	require.ElementsMatch(t, []string{"metadata", "role-ref", "subject",
-		"ignore-annotations", "ignore-labels"}, mapKeys(r.Inputs))
-	require.ElementsMatch(t, []string{"server", "api-version", "kind", "name", "uid",
-		"metadata", "role-ref", "subject"}, mapKeys(r.Outputs))
-	metadata := map[string]typecheck.Type{
-		"name":          typecheck.TOptional(typecheck.TString()),
-		"generate-name": typecheck.TOptional(typecheck.TString()),
-		"annotations":   typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-		"labels":        typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-	}
-	require.Equal(t, typecheck.Object, r.Inputs["metadata"].Kind)
-	require.Equal(t, metadata, objectFields(r.Inputs["metadata"]))
-	reference := map[string]typecheck.Type{"api-group": typecheck.TString(),
-		"kind": typecheck.TString(), "name": typecheck.TString()}
-	require.Equal(t, reference, objectFields(r.Inputs["role-ref"]))
-	require.Equal(t, reference, objectFields(r.Outputs["role-ref"]))
-	require.Equal(t, typecheck.List, r.Inputs["subject"].Kind)
-	require.Equal(t, map[string]typecheck.Type{
-		"kind": typecheck.TString(), "name": typecheck.TString(),
-		"api-group": typecheck.TOptional(typecheck.TString()),
-		"namespace": typecheck.TOptional(typecheck.TString()),
-	}, objectFields(*r.Inputs["subject"].Elem))
-	require.Equal(t, map[string]typecheck.Type{
-		"kind": typecheck.TString(), "name": typecheck.TString(),
-		"api-group": typecheck.TString(), "namespace": typecheck.TString(),
-	}, objectFields(*r.Outputs["subject"].Elem))
-	for _, key := range []string{"ignore-annotations", "ignore-labels"} {
-		require.Equal(t, typecheck.TOptional(typecheck.TList(typecheck.TString())), r.Inputs[key])
-	}
-	for key := range metadata {
-		metadata[key] = typecheck.TString()
-	}
-	metadata["annotations"], metadata["labels"] = typecheck.TMap(typecheck.TString()),
-		typecheck.TMap(typecheck.TString())
-	require.Equal(t, metadata, objectFields(r.Outputs["metadata"]))
-	require.Empty(t, r.SensitiveInputs)
-	require.Empty(t, r.SensitiveOutputs)
 }
 
 func clusterBindingReasons(

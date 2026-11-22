@@ -55,33 +55,53 @@ func TestCompleteModelConversion(t *testing.T) {
 	require.Nil(t, (*pod.Volume)[0].CephFS)
 	require.Nil(t, (*pod.Volume)[0].AzureFile.SecretNamespace)
 	require.Nil(t, (*pod.Volume)[0].RBD.SecretRef.Namespace)
-	require.Equal(t, 4, len((*pod.Volume)[0].Projected.Sources))
-	require.Nil(t, (*(*pod.Volume)[0].Projected.Sources[1].ConfigMap)[0].Optional)
+	projection := (*r.Spec.Template.Spec.Volume)[0].Projected.Sources[0]
+	configMaps := append([]ConfigMapProjection(nil), (*projection.ConfigMap)...)
+	configMaps[0].Optional = nil
+	require.Equal(t, []ProjectionGroup{
+		{Secret: projection.Secret},
+		{ConfigMap: &configMaps},
+		{DownwardAPI: projection.DownwardAPI},
+		{ServiceAccountToken: projection.ServiceAccountToken},
+	}, (*pod.Volume)[0].Projected.Sources)
 	require.Equal(t, "100m", (*(*pod.Container)[0].Resources.Requests)["example.com/value"])
 }
 
 func assertNativeMembers(t *testing.T, want, got any, location string) {
 	t.Helper()
+	require.Equal(t, nativeInputMembers(t, want, want, location),
+		nativeInputMembers(t, want, got, location), location)
+}
+
+func nativeInputMembers(t *testing.T, want, got any, location string) any {
+	t.Helper()
 	switch expected := want.(type) {
 	case map[string]any:
 		actual, ok := got.(map[string]any)
 		require.True(t, ok, location)
+		members := make(map[string]any)
 		for key, value := range expected {
 			if value == "" {
 				continue
 			}
 			require.Contains(t, actual, key, location)
-			assertNativeMembers(t, value, actual[key], location+"."+key)
+			members[key] = nativeInputMembers(t, value, actual[key], location+"."+key)
 		}
+		return members
 	case []any:
 		actual, ok := got.([]any)
 		require.True(t, ok, location)
-		require.Len(t, actual, len(expected), location)
-		for i := range expected {
-			assertNativeMembers(t, expected[i], actual[i], location)
+		members := make([]any, len(actual))
+		for i, value := range actual {
+			if i < len(expected) {
+				members[i] = nativeInputMembers(t, expected[i], value, location)
+			} else {
+				members[i] = value
+			}
 		}
+		return members
 	default:
-		require.Equal(t, want, got, location)
+		return got
 	}
 }
 
@@ -272,22 +292,42 @@ func TestProjectedSourceOrderAndNormalization(t *testing.T) {
 	obj, err := r.expand(nil)
 	require.NoError(t, err)
 	sources := obj.Spec.Template.Spec.Volumes[0].Projected.Sources
-	require.Len(t, sources, 7)
-	require.Equal(t, "s1", sources[0].Secret.Name)
-	require.Equal(t, "s2", sources[1].Secret.Name)
-	require.Equal(t, "c1", sources[2].ConfigMap.Name)
-	require.Equal(t, "c2", sources[3].ConfigMap.Name)
-	require.NotNil(t, sources[4].DownwardAPI)
-	require.Equal(t, "token1", sources[5].ServiceAccountToken.Path)
-	require.Equal(t, "token2", sources[6].ServiceAccountToken.Path)
-	require.Equal(t, int64(3600), *sources[5].ServiceAccountToken.ExpirationSeconds)
+	require.Equal(t, []corev1.VolumeProjection{
+		{Secret: &corev1.SecretProjection{
+			LocalObjectReference: corev1.LocalObjectReference{Name: "s1"}, Optional: new(false),
+		}},
+		{Secret: &corev1.SecretProjection{
+			LocalObjectReference: corev1.LocalObjectReference{Name: "s2"}, Optional: new(false),
+		}},
+		{ConfigMap: &corev1.ConfigMapProjection{
+			LocalObjectReference: corev1.LocalObjectReference{Name: "c1"}, Optional: new(false),
+		}},
+		{ConfigMap: &corev1.ConfigMapProjection{
+			LocalObjectReference: corev1.LocalObjectReference{Name: "c2"}, Optional: new(false),
+		}},
+		{DownwardAPI: &corev1.DownwardAPIProjection{}},
+		{ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+			Path: "token1", ExpirationSeconds: new(int64(3600)),
+		}},
+		{ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+			Path: "token2", ExpirationSeconds: new(int64(3600)),
+		}},
+	}, sources)
 	obj.UID = "uid"
 	out, err := r.output(obj, "server")
 	require.NoError(t, err)
 	groups := (*out.Spec.Template.Spec.Volume)[0].Projected.Sources
-	require.Len(t, groups, 7)
-	require.Equal(t, "s1", *(*groups[0].Secret)[0].Name)
-	require.Equal(t, "c2", *(*groups[3].ConfigMap)[0].Name)
-	require.NotNil(t, groups[4].DownwardAPI)
-	require.Equal(t, "token2", groups[6].ServiceAccountToken.Path)
+	require.Equal(t, []ProjectionGroup{
+		{Secret: new([]SecretProjection{{Name: new("s1"), Optional: new(false)}})},
+		{Secret: new([]SecretProjection{{Name: new("s2"), Optional: new(false)}})},
+		{ConfigMap: new([]ConfigMapProjection{{Name: new("c1")}})},
+		{ConfigMap: new([]ConfigMapProjection{{Name: new("c2")}})},
+		{DownwardAPI: &DownwardAPIProjection{}},
+		{ServiceAccountToken: &ServiceAccountTokenProjection{
+			Audience: new(""), Path: "token1", ExpirationSeconds: new(int64(3600)),
+		}},
+		{ServiceAccountToken: &ServiceAccountTokenProjection{
+			Audience: new(""), Path: "token2", ExpirationSeconds: new(int64(3600)),
+		}},
+	}, groups)
 }

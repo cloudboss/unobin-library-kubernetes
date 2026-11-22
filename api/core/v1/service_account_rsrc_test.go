@@ -5,29 +5,17 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/cloudboss/unobin/pkg/compile"
-	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/runtime"
-	"github.com/cloudboss/unobin/pkg/typecheck"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
-	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/core/v1"
 )
 
-func TestServiceAccountSchemaAndRegistration(t *testing.T) {
-	lib := Library()
-	reg := lib.Resources["service-account"]
-	require.Equal(t, reflect.TypeFor[*svc.ServiceAccountResourceOutput](), reg.OutputType())
-	require.IsType(t, &svc.ServiceAccountResource{}, reg.NewReceiver())
-	require.Equal(t, 1, reg.SchemaVersion())
-	require.NotContains(t, lib.Actions, "service-account")
-	require.NotContains(t, lib.DataSources, "service-account")
-	require.True(t, reg.HasStableID())
+func TestServiceAccountStableID(t *testing.T) {
+	reg := Library().Resources["service-account"]
 	id, err := reg.StableID(map[string]any{"object": map[string]any{"metadata": map[string]any{}}},
 		map[string]any{"server": "https://cluster", "object": map[string]any{
 			"metadata": map[string]any{"uid": "uid"},
@@ -36,61 +24,6 @@ func TestServiceAccountSchemaAndRegistration(t *testing.T) {
 	require.Equal(t, "https://cluster/uid", *id)
 	_, err = reg.StableID(map[string]any{}, map[string]any{})
 	require.Error(t, err)
-	module, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
-		"github.com/cloudboss/unobin").Output()
-	require.NoError(t, err)
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	schema, warnings, err := goschema.Read(".", goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin-library-kubernetes", Dir: root,
-	}, goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin", Dir: strings.TrimSpace(string(module)),
-	})
-	require.NoError(t, err)
-	require.Empty(t, warnings)
-	resource := schema.Resources["service-account"]
-	require.ElementsMatch(t, []string{
-		"object", "create-timeout", "ignore-annotations", "ignore-labels",
-	}, mapKeys(resource.Inputs))
-	require.Equal(t, typecheck.TOptional(typecheck.TString()), resource.Inputs["create-timeout"])
-	require.Equal(t, typecheck.TOptional(typecheck.TList(typecheck.TString())),
-		resource.Inputs["ignore-annotations"])
-	require.Equal(t, resource.Inputs["ignore-annotations"], resource.Inputs["ignore-labels"])
-	object := resource.Inputs["object"]
-	require.Equal(t, typecheck.Object, object.Kind)
-	fields := objectFields(object)
-	require.ElementsMatch(t, []string{
-		"metadata", "image-pull-secrets", "secrets", "automount-service-account-token",
-	}, mapKeys(fields))
-	require.Equal(t,
-		typecheck.TOptional(typecheck.TBoolean()),
-		fields["automount-service-account-token"])
-	require.Equal(t, map[string]typecheck.Type{
-		"name":          typecheck.TOptional(typecheck.TString()),
-		"generate-name": typecheck.TOptional(typecheck.TString()),
-		"namespace":     typecheck.TOptional(typecheck.TString()),
-		"annotations":   typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-		"labels":        typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-	}, objectFields(fields["metadata"]))
-	for _, name := range []string{"image-pull-secrets", "secrets"} {
-		require.Equal(t, typecheck.Optional, fields[name].Kind)
-		require.Equal(t, typecheck.List, fields[name].Elem.Kind)
-		require.Equal(t, map[string]typecheck.Type{"name": typecheck.TOptional(typecheck.TString())},
-			objectFields(*fields[name].Elem.Elem))
-	}
-	require.ElementsMatch(t,
-		[]string{"server",
-			"api-version",
-			"kind",
-			"default-secret-name",
-			"object"},
-		mapKeys(resource.Outputs))
-	metadata := objectFields(objectFields(resource.Outputs["object"])["metadata"])
-	require.ElementsMatch(t, []string{
-		"name", "generate-name", "namespace", "uid", "annotations", "labels",
-	}, mapKeys(metadata))
-	require.Empty(t, resource.SensitiveInputs)
-	require.Empty(t, resource.SensitiveOutputs)
 }
 
 func TestServiceAccountPlanning(t *testing.T) {

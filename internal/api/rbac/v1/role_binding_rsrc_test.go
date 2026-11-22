@@ -608,13 +608,13 @@ func TestRoleBindingReorderComputedGroups(t *testing.T) {
 		require.Equal(t, http.MethodPatch, req.Method)
 		var ops []rolePatchOperation
 		require.NoError(t, json.NewDecoder(req.Body).Decode(&ops))
-		require.Len(t, ops, 2)
-		require.Equal(t, "replace", ops[1].Op)
-		require.Equal(t, "/subjects", ops[1].Path)
-		require.Equal(t, []any{
-			map[string]any{"kind": "User", "name": "bob", "namespace": "default"},
-			map[string]any{"kind": "User", "name": "alice", "namespace": "default"},
-		}, ops[1].Value)
+		require.Equal(t, []rolePatchOperation{
+			{Op: "test", Path: "/metadata/uid", Value: "uid"},
+			{Op: "replace", Path: "/subjects", Value: []any{
+				map[string]any{"kind": "User", "name": "bob", "namespace": "default"},
+				map[string]any{"kind": "User", "name": "alice", "namespace": "default"},
+			}},
+		}, ops)
 		live := liveRoleBinding()
 		live.Subjects = []rbacv1.Subject{
 			{Kind: "User", Name: "bob", APIGroup: "returned-bob", Namespace: "default"},
@@ -653,9 +653,12 @@ func TestRoleBindingPatchFailures(t *testing.T) {
 					patchBody, err := json.Marshal(patch)
 					require.NoError(t, err)
 					require.NoError(t, json.Unmarshal(patchBody, &ops))
-					require.Len(t, ops, 2)
-					require.Equal(t, "replace", ops[1].Op)
-					require.Equal(t, "/subjects", ops[1].Path)
+					require.Equal(t, []rolePatchOperation{
+						{Op: "test", Path: "/metadata/uid", Value: "uid"},
+						{Op: "replace", Path: "/subjects", Value: []any{
+							map[string]any{"kind": "User", "name": "changed", "namespace": "default"},
+						}},
+					}, ops)
 					require.NotContains(t, string(body), "subjects")
 				} else {
 					_, err = patch.Apply(body)

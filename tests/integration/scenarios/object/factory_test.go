@@ -98,16 +98,21 @@ func TestCompiledObjectLifecycle(t *testing.T) {
 			return encrypters.Noop{}, nil
 		})
 		require.NoError(t, err)
-		var resources []runtime.PlanStep
-		for _, step := range result.Steps {
+		type resourceDecision struct {
+			address  string
+			decision runtime.Decision
+		}
+		var resources []resourceDecision
+		var resource *runtime.PlanStep
+		for i := range result.Steps {
+			step := &result.Steps[i]
 			if step.Kind == runtime.NodeResource {
-				resources = append(resources, step)
+				resources = append(resources, resourceDecision{step.Address, step.Decision})
+				resource = step
 			}
 		}
-		require.Len(t, resources, 1)
-		require.Equal(t, "resource.settings", resources[0].Address)
-		require.Equal(t, decision, resources[0].Decision)
-		return &resources[0]
+		require.Equal(t, []resourceDecision{{"resource.settings", decision}}, resources)
+		return resource
 	}
 	plan(current, runtime.DecisionCreate)
 	applied = true

@@ -215,13 +215,26 @@ func TestSecretOperationDeadlines(t *testing.T) {
 			for _, deadline := range deadlines {
 				require.Equal(t, deadlines[0], deadline)
 			}
-			if tt.name == "create" && tt.waiting {
-				if tt.failure {
-					require.Len(t, calls, 3)
-				} else {
-					require.Len(t, calls, 4)
+			want := []string{"GET /api/v1/namespaces/default/secrets/actual"}
+			switch tt.name {
+			case "create":
+				want = []string{"POST /api/v1/namespaces/default/secrets",
+					"GET /api/v1/namespaces/default/secrets/actual"}
+				if tt.waiting {
+					if tt.failure {
+						want = append(want, "GET /api/v1/namespaces/default/events")
+					} else {
+						want = append(want, "GET /api/v1/namespaces/default/secrets/actual",
+							"GET /api/v1/namespaces/default/secrets/actual")
+					}
 				}
+			case "update":
+				want = []string{"PATCH /api/v1/namespaces/default/secrets/actual",
+					"GET /api/v1/namespaces/default/secrets/actual"}
+			case "delete":
+				want = []string{"DELETE /api/v1/namespaces/default/secrets/actual"}
 			}
+			require.Equal(t, want, calls)
 		})
 	}
 }

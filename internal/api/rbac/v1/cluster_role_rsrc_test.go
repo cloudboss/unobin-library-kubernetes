@@ -271,12 +271,16 @@ func TestClusterRoleUpdatePatches(t *testing.T) {
 					[]rolePatchOperation{{Op: "test", Path: "/metadata/uid", Value: "uid"}}, operations)
 			}
 			if strings.HasPrefix(change, "aggregation") {
-				require.Len(t, operations, 2)
-				require.Equal(t, "replace", operations[1].Op)
-				require.Equal(t, "/aggregationRule", operations[1].Path)
-				if change == "aggregation remove" {
-					require.Equal(t, map[string]any{}, operations[1].Value)
+				aggregation := map[string]any{}
+				if change != "aggregation remove" {
+					aggregation["clusterRoleSelectors"] = []any{
+						map[string]any{"matchLabels": map[string]any{"app": "new"}}, map[string]any{},
+					}
 				}
+				require.Equal(t, []rolePatchOperation{
+					{Op: "test", Path: "/metadata/uid", Value: "uid"},
+					{Op: "replace", Path: "/aggregationRule", Value: aggregation},
+				}, operations)
 			}
 			switch change {
 			case "first maps":

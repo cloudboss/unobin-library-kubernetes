@@ -36,19 +36,16 @@ func TestSecretPayloadPatch(t *testing.T) {
 				calls = append(calls, req.Method)
 				if req.Method == "PATCH" {
 					require.Equal(t, "application/json-patch+json", req.Header.Get("Content-Type"))
-					var operations []configMapPatchOperation
+					var operations []map[string]any
 					require.NoError(t, json.NewDecoder(req.Body).Decode(&operations))
-					require.Len(t, operations, 2)
-					require.Equal(t, "test", operations[0].Op)
-					require.Equal(t, "/metadata/uid", operations[0].Path)
-					require.Equal(t, "uid", operations[0].Value)
-					require.Equal(t, "add", operations[1].Op)
-					require.Equal(t, "/data", operations[1].Path)
-					body, err := json.Marshal(operations[1].Value)
-					require.NoError(t, err)
-					got := map[string]string{}
-					require.NoError(t, json.Unmarshal(body, &got))
-					require.Equal(t, tt.want, got)
+					wantData := make(map[string]any, len(tt.want))
+					for key, value := range tt.want {
+						wantData[key] = value
+					}
+					require.Equal(t, []map[string]any{
+						{"op": "test", "path": "/metadata/uid", "value": "uid"},
+						{"op": "add", "path": "/data", "value": wantData},
+					}, operations)
 					encoded, err := json.Marshal(operations)
 					require.NoError(t, err)
 					patch, err := jsonpatch.DecodePatch(encoded)
@@ -99,9 +96,12 @@ func TestSecretMetadataPatchBaselines(t *testing.T) {
 						require.NoError(t, json.NewDecoder(req.Body).Decode(&operations))
 						path := "/metadata/" + field
 						if empty {
-							require.Len(t, operations, 2)
-							require.Equal(t, "add", operations[1].Op)
-							require.Equal(t, path, operations[1].Path)
+							require.Equal(t, []configMapPatchOperation{
+								{Op: "test", Path: "/metadata/uid", Value: "uid"},
+								{Op: "add", Path: path, Value: map[string]any{
+									"example.org/key": "new", "added": "value",
+								}},
+							}, operations)
 						} else {
 							var got []string
 							for _, op := range operations[1:] {
@@ -179,13 +179,11 @@ func TestSecretImmutableUpdate(t *testing.T) {
 		if req.Method == "PATCH" {
 			var operations []configMapPatchOperation
 			require.NoError(t, json.NewDecoder(req.Body).Decode(&operations))
-			require.Len(t, operations, 3)
-			require.Equal(t, "/data", operations[1].Path)
-			require.Equal(t, configMapPatchOperation{Op: "replace", Path: "/immutable", Value: true},
-				operations[2])
-			for _, op := range operations {
-				require.NotEqual(t, "/type", op.Path)
-			}
+			require.Equal(t, []configMapPatchOperation{
+				{Op: "test", Path: "/metadata/uid", Value: "uid"},
+				{Op: "add", Path: "/data", Value: map[string]any{"key": "bmV3"}},
+				{Op: "replace", Path: "/immutable", Value: true},
+			}, operations)
 		}
 		obj := liveSecret()
 		obj.Immutable = new(true)

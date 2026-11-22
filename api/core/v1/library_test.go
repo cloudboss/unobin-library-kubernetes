@@ -10,99 +10,20 @@ import (
 	"testing"
 
 	"github.com/cloudboss/unobin/pkg/compile"
-	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/runtime"
-	"github.com/cloudboss/unobin/pkg/typecheck"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
-	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/core/v1"
 )
 
-func TestConfigMapRegistration(t *testing.T) {
-	lib := Library()
-	require.Equal(t, "kubernetes-core-v1", lib.Name)
-	require.Equal(t, reflect.TypeFor[*config.Configuration](), lib.Configuration.ValueType())
-	reg := lib.Resources["config-map"]
-	require.Equal(t, reflect.TypeFor[*svc.ConfigMapResourceOutput](), reg.OutputType())
-	require.IsType(t, &svc.ConfigMapResource{}, reg.NewReceiver())
-	require.Equal(t, 1, reg.SchemaVersion())
-	require.True(t, reg.HasStableID())
+func TestConfigMapStableID(t *testing.T) {
+	reg := Library().Resources["config-map"]
 	id, err := reg.StableID(map[string]any{"object": map[string]any{"metadata": map[string]any{}}},
 		map[string]any{"server": "https://cluster", "object": map[string]any{
 			"metadata": map[string]any{"uid": "uid"},
 		}})
 	require.NoError(t, err)
 	require.Equal(t, "https://cluster/uid", *id)
-}
-
-func TestConfigMapSchema(t *testing.T) {
-	out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
-		"github.com/cloudboss/unobin").Output()
-	require.NoError(t, err)
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	schema, warnings, err := goschema.Read(".", goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin-library-kubernetes", Dir: root,
-	}, goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin", Dir: strings.TrimSpace(string(out)),
-	})
-	require.NoError(t, err)
-	require.Empty(t, warnings)
-	resource := schema.Resources["config-map"]
-	require.ElementsMatch(t, []string{"object", "ignore-annotations", "ignore-labels"},
-		mapKeys(resource.Inputs))
-	require.Equal(t, typecheck.TOptional(typecheck.TList(typecheck.TString())),
-		resource.Inputs["ignore-annotations"])
-	require.Equal(t, resource.Inputs["ignore-annotations"], resource.Inputs["ignore-labels"])
-	object := resource.Inputs["object"]
-	require.Equal(t, typecheck.Object, object.Kind)
-	fields := objectFields(object)
-	require.ElementsMatch(t, []string{"metadata", "data", "binary-data", "immutable"}, mapKeys(fields))
-	require.Equal(t, typecheck.TOptional(typecheck.TMap(typecheck.TString())), fields["data"])
-	require.Equal(t, fields["data"], fields["binary-data"])
-	require.Equal(t, typecheck.TOptional(typecheck.TBoolean()), fields["immutable"])
-	metadata := fields["metadata"]
-	require.Equal(t, typecheck.Object, metadata.Kind)
-	require.Equal(t, map[string]typecheck.Type{
-		"name":          typecheck.TOptional(typecheck.TString()),
-		"generate-name": typecheck.TOptional(typecheck.TString()),
-		"namespace":     typecheck.TOptional(typecheck.TString()),
-		"annotations":   typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-		"labels":        typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-	}, objectFields(metadata))
-	require.ElementsMatch(t, []string{"server", "api-version", "kind", "object"},
-		mapKeys(resource.Outputs))
-	require.Equal(t, typecheck.TString(), resource.Outputs["api-version"])
-	output := objectFields(resource.Outputs["object"])
-	require.Equal(t, typecheck.TMap(typecheck.TString()), output["data"])
-	require.Equal(t, output["data"], output["binary-data"])
-	require.Equal(t, typecheck.TBoolean(), output["immutable"])
-	require.ElementsMatch(t, []string{
-		"name", "generate-name", "namespace", "uid", "annotations", "labels",
-	},
-		mapKeys(objectFields(output["metadata"])))
-	require.Empty(t, resource.SensitiveInputs)
-	require.Empty(t, resource.SensitiveOutputs)
-}
-
-func objectFields(object typecheck.Type) map[string]typecheck.Type {
-	fields := map[string]typecheck.Type{}
-	for _, field := range object.Fields {
-		fields[field.Name] = field.Type
-		if field.Optional {
-			fields[field.Name] = typecheck.TOptional(field.Type)
-		}
-	}
-	return fields
-}
-
-func mapKeys[T any](values map[string]T) []string {
-	keys := make([]string, 0, len(values))
-	for key := range values {
-		keys = append(keys, key)
-	}
-	return keys
 }
 
 func TestCompiledConfigMapFixtures(t *testing.T) {

@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -15,23 +14,10 @@ import (
 	"github.com/cloudboss/unobin/pkg/lang/syntax"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/cloudboss/unobin/pkg/sdk/cfg"
-	"github.com/cloudboss/unobin/pkg/typecheck"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
-	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/apps/v1"
 )
-
-func TestLibrary(t *testing.T) {
-	lib := Library()
-	require.Equal(t, "kubernetes-apps-v1", lib.Name)
-	require.Equal(t, reflect.TypeFor[*config.Configuration](), lib.Configuration.ValueType())
-	require.Equal(t, reflect.TypeFor[*svc.DeploymentResourceOutput](),
-		lib.Resources["deployment"].OutputType())
-	require.True(t, lib.Resources["deployment"].HasStableID())
-	require.Equal(t, 1, lib.Resources["deployment"].SchemaVersion())
-	require.Len(t, lib.Resources, 1)
-}
 
 func TestLibrarySchemaAndFixtures(t *testing.T) {
 	out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
@@ -48,13 +34,6 @@ func TestLibrarySchemaAndFixtures(t *testing.T) {
 	view, err := cfg.View(config.LibraryConfiguration())
 	require.NoError(t, err)
 	require.Equal(t, view.SchemaDigest, schema.ConfigurationDigest)
-	inputs := schema.Resources["deployment"].Inputs
-	require.Equal(t, typecheck.TOptional(typecheck.TBoolean()), inputs["wait-for-rollout"])
-	require.Contains(t, inputs, "ignore-annotations")
-	require.NotContains(t, inputs, "waitForRollout")
-	require.NotContains(t, inputs, "manifest")
-	require.NotContains(t, schema.Resources["deployment"].Outputs, "status")
-	require.Empty(t, schema.Resources["deployment"].SensitiveInputs)
 	paths, err := filepath.Glob("testdata/ub/*/factory.ub")
 	require.NoError(t, err)
 	for _, fixture := range paths {

@@ -101,8 +101,13 @@ func TestNamespacePatchPointer(t *testing.T) {
 	for _, desired := range []map[string]string{{"example.com/a~b": ""}, {}} {
 		operations := namespaceMapPatch("/metadata/annotations",
 			map[string]string{"example.com/a~b": "old"}, desired)
-		require.Len(t, operations, 1)
-		require.Equal(t, "/metadata/annotations/example.com~1a~0b", operations[0].Path)
+		wantOperation := namespacePatchOperation{
+			Op: "remove", Path: "/metadata/annotations/example.com~1a~0b",
+		}
+		if _, ok := desired["example.com/a~b"]; ok {
+			wantOperation.Op, wantOperation.Value = "replace", ""
+		}
+		require.Equal(t, []namespacePatchOperation{wantOperation}, operations)
 		encoded, err := json.Marshal(operations)
 		require.NoError(t, err)
 		patch, err := jsonpatch.DecodePatch(encoded)

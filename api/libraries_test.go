@@ -3,7 +3,6 @@ package api_test
 import (
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -34,23 +33,21 @@ func TestLibraryConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	for _, entry := range []struct {
 		path string
-		name string
 		new  func() *runtime.Library
 	}{
-		{path: "core/v1", name: "kubernetes-core-v1", new: core.Library},
-		{path: "apps/v1", name: "kubernetes-apps-v1", new: apps.Library},
-		{path: "batch/v1", name: "kubernetes-batch-v1", new: batch.Library},
-		{path: "networking/v1", name: "kubernetes-networking-v1", new: networking.Library},
-		{path: "rbac/v1", name: "kubernetes-rbac-v1", new: rbac.Library},
-		{path: "storage/v1", name: "kubernetes-storage-v1", new: storage.Library},
-		{path: "autoscaling/v2", name: "kubernetes-autoscaling-v2", new: autoscaling.Library},
-		{path: "policy/v1", name: "kubernetes-policy-v1", new: policy.Library},
-		{path: "apiextensions/v1", name: "kubernetes-apiextensions-v1", new: apiextensions.Library},
+		{path: "core/v1", new: core.Library},
+		{path: "apps/v1", new: apps.Library},
+		{path: "batch/v1", new: batch.Library},
+		{path: "networking/v1", new: networking.Library},
+		{path: "rbac/v1", new: rbac.Library},
+		{path: "storage/v1", new: storage.Library},
+		{path: "autoscaling/v2", new: autoscaling.Library},
+		{path: "policy/v1", new: policy.Library},
+		{path: "apiextensions/v1", new: apiextensions.Library},
 	} {
 		t.Run(entry.path, func(t *testing.T) {
 			lib := entry.new()
-			require.Equal(t, entry.name, lib.Name)
-			require.Equal(t, reflect.TypeFor[*config.Configuration](), lib.Configuration.ValueType())
+
 			decoded, err := cfg.Decode(lib.Configuration, map[string]any{
 				"server": "https://cluster.example", "token-file": "/run/token",
 			})

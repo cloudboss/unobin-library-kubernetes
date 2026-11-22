@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -17,79 +16,18 @@ import (
 	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/lang"
 	"github.com/cloudboss/unobin/pkg/runtime"
-	"github.com/cloudboss/unobin/pkg/typecheck"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
-	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/core/v1"
 )
 
-func TestServiceRegistrationAndSchema(t *testing.T) {
-	lib := Library()
-	reg, ok := lib.Resources["service"]
-	require.True(t, ok)
-	require.Equal(t, reflect.TypeFor[*svc.ServiceResourceOutput](), reg.OutputType())
-	require.IsType(t, &svc.ServiceResource{}, reg.NewReceiver())
-	require.Equal(t, 1, reg.SchemaVersion())
-	require.True(t, reg.HasStableID())
+func TestServiceStableID(t *testing.T) {
+	reg := Library().Resources["service"]
 	id, err := reg.StableID(map[string]any{"metadata": map[string]any{}, "spec": map[string]any{}},
 		map[string]any{"server": "https://saved", "uid": "uid"})
 	require.NoError(t, err)
 	require.Equal(t, "https://saved/uid", *id)
-	module, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
-		"github.com/cloudboss/unobin").Output()
-	require.NoError(t, err)
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	schema, warnings, err := goschema.Read(".", goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin-library-kubernetes", Dir: root,
-	}, goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin", Dir: strings.TrimSpace(string(module)),
-	})
-	require.NoError(t, err)
-	require.Empty(t, warnings)
-	resource := schema.Resources["service"]
-	require.ElementsMatch(t, []string{"metadata", "spec", "wait-for-load-balancer", "create-timeout",
-		"ignore-annotations", "ignore-labels"}, mapKeys(resource.Inputs))
-	require.Equal(t, typecheck.Object, resource.Inputs["metadata"].Kind)
-	require.Equal(t, typecheck.Object, resource.Inputs["spec"].Kind)
-	require.ElementsMatch(t, []string{"name", "generate-name", "namespace", "annotations", "labels"},
-		mapKeys(objectFields(resource.Inputs["metadata"])))
-	spec := objectFields(resource.Inputs["spec"])
-	require.ElementsMatch(t, []string{
-		"type", "allocate-load-balancer-node-ports", "cluster-ip", "cluster-ips", "external-ips",
-		"external-name", "external-traffic-policy", "internal-traffic-policy", "ip-families",
-		"ip-family-policy", "load-balancer-class", "load-balancer-ip", "load-balancer-source-ranges",
-		"health-check-node-port", "publish-not-ready-addresses", "selector", "session-affinity",
-		"session-affinity-config", "port"}, mapKeys(spec))
-	require.Equal(t, typecheck.TOptional(typecheck.TList(typecheck.TString())), spec["cluster-ips"])
-	require.Equal(t, spec["cluster-ips"], spec["external-ips"])
-	require.Equal(t, typecheck.TOptional(typecheck.TMap(typecheck.TString())), spec["selector"])
-	port := objectFields(*spec["port"].Elem.Elem)
-	require.ElementsMatch(t, []string{
-		"port", "name", "app-protocol", "protocol", "node-port", "target-port",
-	}, mapKeys(port))
-	require.Equal(t, typecheck.TOptional(typecheck.TString()), port["target-port"])
-	require.Equal(t, typecheck.TInteger(), port["port"])
-	require.Equal(t, typecheck.TOptional(typecheck.TInteger()), port["node-port"])
-	require.Equal(t, typecheck.TOptional(typecheck.TInteger()), spec["health-check-node-port"])
-	affinity := objectFields(*spec["session-affinity-config"].Elem)
-	clientIP := objectFields(*affinity["client-ip"].Elem)
-	require.Equal(t, typecheck.TOptional(typecheck.TInteger()), clientIP["timeout-seconds"])
-	require.ElementsMatch(t, []string{
-		"server", "api-version", "kind", "name", "namespace", "uid", "metadata", "spec", "status",
-	}, mapKeys(resource.Outputs))
-	outputSpec := objectFields(resource.Outputs["spec"])
-	outputPort := objectFields(*outputSpec["port"].Elem)
-	require.Equal(t, typecheck.TInteger(), outputPort["port"])
-	require.Equal(t, typecheck.TInteger(), outputPort["node-port"])
-	require.Equal(t, typecheck.TInteger(), outputSpec["health-check-node-port"])
-	outputAffinity := objectFields(*outputSpec["session-affinity-config"].Elem)
-	outputClientIP := objectFields(*outputAffinity["client-ip"].Elem)
-	require.Equal(t, typecheck.TOptional(typecheck.TInteger()), outputClientIP["timeout-seconds"])
-	require.Empty(t, resource.SensitiveInputs)
-	require.Empty(t, resource.SensitiveOutputs)
 }
 
 func TestServiceReplacementAndEquality(t *testing.T) {

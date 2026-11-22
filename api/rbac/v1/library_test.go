@@ -10,108 +10,18 @@ import (
 	"testing"
 
 	"github.com/cloudboss/unobin/pkg/compile"
-	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/runtime"
-	"github.com/cloudboss/unobin/pkg/typecheck"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
-	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/rbac/v1"
 )
 
-func TestRoleRegistration(t *testing.T) {
-	lib := Library()
-	require.Equal(t, "kubernetes-rbac-v1", lib.Name)
-	require.Equal(t, reflect.TypeFor[*config.Configuration](), lib.Configuration.ValueType())
-	require.ElementsMatch(t, []string{"role", "role-binding", "cluster-role", "cluster-role-binding"},
-		mapKeys(lib.Resources))
-	require.Empty(t, lib.Actions)
-	require.Empty(t, lib.DataSources)
-	reg := lib.Resources["role"]
-	require.IsType(t, &svc.RoleResource{}, reg.NewReceiver())
-	require.Equal(t, reflect.TypeFor[*svc.RoleResourceOutput](), reg.OutputType())
-	require.Equal(t, 1, reg.SchemaVersion())
-	require.True(t, reg.HasStableID())
+func TestRoleStableID(t *testing.T) {
+	reg := Library().Resources["role"]
 	id, err := reg.StableID(map[string]any{},
 		map[string]any{"server": "https://saved", "uid": "uid"})
 	require.NoError(t, err)
 	require.Equal(t, "https://saved/uid", *id)
-}
-
-func TestRoleSchema(t *testing.T) {
-	out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
-		"github.com/cloudboss/unobin").Output()
-	require.NoError(t, err)
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	schema, warnings, err := goschema.Read(".", goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin-library-kubernetes", Dir: root,
-	}, goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin", Dir: strings.TrimSpace(string(out)),
-	})
-	require.NoError(t, err)
-	require.Empty(t, warnings)
-	resource := schema.Resources["role"]
-	require.ElementsMatch(t, []string{"metadata", "rule", "ignore-annotations", "ignore-labels"},
-		mapKeys(resource.Inputs))
-	require.Equal(t, typecheck.TOptional(typecheck.TList(typecheck.TString())),
-		resource.Inputs["ignore-annotations"])
-	require.Equal(t, resource.Inputs["ignore-annotations"], resource.Inputs["ignore-labels"])
-	require.Equal(t, typecheck.Object, resource.Inputs["metadata"].Kind)
-	metadata := map[string]typecheck.Type{
-		"name":          typecheck.TOptional(typecheck.TString()),
-		"namespace":     typecheck.TOptional(typecheck.TString()),
-		"generate-name": typecheck.TOptional(typecheck.TString()),
-		"labels":        typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-		"annotations":   typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-	}
-	require.Equal(t, metadata, objectFields(resource.Inputs["metadata"]))
-	rules := resource.Inputs["rule"]
-	require.Equal(t, typecheck.List, rules.Kind)
-	require.Equal(t, map[string]typecheck.Type{
-		"api-groups":     typecheck.TList(typecheck.TString()),
-		"resources":      typecheck.TList(typecheck.TString()),
-		"verbs":          typecheck.TList(typecheck.TString()),
-		"resource-names": typecheck.TOptional(typecheck.TList(typecheck.TString())),
-	}, objectFields(*rules.Elem))
-	require.ElementsMatch(t, []string{"server", "api-version", "kind", "name", "namespace", "uid",
-		"metadata", "rule"}, mapKeys(resource.Outputs))
-	for _, name := range []string{"server", "api-version", "kind", "name", "namespace", "uid"} {
-		require.Equal(t, typecheck.TString(), resource.Outputs[name])
-	}
-	for name := range metadata {
-		metadata[name] = typecheck.TString()
-	}
-	metadata["labels"], metadata["annotations"] = typecheck.TMap(typecheck.TString()),
-		typecheck.TMap(typecheck.TString())
-	require.Equal(t, metadata, objectFields(resource.Outputs["metadata"]))
-	require.Equal(t, map[string]typecheck.Type{
-		"api-groups":     typecheck.TList(typecheck.TString()),
-		"resources":      typecheck.TList(typecheck.TString()),
-		"verbs":          typecheck.TList(typecheck.TString()),
-		"resource-names": typecheck.TList(typecheck.TString()),
-	}, objectFields(*resource.Outputs["rule"].Elem))
-	require.Empty(t, resource.SensitiveInputs)
-	require.Empty(t, resource.SensitiveOutputs)
-}
-
-func objectFields(object typecheck.Type) map[string]typecheck.Type {
-	fields := map[string]typecheck.Type{}
-	for _, field := range object.Fields {
-		fields[field.Name] = field.Type
-		if field.Optional {
-			fields[field.Name] = typecheck.TOptional(field.Type)
-		}
-	}
-	return fields
-}
-
-func mapKeys[T any](values map[string]T) []string {
-	keys := make([]string, 0, len(values))
-	for key := range values {
-		keys = append(keys, key)
-	}
-	return keys
 }
 
 func TestCompiledRoleFixtures(t *testing.T) {

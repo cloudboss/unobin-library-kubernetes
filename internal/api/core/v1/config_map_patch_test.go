@@ -125,8 +125,13 @@ func TestConfigMapPatchPointer(t *testing.T) {
 	for _, desired := range []map[string]string{{"example.com/a~b": "new"}, {}} {
 		operations := configMapMapPatch("/metadata/annotations",
 			map[string]string{"example.com/a~b": "old"}, desired)
-		require.Len(t, operations, 1)
-		require.Equal(t, "/metadata/annotations/example.com~1a~0b", operations[0].Path)
+		wantOperation := configMapPatchOperation{
+			Op: "remove", Path: "/metadata/annotations/example.com~1a~0b",
+		}
+		if _, ok := desired["example.com/a~b"]; ok {
+			wantOperation.Op, wantOperation.Value = "replace", "new"
+		}
+		require.Equal(t, []configMapPatchOperation{wantOperation}, operations)
 		encoded, err := json.Marshal(operations)
 		require.NoError(t, err)
 		patch, err := jsonpatch.DecodePatch(encoded)

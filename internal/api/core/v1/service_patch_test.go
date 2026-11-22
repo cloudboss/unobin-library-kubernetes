@@ -255,14 +255,14 @@ func TestServiceUpdateFailures(t *testing.T) {
 			out, err := r.Update(t.Context(), c, p)
 			require.Error(t, err)
 			require.Nil(t, out)
-			want := 2
-			if failure == "uid" {
-				want = 1
+			want := []string{"GET /api/v1/namespaces/default/services/generated-actual"}
+			if failure != "uid" {
+				want = append(want, "GET /version")
 			}
 			if failure == "patch" || failure == "empty families" {
-				want = 3
+				want = append(want, "PATCH /api/v1/namespaces/default/services/generated-actual")
 			}
-			require.Len(t, calls, want)
+			require.Equal(t, want, calls)
 		})
 	}
 }

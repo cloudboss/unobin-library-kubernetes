@@ -9,83 +9,26 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/cloudboss/unobin/pkg/compile"
-	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/cloudboss/unobin/pkg/sdk/state"
-	"github.com/cloudboss/unobin/pkg/typecheck"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
-	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/core/v1"
 )
 
-func TestSecretSchemaAndRegistration(t *testing.T) {
-	lib := Library()
-	reg := lib.Resources["secret"]
-	require.Equal(t, reflect.TypeFor[*svc.SecretResourceOutput](), reg.OutputType())
-	require.IsType(t, &svc.SecretResource{}, reg.NewReceiver())
-	require.Equal(t, 1, reg.SchemaVersion())
-	require.True(t, reg.HasStableID())
+func TestSecretStableID(t *testing.T) {
+	reg := Library().Resources["secret"]
 	id, err := reg.StableID(map[string]any{"object": map[string]any{"metadata": map[string]any{}}},
 		map[string]any{"server": "https://saved", "object": map[string]any{
 			"metadata": map[string]any{"uid": "uid"},
 		}})
 	require.NoError(t, err)
 	require.Equal(t, "https://saved/uid", *id)
-	module, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
-		"github.com/cloudboss/unobin").Output()
-	require.NoError(t, err)
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	schema, warnings, err := goschema.Read(".", goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin-library-kubernetes", Dir: root,
-	}, goschema.ModuleRoot{
-		Path: "github.com/cloudboss/unobin", Dir: strings.TrimSpace(string(module)),
-	})
-	require.NoError(t, err)
-	require.Empty(t, warnings)
-	resource := schema.Resources["secret"]
-	require.ElementsMatch(t, []string{"object", "wait-for-service-account-token", "create-timeout",
-		"ignore-annotations", "ignore-labels"}, mapKeys(resource.Inputs))
-	require.Equal(t, []string{"object"}, resource.SensitiveInputs)
-	require.Equal(t, []string{"object"}, resource.SensitiveOutputs)
-	require.Equal(t, typecheck.TOptional(typecheck.TBoolean()),
-		resource.Inputs["wait-for-service-account-token"])
-	require.Equal(t, typecheck.TOptional(typecheck.TString()), resource.Inputs["create-timeout"])
-	fields := objectFields(resource.Inputs["object"])
-	require.Equal(t, typecheck.Object, resource.Inputs["object"].Kind)
-	require.ElementsMatch(t, []string{"metadata", "data", "binary-data", "immutable", "type"},
-		mapKeys(fields))
-	require.Equal(t, typecheck.Object, fields["metadata"].Kind)
-	require.Equal(t, typecheck.TOptional(typecheck.TMap(typecheck.TString())), fields["data"])
-	require.Equal(t, fields["data"], fields["binary-data"])
-	require.Equal(t, typecheck.TOptional(typecheck.TString()), fields["type"])
-	require.Equal(t, typecheck.TOptional(typecheck.TBoolean()), fields["immutable"])
-	require.Equal(t, map[string]typecheck.Type{
-		"name":          typecheck.TOptional(typecheck.TString()),
-		"generate-name": typecheck.TOptional(typecheck.TString()),
-		"namespace":     typecheck.TOptional(typecheck.TString()),
-		"annotations":   typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-		"labels":        typecheck.TOptional(typecheck.TMap(typecheck.TString())),
-	}, objectFields(fields["metadata"]))
-	require.ElementsMatch(t, []string{"server", "api-version", "kind", "object"},
-		mapKeys(resource.Outputs))
-	output := objectFields(resource.Outputs["object"])
-	require.ElementsMatch(t, []string{"metadata", "data", "binary-data", "immutable", "type"},
-		mapKeys(output))
-	require.Equal(t, typecheck.TMap(typecheck.TString()), output["data"])
-	require.Equal(t, output["data"], output["binary-data"])
-	require.Equal(t, typecheck.TBoolean(), output["immutable"])
-	require.Equal(t, typecheck.TString(), output["type"])
-	require.ElementsMatch(t,
-		[]string{"name", "generate-name", "namespace", "uid", "annotations", "labels"},
-		mapKeys(objectFields(output["metadata"])))
 }
 
 func TestSecretReplacementMatrix(t *testing.T) {

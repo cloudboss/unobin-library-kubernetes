@@ -170,7 +170,11 @@ func TestSecretCRUDAndFinalReadErrors(t *testing.T) {
 				_, err = r.Update(t.Context(), c, secretPrior{Outputs: secretSaved(*c.Server)})
 			}
 			require.True(t, apierrors.IsForbidden(err))
-			require.Len(t, calls, 2)
+			want := []string{"POST", "GET"}
+			if operation == "update" {
+				want = []string{"PATCH", "GET"}
+			}
+			require.Equal(t, want, calls)
 		})
 	}
 }
