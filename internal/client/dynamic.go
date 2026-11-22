@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"sync/atomic"
 
@@ -28,7 +29,7 @@ type DynamicClient struct {
 
 type mappingDiscovery struct {
 	discovery.CachedDiscoveryInterface
-	failures atomic.Pointer[discovery.ErrGroupDiscoveryFailed]
+	failures atomic.Pointer[map[schema.GroupVersion]error]
 }
 
 func (d *mappingDiscovery) ServerGroupsAndResources() (
@@ -36,8 +37,18 @@ func (d *mappingDiscovery) ServerGroupsAndResources() (
 ) {
 	groups, resources, err := d.CachedDiscoveryInterface.ServerGroupsAndResources()
 	// The REST mapper uses successful group results and discards partial discovery errors.
-	var failures *discovery.ErrGroupDiscoveryFailed
-	errors.As(err, &failures)
+	var failures *map[schema.GroupVersion]error
+	var partial *discovery.ErrGroupDiscoveryFailed
+	if errors.As(err, &partial) {
+		byVersion := maps.Clone(partial.Groups)
+		for _, group := range groups {
+			preferred := schema.GroupVersion{Group: group.Name, Version: group.PreferredVersion.Version}
+			if cause := byVersion[preferred]; cause != nil {
+				byVersion[schema.GroupVersion{Group: group.Name}] = cause
+			}
+		}
+		failures = &byVersion
+	}
 	d.failures.Store(failures)
 	return groups, resources, err
 }
@@ -82,7 +93,7 @@ func (c *DynamicClient) Resolve(
 	mapping, err := c.mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
 		if failures := c.discovery.failures.Load(); failures != nil && meta.IsNoMatchError(err) {
-			if cause := failures.Groups[gvk.GroupVersion()]; cause != nil {
+			if cause := (*failures)[gvk.GroupVersion()]; cause != nil {
 				err = cause
 			}
 		}

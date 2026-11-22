@@ -33,7 +33,7 @@ func TestDynamicDiscovery(t *testing.T) {
 					GroupVersion: "example.com/v2", Version: "v2",
 				}},
 				PreferredVersion: metav1.GroupVersionForDiscovery{
-					GroupVersion: "example.com/v1", Version: "v1",
+					GroupVersion: "example.com/v2", Version: "v2",
 				},
 			}}}
 		case "/api/v1":
@@ -85,6 +85,11 @@ func TestDynamicDiscovery(t *testing.T) {
 	}, "")
 	require.ErrorContains(t, err, "discover Kubernetes kind")
 	require.True(t, apierrors.IsForbidden(err), "%v", err)
+	_, _, err = c.Resolve(schema.GroupVersionKind{Group: "example.com", Kind: "Widget"}, "")
+	require.ErrorContains(t, err, "discover Kubernetes kind")
+	require.True(t, apierrors.IsForbidden(err), "%v", err)
+	_, _, err = c.Resolve(schema.GroupVersionKind{Group: "example.com", Kind: "Person"}, "")
+	require.NoError(t, err)
 	resource, namespace, err := c.Resolve(schema.GroupVersionKind{
 		Group: "example.com", Version: "v1", Kind: "Person",
 	}, "")
