@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
+	"slices"
 	"sync/atomic"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
@@ -38,9 +40,17 @@ func (d *mappingDiscovery) ServerGroupsAndResources() (
 	groups, resources, err := d.CachedDiscoveryInterface.ServerGroupsAndResources()
 	// The REST mapper uses successful group results and discards partial discovery errors.
 	var failures *map[schema.GroupVersion]error
-	var partial *discovery.ErrGroupDiscoveryFailed
-	if errors.As(err, &partial) {
-		byVersion := maps.Clone(partial.Groups)
+	if partial, ok := discovery.GroupDiscoveryFailedErrorGroups(err); ok {
+		byVersion := maps.Clone(partial)
+		failedVersions := slices.SortedFunc(maps.Keys(partial), func(a, b schema.GroupVersion) int {
+			return version.CompareKubeAwareVersionStrings(b.Version, a.Version)
+		})
+		for _, failed := range failedVersions {
+			group := schema.GroupVersion{Group: failed.Group}
+			if byVersion[group] == nil {
+				byVersion[group] = partial[failed]
+			}
+		}
 		for _, group := range groups {
 			preferred := schema.GroupVersion{Group: group.Name, Version: group.PreferredVersion.Version}
 			if cause := byVersion[preferred]; cause != nil {
@@ -92,7 +102,8 @@ func (c *DynamicClient) Resolve(
 ) (dynamic.ResourceInterface, string, error) {
 	mapping, err := c.mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
-		if failures := c.discovery.failures.Load(); failures != nil && meta.IsNoMatchError(err) {
+		if failures := c.discovery.failures.Load(); failures != nil &&
+			(meta.IsNoMatchError(err) || errors.Is(err, &discovery.ErrGroupDiscoveryFailed{})) {
 			if cause := (*failures)[gvk.GroupVersion()]; cause != nil {
 				err = cause
 			}
