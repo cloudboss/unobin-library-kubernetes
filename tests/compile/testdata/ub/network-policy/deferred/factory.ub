@@ -1,0 +1,15 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs:          { server: { type: string } }
+  resources: {
+    seed: networking.network-policy {
+      metadata: { generate-name: 'seed-' }
+      spec:     { pod-selector: {}, policy-types: ['Ingress'] }
+    }
+    policy: networking.network-policy {
+      metadata: { generate-name: resource.seed.uid }
+      spec:     { pod-selector: {}, policy-types: ['Ingress'] }
+    }
+  }
+}

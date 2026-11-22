@@ -1,0 +1,17 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: {} }
+  inputs: {
+    name:  { type: string }
+    types: { type: list(string), default: ['Ingress'] }
+    label: { type: string, default: 'valid' }
+    regex: { type: string, default: 'ignored' }
+  }
+  resources: {
+    policy: networking.network-policy {
+      metadata:      { name: input.name, labels: { key: input.label } }
+      spec:          { pod-selector: {}, policy-types: input.types }
+      ignore-labels: [input.regex]
+    }
+  }
+}

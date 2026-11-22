@@ -17,6 +17,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{
+			"network-policy": runtime.MakeResource[
+				svc.NetworkPolicyResource, *svc.NetworkPolicyResourceOutput, *config.Configuration,
+			]((&svc.NetworkPolicyResource{}).ResourceDefinition()),
 			"ingress": runtime.MakeResource[
 				svc.IngressResource, *svc.IngressResourceOutput, *config.Configuration,
 			]((&svc.IngressResource{}).ResourceDefinition()),

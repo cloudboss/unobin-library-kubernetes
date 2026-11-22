@@ -1,0 +1,22 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: {
+    networking: { server: input.server, token: input.token, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:      { type: string }
+    token:       { type: string, default: 'first' }
+    metadata:    { type: opaque }
+    spec:        { type: opaque }
+    annotations: { type: list(string), default: [] }
+    ignore:      { type: list(string), default: [] }
+  }
+  resources: {
+    policy: networking.network-policy {
+      metadata:           input.metadata
+      spec:               input.spec
+      ignore-annotations: input.annotations
+      ignore-labels:      input.ignore
+    }
+  }
+}

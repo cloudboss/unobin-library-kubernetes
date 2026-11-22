@@ -1,0 +1,28 @@
+stack: {
+  factory: {
+    inputs: {
+      replacement-name: 'unobin-it-policy-first'
+      spec: {
+        pod-selector: { match-labels: { app: 'selected' } }
+        policy-types: ['Ingress', 'Egress']
+        ingress: [
+          {
+            ports: [{ port: '0080' }, { port: 'http', protocol: 'TCP' }]
+            from:  [{ namespace-selector: {}, pod-selector: { match-labels: { role: 'client' } } }]
+          },
+          {},
+        ]
+        egress: [
+          {
+            ports: [{ port: '53', protocol: 'UDP' }]
+            to:    [{ ip-block: { cidr: '192.0.2.0/24', except: ['192.0.2.1/32'] } }]
+          },
+        ]
+      }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
