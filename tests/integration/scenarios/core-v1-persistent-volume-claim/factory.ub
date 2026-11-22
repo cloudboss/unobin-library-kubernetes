@@ -1,0 +1,27 @@
+factory: {
+  description:     'Creates a generated PVC without a binding wait and updates its metadata.'
+  imports:         { kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { kubernetes: {} }
+  inputs:          { value: { type: string } }
+  resources: {
+    claim: kubernetes.persistent-volume-claim {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-claim-'
+          namespace:     'default'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-persistent-volume-claim'
+            value:                               input.value
+          }
+          annotations: { 'example.com/value': input.value }
+        }
+        spec: { access-modes: ['ReadWriteOnce'], resources: { requests: { storage: '1Gi' } } }
+      }
+      wait-until-bound: false
+    }
+  }
+  outputs: {
+    name: { value: resource.claim.object.metadata.name }
+    uid:  { value: resource.claim.object.metadata.uid }
+  }
+}

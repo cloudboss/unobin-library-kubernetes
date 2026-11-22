@@ -1,0 +1,22 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    claim: core.persistent-volume-claim {
+      object: {
+        metadata: {}
+        spec: {
+          access-modes: [
+            'ReadWriteOnce',
+          ]
+          resources: {
+            requests: {
+              storage: '1Gi'
+            }
+          }
+        }
+      }
+      wait-until-bound: false
+    }
+  }
+}

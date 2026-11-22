@@ -1,0 +1,20 @@
+factory: {
+  inputs:          { server: { type: string } }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    seed: core.persistent-volume-claim {
+      object: {
+        metadata: { name: 'seed' }
+        spec:     { access-modes: [], resources: { requests: { storage: '1Gi' } } }
+      }
+      wait-until-bound: false
+    }
+    claim: core.persistent-volume-claim {
+      object: {
+        metadata: { generate-name: resource.seed.object.spec.volume-name }
+        spec:     { access-modes: [], resources: { requests: { storage: '1Gi' } } }
+      }
+      wait-until-bound: false
+    }
+  }
+}

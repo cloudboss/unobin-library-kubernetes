@@ -1,0 +1,18 @@
+factory: {
+  inputs: {
+    server:  { type: string }
+    object:  { type: opaque }
+    wait:    { type: boolean }
+    timeout: { type: string }
+  }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    claim: core.persistent-volume-claim {
+      object:             input.object
+      wait-until-bound:   input.wait
+      create-timeout:     input.timeout
+      ignore-annotations: ['ignored']
+      ignore-labels:      ['ignored']
+    }
+  }
+}

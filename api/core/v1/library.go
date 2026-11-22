@@ -8,6 +8,10 @@ import (
 )
 
 func Library() *runtime.Library {
+	pvc := runtime.MakeResource[
+		svc.PersistentVolumeClaimResource, *svc.PersistentVolumeClaimResourceOutput,
+		*config.Configuration,
+	]((&svc.PersistentVolumeClaimResource{}).ResourceDefinition())
 	return &runtime.Library{
 		Name:        "kubernetes-core-v1",
 		Description: "Kubernetes core/v1 objects for Unobin.",
@@ -17,6 +21,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{
+			"persistent-volume-claim": svc.PersistentVolumeClaimRegistration[
+				svc.PersistentVolumeClaimResource, *svc.PersistentVolumeClaimResourceOutput,
+			](pvc, pvc.Read, pvc.KnownReplacementReasons),
 			"service-account": runtime.MakeResource[
 				svc.ServiceAccountResource, *svc.ServiceAccountResourceOutput, *config.Configuration,
 			]((&svc.ServiceAccountResource{}).ResourceDefinition()),
