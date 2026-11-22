@@ -1,0 +1,82 @@
+factory: {
+  description:     'Creates two HPAs and updates API spec values without a scaling wait.'
+  imports:         { hpa: 'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2' }
+  library-configs: { hpa: {} }
+  inputs: {
+    max:          { type: integer }
+    min:          { type: integer }
+    target:       { type: string }
+    cpu:          { type: integer }
+    window:       { type: integer }
+    policy-value: { type: integer }
+    stage:        { type: string }
+  }
+  resources: {
+    explicit: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: {
+          generate-name: 'unobin-hpa-explicit-'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'autoscaling-v2-horizontal-pod-autoscaler'
+            instance:                            'explicit'
+          }
+          annotations: { 'example.com/stage': input.stage }
+        }
+        spec: {
+          max-replicas:     input.max
+          min-replicas:     input.min
+          scale-target-ref: { api-version: 'apps/v1', kind: 'Deployment', name: input.target }
+          metric: [
+            {
+              type: 'Resource'
+              resource: {
+                name:   'cpu'
+                target: { type: 'Utilization', average-utilization: input.cpu }
+              }
+            },
+          ]
+          behavior: {
+            scale-up: [
+              {
+                select-policy:                'Max'
+                stabilization-window-seconds: input.window
+                policy: [{ type: 'Pods', period-seconds: 15, value: input.policy-value }]
+              },
+            ]
+            scale-down: [
+              {
+                select-policy:                'Max'
+                stabilization-window-seconds: 300
+                policy:                       [{ type: 'Percent', period-seconds: 15, value: 100 }]
+              },
+            ]
+          }
+        }
+      }
+    }
+    omitted: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: {
+          generate-name: 'unobin-hpa-omitted-'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'autoscaling-v2-horizontal-pod-autoscaler'
+            instance:                            'omitted'
+          }
+          annotations: { 'example.com/stage': input.stage }
+        }
+        spec: {
+          max-replicas:     input.max
+          min-replicas:     input.min
+          scale-target-ref: { api-version: 'apps/v1', kind: 'Deployment', name: input.target }
+        }
+      }
+    }
+  }
+  outputs: {
+    explicit-name: { value: resource.explicit.object.metadata.name }
+    explicit-uid:  { value: resource.explicit.object.metadata.uid }
+    explicit-spec: { value: resource.explicit.object.spec }
+    omitted-name:  { value: resource.omitted.object.metadata.name }
+    omitted-spec:  { value: resource.omitted.object.spec }
+  }
+}

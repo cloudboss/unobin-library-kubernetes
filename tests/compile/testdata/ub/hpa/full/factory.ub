@@ -1,0 +1,84 @@
+factory: {
+  imports:         { hpa: 'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2' }
+  library-configs: { hpa: {} }
+  resources: {
+    hpa: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: {
+          generate-name: 'hpa-'
+          namespace:     'default'
+          labels:        { app: 'hpa' }
+          annotations:   { 'EXAMPLE.COM/key': 'value' }
+        }
+        spec: {
+          max-replicas:                      4
+          min-replicas:                      1
+          target-cpu-utilization-percentage: 50
+          scale-target-ref: { api-version: 'apps/v1', kind: 'Deployment', name: 'target' }
+          metric: [
+            {
+              type: 'Resource'
+              resource: {
+                name: 'cpu'
+                target: {
+                  type:                'Utilization'
+                  average-utilization: 70
+                  average-value:       'bad'
+                  value:               'bad'
+                }
+              }
+            },
+            {
+              type: 'ContainerResource'
+              container-resource: {
+                name:      'memory'
+                container: 'main'
+                target:    { type: 'AverageValue', average-value: '1Gi' }
+              }
+            },
+            {
+              type: 'External'
+              external: {
+                metric: {
+                  name: 'queue'
+                  selector: [
+                    {
+                      match-labels: { app: 'hpa' }
+                      match-expressions: [
+                        { key: 'z', operator: 'anything', values: ['b', 'a', 'a'] },
+                        {},
+                      ]
+                    },
+                  ]
+                }
+                target: { type: 'Value', value: '1' }
+              }
+            },
+            { type: 'Pods', pods: { metric: { name: 'requests', selector: [{}, {}] } } },
+            {
+              type: 'Object'
+              object: {
+                described-object: { api-version: 'v1', kind: 'Service', name: 'target' }
+                metric:           { name: 'requests' }
+                target:           { type: 'unknown' }
+              }
+            },
+          ]
+          behavior: {
+            scale-up: [
+              {
+                policy:                       [{ type: 'Pods', period-seconds: 15, value: 4 }]
+                select-policy:                'Max'
+                stabilization-window-seconds: 0
+              },
+              { policy: [{ type: 'ignored', period-seconds: -1, value: -1 }] },
+            ]
+            scale-down: []
+          }
+        }
+      }
+      ignore-annotations: ['^ignored/']
+      ignore-labels:      ['^ignored/']
+    }
+  }
+}

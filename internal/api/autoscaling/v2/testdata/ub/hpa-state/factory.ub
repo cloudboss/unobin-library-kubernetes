@@ -1,0 +1,86 @@
+factory: {
+  imports: { hpa: 'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2' }
+  library-configs: {
+    hpa: { server: input.server, token: input.token, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:    { type: string }
+    token:     { type: string, default: 'first' }
+    name:      { type: optional(string) }
+    prefix:    { type: optional(string) }
+    namespace: { type: optional(string) }
+    labels:    { type: optional(map(string)) }
+    max:       { type: integer, default: 4 }
+    cpu:       { type: optional(integer) }
+    metric: {
+      type: optional(
+        list(
+          object(
+            {
+              type: string
+              resource: optional(
+                object(
+                  {
+                    name: string
+                    target: optional(
+                      object({ type: string, average-utilization: optional(integer) }),
+                    )
+                  },
+                ),
+              )
+            },
+          ),
+        ),
+      )
+    }
+    behavior: {
+      type: optional(
+        object(
+          {
+            scale-up: optional(
+              list(
+                object(
+                  {
+                    policy: list(object({ type: string, period-seconds: integer, value: integer }))
+                    select-policy:                optional(string)
+                    stabilization-window-seconds: optional(integer)
+                  },
+                ),
+              ),
+            )
+            scale-down: optional(
+              list(
+                object(
+                  {
+                    policy: list(object({ type: string, period-seconds: integer, value: integer }))
+                    select-policy:                optional(string)
+                    stabilization-window-seconds: optional(integer)
+                  },
+                ),
+              ),
+            )
+          },
+        ),
+      )
+    }
+  }
+  resources: {
+    hpa: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: {
+          name:          input.name
+          generate-name: input.prefix
+          namespace:     input.namespace
+          labels:        input.labels
+        }
+        spec: {
+          max-replicas:     input.max
+          scale-target-ref: { api-version: 'apps/v1', kind: 'Deployment', name: 'target' }
+          metric:           input.metric
+          behavior:         input.behavior
+          target-cpu-utilization-percentage: input.cpu
+        }
+      }
+    }
+  }
+}

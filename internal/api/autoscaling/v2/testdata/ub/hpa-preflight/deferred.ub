@@ -1,0 +1,47 @@
+factory: {
+  imports: {
+    hpa:  'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2'
+    seed: 'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2'
+  }
+  library-configs: {
+    hpa:  { server: input.server, insecure-skip-tls-verify: true }
+    seed: { server: input.seed-server, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:      { type: string }
+    seed-server: { type: string }
+    name:        { type: string }
+    quantity:    { type: string }
+    target-type: { type: string }
+  }
+  resources: {
+    seed: seed.horizontal-pod-autoscaler {
+      object: {
+        metadata: { generate-name: 'quantity-' }
+        spec:     { max-replicas: 4, scale-target-ref: { kind: 'Deployment', name: 'target' } }
+      }
+    }
+    hpa: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: { name: input.name }
+        spec: {
+          max-replicas:     4
+          scale-target-ref: { kind: 'Deployment', name: 'target' }
+          metric: [
+            {
+              type: 'Resource'
+              resource: {
+                name: 'cpu'
+                target: {
+                  type:          input.target-type
+                  value:         resource.seed.object.metadata.name
+                  average-value: resource.seed.object.metadata.name
+                }
+              }
+            },
+          ]
+        }
+      }
+    }
+  }
+}

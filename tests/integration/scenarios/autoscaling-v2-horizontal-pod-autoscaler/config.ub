@@ -1,0 +1,17 @@
+stack: {
+  factory: {
+    inputs: {
+      max:          4
+      min:          1
+      target:       'unobin-target'
+      cpu:          65
+      window:       0
+      policy-value: 4
+      stage:        'applied'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

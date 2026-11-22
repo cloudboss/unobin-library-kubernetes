@@ -1,0 +1,34 @@
+factory: {
+  imports:         { hpa: 'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2' }
+  library-configs: { hpa: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs: {
+    server:      { type: string }
+    name:        { type: string }
+    quantity:    { type: string }
+    target-type: { type: string }
+  }
+  resources: {
+    hpa: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: { name: input.name }
+        spec: {
+          max-replicas:     4
+          scale-target-ref: { kind: 'Deployment', name: 'target' }
+          metric: [
+            {
+              type: 'Resource'
+              resource: {
+                name: 'cpu'
+                target: {
+                  type:          input.target-type
+                  value:         input.quantity
+                  average-value: input.quantity
+                }
+              }
+            },
+          ]
+        }
+      }
+    }
+  }
+}
