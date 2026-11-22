@@ -41,8 +41,10 @@ Failed runs retain diagnostics under `_output/integration/kind-*/`.
 
 The kind tool image is built once for each combination of its Containerfile,
 Go image, and kind version. Its `_output/.image-kind-*` file prevents repeated
-builds. The pinned Unobin CLI is installed at `_output/go/bin/unobin` and rebuilt
-when its module or Makefile inputs change.
+builds. The pinned Unobin CLI is installed by the Go container at
+`_output/integration/bin/unobin` and rebuilt when its module or Makefile inputs
+change. This path is separate from host-installed Go tools so an incompatible
+host executable cannot be reused by the Alpine test container.
 
 ## Run against an existing cluster
 

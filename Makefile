@@ -88,9 +88,11 @@ lint:
 		-e XDG_CACHE_HOME=/code/$(DIR_OUT)/xdg-cache \
 		$(CTR_IMAGE_LINT) golangci-lint run -v ./...
 
-$(DIR_OUT)/go/bin/unobin: go.mod Makefile | $(HAS_COMMAND_DOCKER) $(DIR_OUT)/go/ $(DIR_OUT)/gocache/
+$(DIR_OUT)/integration/bin/unobin: go.mod Makefile | $(HAS_COMMAND_DOCKER) \
+		$(DIR_OUT)/go/ $(DIR_OUT)/gocache/ $(DIR_OUT)/integration/bin/
 	@rm -f $(@)
-	@$(RUN_GO) go install github.com/cloudboss/unobin/cmd/unobin@$(UNOBIN_VERSION)
+	@$(RUN_GO) env GOBIN=/code/$(DIR_OUT)/integration/bin \
+		go install github.com/cloudboss/unobin/cmd/unobin@$(UNOBIN_VERSION)
 
 $(HAS_IMAGE_KIND): Containerfile.integration | $(HAS_COMMAND_DOCKER) $(DIR_OUT)/dockerbuild/
 	@rm -f $(@)
@@ -98,10 +100,10 @@ $(HAS_IMAGE_KIND): Containerfile.integration | $(HAS_COMMAND_DOCKER) $(DIR_OUT)/
 		-f $(DIR_ROOT)/Containerfile.integration -t $(CTR_IMAGE_KIND) $(DIR_OUT)/dockerbuild
 	@touch $(@)
 
-test-integration-kind: $(DIR_OUT)/go/bin/unobin | $(HAS_IMAGE_KIND)
+test-integration-kind: $(DIR_OUT)/integration/bin/unobin | $(HAS_IMAGE_KIND)
 	@./hack/test-integration-kind
 
-test-integration-live: $(DIR_OUT)/go/bin/unobin
+test-integration-live: $(DIR_OUT)/integration/bin/unobin
 	@./hack/test-integration-live
 
 export PROJECT CTR_IMAGE_GO CTR_IMAGE_KIND KIND_NODE UID GID SCENARIO

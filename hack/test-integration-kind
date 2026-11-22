@@ -50,5 +50,5 @@ docker run --rm --network kind \
     -e GOPATH=/code/_output/go -e GOCACHE=/code/_output/gocache \
     -e XDG_CACHE_HOME=/code/_output/xdg-cache \
     -e KUBECONFIG="/code/${work#${root}/}/kubeconfig" \
-    -e UNOBIN=/code/_output/go/bin/unobin -e SCENARIO \
+    -e UNOBIN=/code/_output/integration/bin/unobin -e SCENARIO \
     "${CTR_IMAGE_GO}" ./tests/integration/run.sh kind

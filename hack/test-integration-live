@@ -25,7 +25,7 @@ set -- docker run --rm --env-file "${work}/environment" \
     -e GOPATH="${root}/_output/go" -e GOCACHE="${root}/_output/gocache" \
     -e XDG_CACHE_HOME="${root}/_output/xdg-cache" \
     -e TMPDIR="${work}/tmp" \
-    -e UNOBIN="${root}/_output/go/bin/unobin"
+    -e UNOBIN="${root}/_output/integration/bin/unobin"
 
 config_paths=${KUBECONFIG}
 mounted="${root}:${HOME}"
