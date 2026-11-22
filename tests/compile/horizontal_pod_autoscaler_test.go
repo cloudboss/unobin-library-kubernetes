@@ -27,7 +27,7 @@ func TestHPACompiledNativeLiterals(t *testing.T) {
 			var log bytes.Buffer
 			_, err = compile.RunResult(compile.Options{
 				FactoryPath: fixture, OutDir: t.TempDir(), StackName: "hpa-native",
-				Version: "v0.0.0", CLIVersion: "v0.13.0-a.7", GoVersion: "1.26.2",
+				Version: "v0.0.0", CLIVersion: "v0.13.0-a.8", GoVersion: "1.26.2",
 				ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 				Stdout:           &log, Stderr: &log,
 			})
