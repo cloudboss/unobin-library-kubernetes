@@ -317,7 +317,7 @@ func mapPatch(path string, before, after *map[string]string) []patchOperation {
 func (r DeploymentResource) Constraints() []constraint.Constraint {
 	return []constraint.Constraint{
 		constraint.Must(
-			constraint.Matches(
+			constraint.IsMatch(
 				r.Spec.Replicas,
 				`^([+-]?0*([0-9]{1,18}|[0-8][0-9]{18}|9[0-1][0-9]{17}|9`+
 					`2[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|9`+
@@ -331,7 +331,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			),
 		),
 		constraint.Must(
-			constraint.Matches(
+			constraint.IsMatch(
 				r.Spec.Template.Spec.SecurityContext.FSGroup,
 				`^([+-]?0*([0-9]{1,18}|[0-8][0-9]{18}|9[0-1][0-9]{17}|9`+
 					`2[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|9`+
@@ -345,7 +345,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			),
 		),
 		constraint.Must(
-			constraint.Matches(
+			constraint.IsMatch(
 				r.Spec.Template.Spec.SecurityContext.RunAsGroup,
 				`^([+-]?0*([0-9]{1,18}|[0-8][0-9]{18}|9[0-1][0-9]{17}|9`+
 					`2[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|9`+
@@ -359,7 +359,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			),
 		),
 		constraint.Must(
-			constraint.Matches(
+			constraint.IsMatch(
 				r.Spec.Template.Spec.SecurityContext.RunAsUser,
 				`^([+-]?0*([0-9]{1,18}|[0-8][0-9]{18}|9[0-1][0-9]{17}|9`+
 					`2[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|9`+
@@ -374,7 +374,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 		),
 		constraint.ExactlyOneOf(r.Metadata.Name, r.Metadata.GenerateName),
 		constraint.Must(
-			constraint.Matches(
+			constraint.IsMatch(
 				r.Metadata.Name,
 				`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`,
 			),
@@ -383,11 +383,11 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 		constraint.Must(
 			constraint.Any(
 				constraint.All(
-					constraint.Matches(r.Metadata.GenerateName, `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`),
+					constraint.IsMatch(r.Metadata.GenerateName, `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`),
 					constraint.MaxItems(r.Metadata.GenerateName, 63),
 				),
 				constraint.All(
-					constraint.Matches(r.Metadata.GenerateName, `^([\x00-\x7f]|[a-z0-9][-a-z0-9]*[\x00-\x7f])-$`),
+					constraint.IsMatch(r.Metadata.GenerateName, `^([\x00-\x7f]|[a-z0-9][-a-z0-9]*[\x00-\x7f])-$`),
 					constraint.MaxItems(r.Metadata.GenerateName, 64),
 				),
 			),
@@ -397,12 +397,12 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							entry.Key,
 							`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a`+
 								`-z0-9])?)*/)?[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$`,
 						),
-						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+						constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
 					),
 				}
 			},
@@ -412,13 +412,13 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							entry.Key,
 							`^([A-Za-zKİ0-9]([-A-Za-zKİ0-9]*[A-Za-zKİ0-9])?(\.[A-Za-`+
 								`zKİ0-9]([-A-Za-zKİ0-9]*[A-Za-zKİ0-9])?)*/)?[A-Za-zKİ0-9`+
 								`]([-A-Za-zKİ0-9_.]*[A-Za-zKİ0-9])?$`,
 						),
-						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+						constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
 					),
 				}
 			},
@@ -428,7 +428,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(entry.Value, `^([A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?)?$`),
+						constraint.IsMatch(entry.Value, `^([A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?)?$`),
 						constraint.MaxItems(entry.Value, 63),
 					),
 				}
@@ -437,14 +437,14 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 		constraint.When(constraint.Present(r.Spec.Strategy.Type)).
 			Require(constraint.OneOf(r.Spec.Strategy.Type, `RollingUpdate`, `Recreate`)),
 		constraint.Must(
-			constraint.Matches(r.Spec.Strategy.RollingUpdate.MaxSurge, `^([0-9]+|[0-9]+%|)$`),
+			constraint.IsMatch(r.Spec.Strategy.RollingUpdate.MaxSurge, `^([0-9]+|[0-9]+%|)$`),
 		),
 		constraint.Must(
-			constraint.Matches(r.Spec.Strategy.RollingUpdate.MaxUnavailable, `^([0-9]+|[0-9]+%|)$`),
+			constraint.IsMatch(r.Spec.Strategy.RollingUpdate.MaxUnavailable, `^([0-9]+|[0-9]+%|)$`),
 		),
 		constraint.AtMostOneOf(r.Spec.Template.Metadata.Name, r.Spec.Template.Metadata.GenerateName),
 		constraint.Must(
-			constraint.Matches(
+			constraint.IsMatch(
 				r.Spec.Template.Metadata.Name,
 				`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`,
 			),
@@ -453,11 +453,11 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 		constraint.Must(
 			constraint.Any(
 				constraint.All(
-					constraint.Matches(r.Spec.Template.Metadata.GenerateName, `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`),
+					constraint.IsMatch(r.Spec.Template.Metadata.GenerateName, `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`),
 					constraint.MaxItems(r.Spec.Template.Metadata.GenerateName, 63),
 				),
 				constraint.All(
-					constraint.Matches(
+					constraint.IsMatch(
 						r.Spec.Template.Metadata.GenerateName,
 						`^([\x00-\x7f]|[a-z0-9][-a-z0-9]*[\x00-\x7f])-$`,
 					),
@@ -470,12 +470,12 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							entry.Key,
 							`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a`+
 								`-z0-9])?)*/)?[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$`,
 						),
-						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+						constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
 					),
 				}
 			},
@@ -485,13 +485,13 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							entry.Key,
 							`^([A-Za-zKİ0-9]([-A-Za-zKİ0-9]*[A-Za-zKİ0-9])?(\.[A-Za-`+
 								`zKİ0-9]([-A-Za-zKİ0-9]*[A-Za-zKİ0-9])?)*/)?[A-Za-zKİ0-9`+
 								`]([-A-Za-zKİ0-9_.]*[A-Za-zKİ0-9])?$`,
 						),
-						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+						constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
 					),
 				}
 			},
@@ -501,7 +501,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(entry.Value, `^([A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?)?$`),
+						constraint.IsMatch(entry.Value, `^([A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?)?$`),
 						constraint.MaxItems(entry.Value, 63),
 					),
 				}
@@ -526,7 +526,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(container Container) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							container.SecurityContext.RunAsGroup,
 							`^([+-]?0*([0-9]{1,18}|[0-8][0-9]{18}|9[0-1][0-9]{17}|9`+
 								`2[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|9`+
@@ -540,7 +540,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						),
 					),
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							container.SecurityContext.RunAsUser,
 							`^([+-]?0*([0-9]{1,18}|[0-8][0-9]{18}|9[0-1][0-9]{17}|9`+
 								`2[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|9`+
@@ -557,31 +557,31 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(container.Lifecycle.PostStart.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.Lifecycle.PostStart.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(container.Lifecycle.PostStart.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(container.Lifecycle.PostStart.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(container.Lifecycle.PostStart.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(container.Lifecycle.PostStart.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(container.Lifecycle.PostStart.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.Lifecycle.PostStart.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(
+								constraint.IsMatch(
 									container.Lifecycle.PostStart.TCPSocket.Port,
 									`^[a-z0-9]+(-[a-z0-9]+)*$`,
 								),
-								constraint.Matches(container.Lifecycle.PostStart.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(container.Lifecycle.PostStart.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(container.Lifecycle.PostStart.TCPSocket.Port, 15),
 							),
 						),
@@ -590,28 +590,28 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(container.Lifecycle.PreStop.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.Lifecycle.PreStop.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(container.Lifecycle.PreStop.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(container.Lifecycle.PreStop.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(container.Lifecycle.PreStop.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(container.Lifecycle.PreStop.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(container.Lifecycle.PreStop.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.Lifecycle.PreStop.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(container.Lifecycle.PreStop.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(container.Lifecycle.PreStop.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(container.Lifecycle.PreStop.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(container.Lifecycle.PreStop.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(container.Lifecycle.PreStop.TCPSocket.Port, 15),
 							),
 						),
@@ -620,28 +620,28 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(container.LivenessProbe.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.LivenessProbe.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(container.LivenessProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(container.LivenessProbe.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(container.LivenessProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(container.LivenessProbe.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(container.LivenessProbe.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.LivenessProbe.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(container.LivenessProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(container.LivenessProbe.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(container.LivenessProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(container.LivenessProbe.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(container.LivenessProbe.TCPSocket.Port, 15),
 							),
 						),
@@ -658,28 +658,28 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(container.ReadinessProbe.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.ReadinessProbe.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(container.ReadinessProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(container.ReadinessProbe.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(container.ReadinessProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(container.ReadinessProbe.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(container.ReadinessProbe.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.ReadinessProbe.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(container.ReadinessProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(container.ReadinessProbe.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(container.ReadinessProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(container.ReadinessProbe.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(container.ReadinessProbe.TCPSocket.Port, 15),
 							),
 						),
@@ -696,28 +696,28 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(container.StartupProbe.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.StartupProbe.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(container.StartupProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(container.StartupProbe.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(container.StartupProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(container.StartupProbe.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(container.StartupProbe.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								container.StartupProbe.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(container.StartupProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(container.StartupProbe.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(container.StartupProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(container.StartupProbe.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(container.StartupProbe.TCPSocket.Port, 15),
 							),
 						),
@@ -742,14 +742,14 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 							),
 							constraint.Must(
 								constraint.Any(
-									constraint.Matches(
+									constraint.IsMatch(
 										port.Name,
 										`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 											`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 									),
 									constraint.All(
-										constraint.Matches(port.Name, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-										constraint.Matches(port.Name, `[a-z]`),
+										constraint.IsMatch(port.Name, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+										constraint.IsMatch(port.Name, `[a-z]`),
 										constraint.MaxItems(port.Name, 15),
 									),
 								),
@@ -789,7 +789,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(initContainer Container) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							initContainer.SecurityContext.RunAsGroup,
 							`^([+-]?0*([0-9]{1,18}|[0-8][0-9]{18}|9[0-1][0-9]{17}|9`+
 								`2[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|9`+
@@ -803,7 +803,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						),
 					),
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							initContainer.SecurityContext.RunAsUser,
 							`^([+-]?0*([0-9]{1,18}|[0-8][0-9]{18}|9[0-1][0-9]{17}|9`+
 								`2[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|9`+
@@ -820,34 +820,34 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(initContainer.Lifecycle.PostStart.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.Lifecycle.PostStart.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(
+								constraint.IsMatch(
 									initContainer.Lifecycle.PostStart.HTTPGet.Port,
 									`^[a-z0-9]+(-[a-z0-9]+)*$`,
 								),
-								constraint.Matches(initContainer.Lifecycle.PostStart.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.Lifecycle.PostStart.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.Lifecycle.PostStart.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.Lifecycle.PostStart.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(
+								constraint.IsMatch(
 									initContainer.Lifecycle.PostStart.TCPSocket.Port,
 									`^[a-z0-9]+(-[a-z0-9]+)*$`,
 								),
-								constraint.Matches(initContainer.Lifecycle.PostStart.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.Lifecycle.PostStart.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.Lifecycle.PostStart.TCPSocket.Port, 15),
 							),
 						),
@@ -856,34 +856,34 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(initContainer.Lifecycle.PreStop.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.Lifecycle.PreStop.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(
+								constraint.IsMatch(
 									initContainer.Lifecycle.PreStop.HTTPGet.Port,
 									`^[a-z0-9]+(-[a-z0-9]+)*$`,
 								),
-								constraint.Matches(initContainer.Lifecycle.PreStop.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.Lifecycle.PreStop.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.Lifecycle.PreStop.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.Lifecycle.PreStop.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(
+								constraint.IsMatch(
 									initContainer.Lifecycle.PreStop.TCPSocket.Port,
 									`^[a-z0-9]+(-[a-z0-9]+)*$`,
 								),
-								constraint.Matches(initContainer.Lifecycle.PreStop.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.Lifecycle.PreStop.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.Lifecycle.PreStop.TCPSocket.Port, 15),
 							),
 						),
@@ -892,28 +892,28 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(initContainer.LivenessProbe.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.LivenessProbe.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(initContainer.LivenessProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(initContainer.LivenessProbe.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.LivenessProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(initContainer.LivenessProbe.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.LivenessProbe.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.LivenessProbe.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(initContainer.LivenessProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(initContainer.LivenessProbe.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.LivenessProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(initContainer.LivenessProbe.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.LivenessProbe.TCPSocket.Port, 15),
 							),
 						),
@@ -930,28 +930,28 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(initContainer.ReadinessProbe.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.ReadinessProbe.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(initContainer.ReadinessProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(initContainer.ReadinessProbe.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.ReadinessProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(initContainer.ReadinessProbe.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.ReadinessProbe.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.ReadinessProbe.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(initContainer.ReadinessProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(initContainer.ReadinessProbe.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.ReadinessProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(initContainer.ReadinessProbe.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.ReadinessProbe.TCPSocket.Port, 15),
 							),
 						),
@@ -968,28 +968,28 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						Require(constraint.OneOf(initContainer.StartupProbe.HTTPGet.Scheme, `HTTP`, `HTTPS`)),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.StartupProbe.HTTPGet.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(initContainer.StartupProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(initContainer.StartupProbe.HTTPGet.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.StartupProbe.HTTPGet.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(initContainer.StartupProbe.HTTPGet.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.StartupProbe.HTTPGet.Port, 15),
 							),
 						),
 					),
 					constraint.Must(
 						constraint.Any(
-							constraint.Matches(
+							constraint.IsMatch(
 								initContainer.StartupProbe.TCPSocket.Port,
 								`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 									`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 							),
 							constraint.All(
-								constraint.Matches(initContainer.StartupProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-								constraint.Matches(initContainer.StartupProbe.TCPSocket.Port, `[a-z]`),
+								constraint.IsMatch(initContainer.StartupProbe.TCPSocket.Port, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+								constraint.IsMatch(initContainer.StartupProbe.TCPSocket.Port, `[a-z]`),
 								constraint.MaxItems(initContainer.StartupProbe.TCPSocket.Port, 15),
 							),
 						),
@@ -1014,14 +1014,14 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 							),
 							constraint.Must(
 								constraint.Any(
-									constraint.Matches(
+									constraint.IsMatch(
 										port.Name,
 										`^\+?0*([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[`+
 											`0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
 									),
 									constraint.All(
-										constraint.Matches(port.Name, `^[a-z0-9]+(-[a-z0-9]+)*$`),
-										constraint.Matches(port.Name, `[a-z]`),
+										constraint.IsMatch(port.Name, `^[a-z0-9]+(-[a-z0-9]+)*$`),
+										constraint.IsMatch(port.Name, `[a-z]`),
 										constraint.MaxItems(port.Name, 15),
 									),
 								),
@@ -1060,7 +1060,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			r.Spec.Template.Spec.HostAliases,
 			func(hostAliases HostAlias) []constraint.Constraint {
 				return []constraint.Constraint{
-					constraint.Must(constraint.IsIP(hostAliases.IP)),
+					constraint.Must(constraint.IsFormat(hostAliases.IP, constraint.FormatIP)),
 				}
 			},
 		),
@@ -1068,7 +1068,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			r.Spec.Template.Spec.DNSConfig.Nameservers,
 			func(nameservers string) []constraint.Constraint {
 				return []constraint.Constraint{
-					constraint.Must(constraint.IsIP(nameservers)),
+					constraint.Must(constraint.IsFormat(nameservers, constraint.FormatIP)),
 				}
 			},
 		),
@@ -1077,7 +1077,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(searches string) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							searches,
 							`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`,
 						),
@@ -1110,7 +1110,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 			func(toleration Toleration) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(
+						constraint.IsMatch(
 							toleration.TolerationSeconds,
 							`^([+-]?0*([0-9]{1,18}|[0-8][0-9]{18}|9[0-1][0-9]{17}|9`+
 								`2[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|9`+
@@ -1201,44 +1201,44 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 		constraint.ForEach(r.Spec.Template.Spec.Volume, func(volume Volume) []constraint.Constraint {
 			return []constraint.Constraint{
 				constraint.Must(
-					constraint.Matches(volume.ConfigMap.DefaultMode, `^0[0-7]*$`),
-					constraint.Matches(volume.ConfigMap.DefaultMode, `^0*[0-7]{0,3}$`),
+					constraint.IsMatch(volume.ConfigMap.DefaultMode, `^0[0-7]*$`),
+					constraint.IsMatch(volume.ConfigMap.DefaultMode, `^0*[0-7]{0,3}$`),
 				),
 				constraint.ForEach(volume.ConfigMap.Items, func(items KeyPath) []constraint.Constraint {
 					return []constraint.Constraint{
 						constraint.When(constraint.Present(items.Path)).
-							Require(constraint.Not(constraint.Matches(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
+							Require(constraint.Not(constraint.IsMatch(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
 						constraint.Must(
-							constraint.Matches(items.Mode, `^0[0-7]*$`),
-							constraint.Matches(items.Mode, `^0*[0-7]{0,3}$`),
+							constraint.IsMatch(items.Mode, `^0[0-7]*$`),
+							constraint.IsMatch(items.Mode, `^0*[0-7]{0,3}$`),
 						),
 					}
 				}),
 				constraint.Must(
-					constraint.Matches(volume.Secret.DefaultMode, `^0[0-7]*$`),
-					constraint.Matches(volume.Secret.DefaultMode, `^0*[0-7]{0,3}$`),
+					constraint.IsMatch(volume.Secret.DefaultMode, `^0[0-7]*$`),
+					constraint.IsMatch(volume.Secret.DefaultMode, `^0*[0-7]{0,3}$`),
 				),
 				constraint.ForEach(volume.Secret.Items, func(items KeyPath) []constraint.Constraint {
 					return []constraint.Constraint{
 						constraint.When(constraint.Present(items.Path)).
-							Require(constraint.Not(constraint.Matches(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
+							Require(constraint.Not(constraint.IsMatch(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
 						constraint.Must(
-							constraint.Matches(items.Mode, `^0[0-7]*$`),
-							constraint.Matches(items.Mode, `^0*[0-7]{0,3}$`),
+							constraint.IsMatch(items.Mode, `^0[0-7]*$`),
+							constraint.IsMatch(items.Mode, `^0*[0-7]{0,3}$`),
 						),
 					}
 				}),
 				constraint.Must(
-					constraint.Matches(volume.DownwardAPI.DefaultMode, `^0[0-7]*$`),
-					constraint.Matches(volume.DownwardAPI.DefaultMode, `^0*[0-7]{0,3}$`),
+					constraint.IsMatch(volume.DownwardAPI.DefaultMode, `^0[0-7]*$`),
+					constraint.IsMatch(volume.DownwardAPI.DefaultMode, `^0*[0-7]{0,3}$`),
 				),
 				constraint.ForEach(volume.DownwardAPI.Items, func(items DownwardItem) []constraint.Constraint {
 					return []constraint.Constraint{
 						constraint.When(constraint.Present(items.Path)).
-							Require(constraint.Not(constraint.Matches(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
+							Require(constraint.Not(constraint.IsMatch(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
 						constraint.Must(
-							constraint.Matches(items.Mode, `^0[0-7]*$`),
-							constraint.Matches(items.Mode, `^0*[0-7]{0,3}$`),
+							constraint.IsMatch(items.Mode, `^0[0-7]*$`),
+							constraint.IsMatch(items.Mode, `^0*[0-7]{0,3}$`),
 						),
 					}
 				}),
@@ -1254,11 +1254,11 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 						),
 					),
 				constraint.When(constraint.Present(volume.GitRepo.Directory)).Require(
-					constraint.Not(constraint.Matches(volume.GitRepo.Directory, `^/|^\.\.|(^|/)\.\.(/|$)`)),
+					constraint.Not(constraint.IsMatch(volume.GitRepo.Directory, `^/|^\.\.|(^|/)\.\.(/|$)`)),
 				),
 				constraint.Must(
-					constraint.Matches(volume.Projected.DefaultMode, `^0[0-7]*$`),
-					constraint.Matches(volume.Projected.DefaultMode, `^0*[0-7]{0,3}$`),
+					constraint.IsMatch(volume.Projected.DefaultMode, `^0[0-7]*$`),
+					constraint.IsMatch(volume.Projected.DefaultMode, `^0*[0-7]{0,3}$`),
 				),
 				constraint.ForEach(
 					volume.Projected.Sources,
@@ -1269,10 +1269,10 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 									constraint.ForEach(secret.Items, func(items KeyPath) []constraint.Constraint {
 										return []constraint.Constraint{
 											constraint.When(constraint.Present(items.Path)).
-												Require(constraint.Not(constraint.Matches(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
+												Require(constraint.Not(constraint.IsMatch(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
 											constraint.Must(
-												constraint.Matches(items.Mode, `^0[0-7]*$`),
-												constraint.Matches(items.Mode, `^0*[0-7]{0,3}$`),
+												constraint.IsMatch(items.Mode, `^0[0-7]*$`),
+												constraint.IsMatch(items.Mode, `^0*[0-7]{0,3}$`),
 											),
 										}
 									}),
@@ -1285,10 +1285,10 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 										constraint.ForEach(configMap.Items, func(items KeyPath) []constraint.Constraint {
 											return []constraint.Constraint{
 												constraint.When(constraint.Present(items.Path)).
-													Require(constraint.Not(constraint.Matches(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
+													Require(constraint.Not(constraint.IsMatch(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
 												constraint.Must(
-													constraint.Matches(items.Mode, `^0[0-7]*$`),
-													constraint.Matches(items.Mode, `^0*[0-7]{0,3}$`),
+													constraint.IsMatch(items.Mode, `^0[0-7]*$`),
+													constraint.IsMatch(items.Mode, `^0*[0-7]{0,3}$`),
 												),
 											}
 										}),
@@ -1300,10 +1300,10 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 								func(items ProjectedDownwardItem) []constraint.Constraint {
 									return []constraint.Constraint{
 										constraint.When(constraint.Present(items.Path)).
-											Require(constraint.Not(constraint.Matches(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
+											Require(constraint.Not(constraint.IsMatch(items.Path, `^/|^\.\.|(^|/)\.\.(/|$)`))),
 										constraint.Must(
-											constraint.Matches(items.Mode, `^0[0-7]*$`),
-											constraint.Matches(items.Mode, `^0*[0-7]{0,3}$`),
+											constraint.IsMatch(items.Mode, `^0[0-7]*$`),
+											constraint.IsMatch(items.Mode, `^0*[0-7]{0,3}$`),
 										),
 									}
 								},
@@ -1318,12 +1318,12 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 					func(entry constraint.MapEntry[string]) []constraint.Constraint {
 						return []constraint.Constraint{
 							constraint.Must(
-								constraint.Matches(
+								constraint.IsMatch(
 									entry.Key,
 									`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a`+
 										`-z0-9])?)*/)?[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$`,
 								),
-								constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+								constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
 							),
 						}
 					},
@@ -1333,13 +1333,13 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 					func(entry constraint.MapEntry[string]) []constraint.Constraint {
 						return []constraint.Constraint{
 							constraint.Must(
-								constraint.Matches(
+								constraint.IsMatch(
 									entry.Key,
 									`^([A-Za-zKİ0-9]([-A-Za-zKİ0-9]*[A-Za-zKİ0-9])?(\.[A-Za-`+
 										`zKİ0-9]([-A-Za-zKİ0-9]*[A-Za-zKİ0-9])?)*/)?[A-Za-zKİ0-9`+
 										`]([-A-Za-zKİ0-9_.]*[A-Za-zKİ0-9])?$`,
 								),
-								constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+								constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
 							),
 						}
 					},
@@ -1349,7 +1349,7 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 					func(entry constraint.MapEntry[string]) []constraint.Constraint {
 						return []constraint.Constraint{
 							constraint.Must(
-								constraint.Matches(entry.Value, `^([A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?)?$`),
+								constraint.IsMatch(entry.Value, `^([A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?)?$`),
 								constraint.MaxItems(entry.Value, 63),
 							),
 						}
@@ -1391,17 +1391,17 @@ func (r DeploymentResource) Constraints() []constraint.Constraint {
 					),
 			}
 		}),
-		constraint.Must(constraint.IsPositiveDuration(r.CreateTimeout)),
-		constraint.Must(constraint.IsPositiveDuration(r.UpdateTimeout)),
-		constraint.Must(constraint.IsPositiveDuration(r.DeleteTimeout)),
+		constraint.Must(constraint.IsFormat(r.CreateTimeout, constraint.FormatPositiveDuration)),
+		constraint.Must(constraint.IsFormat(r.UpdateTimeout, constraint.FormatPositiveDuration)),
+		constraint.Must(constraint.IsFormat(r.DeleteTimeout, constraint.FormatPositiveDuration)),
 		constraint.ForEach(r.IgnoreAnnotations, func(pattern string) []constraint.Constraint {
 			return []constraint.Constraint{
-				constraint.Must(constraint.IsRegex(pattern)),
+				constraint.Must(constraint.IsFormat(pattern, constraint.FormatRegex)),
 			}
 		}),
 		constraint.ForEach(r.IgnoreLabels, func(pattern string) []constraint.Constraint {
 			return []constraint.Constraint{
-				constraint.Must(constraint.IsRegex(pattern)),
+				constraint.Must(constraint.IsFormat(pattern, constraint.FormatRegex)),
 			}
 		}),
 	}

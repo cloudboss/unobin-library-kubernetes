@@ -3,7 +3,7 @@ module github.com/cloudboss/unobin-library-kubernetes
 go 1.26.2
 
 require (
-	github.com/cloudboss/unobin v0.13.0-a.2
+	github.com/cloudboss/unobin v0.13.0-a.4
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/evanphx/json-patch.v4 v4.12.0
 	k8s.io/api v0.33.4

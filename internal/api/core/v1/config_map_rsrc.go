@@ -238,12 +238,12 @@ func (r ConfigMapResource) Constraints() []constraint.Constraint {
 	return []constraint.Constraint{
 		constraint.ExactlyOneOf(r.Object.Metadata.Name, r.Object.Metadata.GenerateName),
 		constraint.Must(
-			constraint.Matches(r.Object.Metadata.Name,
+			constraint.IsMatch(r.Object.Metadata.Name,
 				`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`),
 			constraint.MaxItems(r.Object.Metadata.Name, 253),
 		),
 		// Generated-prefix validation masks the final two bytes before checking DNS label syntax.
-		constraint.Must(constraint.Matches(r.Object.Metadata.GenerateName,
+		constraint.Must(constraint.IsMatch(r.Object.Metadata.GenerateName,
 			`^([a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?|[\x00-\x7f]-|`+
 				`[a-z0-9][-a-z0-9]{0,61}[\x00-\x7f]-)$`)),
 		constraint.ForEach(
@@ -251,11 +251,11 @@ func (r ConfigMapResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(entry.Key,
+						constraint.IsMatch(entry.Key,
 							`^([a-z0-9]([-a-z0-9]*[a-z0-9])?`+
 								`(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?`+
 								`[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$`),
-						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+						constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
 					),
 				}
 			},
@@ -264,7 +264,7 @@ func (r ConfigMapResource) Constraints() []constraint.Constraint {
 			r.Object.Metadata.Labels,
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
-					constraint.Must(constraint.Matches(entry.Value,
+					constraint.Must(constraint.IsMatch(entry.Value,
 						`^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$`)),
 				}
 			},
@@ -274,25 +274,31 @@ func (r ConfigMapResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(entry.Key,
+						constraint.IsMatch(entry.Key,
 							`^([a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?`+
 								`(\.[a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?)*/)?`+
 								`[A-Za-z0-9İK]([-A-Za-z0-9_.İK]*[A-Za-z0-9İK])?$`),
-						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+						constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
 					),
 				}
 			},
 		),
 		constraint.ForEach(r.IgnoreAnnotations, func(pattern string) []constraint.Constraint {
-			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+			return []constraint.Constraint{
+				constraint.Must(constraint.IsFormat(pattern, constraint.FormatRegex)),
+			}
 		}),
 		constraint.ForEach(r.IgnoreLabels, func(pattern string) []constraint.Constraint {
-			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+			return []constraint.Constraint{
+				constraint.Must(constraint.IsFormat(pattern, constraint.FormatRegex)),
+			}
 		}),
 		constraint.ForEach(
 			r.Object.BinaryData,
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
-				return []constraint.Constraint{constraint.Must(constraint.IsBase64(entry.Value))}
+				return []constraint.Constraint{
+					constraint.Must(constraint.IsFormat(entry.Value, constraint.FormatBase64)),
+				}
 			},
 		),
 	}

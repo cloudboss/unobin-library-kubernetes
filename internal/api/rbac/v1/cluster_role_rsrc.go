@@ -340,11 +340,11 @@ func (r ClusterRoleResource) Constraints() []constraint.Constraint {
 			Require(constraint.NotEmpty(r.Metadata.GenerateName)).
 			Message("metadata.generate-name must not be empty"),
 		constraint.Must(
-			constraint.Matches(r.Metadata.Name, `^[^/%]*$`),
+			constraint.IsMatch(r.Metadata.Name, `^[^/%]*$`),
 			constraint.Not(constraint.OneOf(r.Metadata.Name, ".", "..")),
 		).Message("metadata.name must be an RBAC path segment"),
 		constraint.Must(
-			constraint.Matches(r.Metadata.GenerateName, `^[^/%]*$`),
+			constraint.IsMatch(r.Metadata.GenerateName, `^[^/%]*$`),
 			constraint.Not(constraint.OneOf(r.Metadata.GenerateName, ".", "..")),
 		).Message("metadata.generate-name must be an RBAC path segment"),
 		constraint.ForEach(
@@ -352,10 +352,10 @@ func (r ClusterRoleResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(entry.Key, `^([a-z0-9]([-a-z0-9]*[a-z0-9])?`+
+						constraint.IsMatch(entry.Key, `^([a-z0-9]([-a-z0-9]*[a-z0-9])?`+
 							`(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?`+
 							`[A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?$`),
-						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]+$`),
+						constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]+$`),
 					).Message("metadata.labels keys must be Kubernetes qualified names"),
 				}
 			},
@@ -364,7 +364,7 @@ func (r ClusterRoleResource) Constraints() []constraint.Constraint {
 			r.Metadata.Labels,
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
-					constraint.Must(constraint.Matches(entry.Value,
+					constraint.Must(constraint.IsMatch(entry.Value,
 						`^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$`,
 					)).Message("metadata.labels values must be valid Kubernetes label values"),
 				}
@@ -375,24 +375,24 @@ func (r ClusterRoleResource) Constraints() []constraint.Constraint {
 			func(entry constraint.MapEntry[string]) []constraint.Constraint {
 				return []constraint.Constraint{
 					constraint.Must(
-						constraint.Matches(entry.Key, `^([A-Za-z0-9İK]([-A-Za-z0-9İK]*`+
+						constraint.IsMatch(entry.Key, `^([A-Za-z0-9İK]([-A-Za-z0-9İK]*`+
 							`[A-Za-z0-9İK])?(\.[A-Za-z0-9İK]([-A-Za-z0-9İK]*`+
 							`[A-Za-z0-9İK])?)*/)?[A-Za-z0-9İK]`+
 							`([-A-Za-z0-9İK_.]{0,61}[A-Za-z0-9İK])?$`),
-						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]+$`),
+						constraint.IsMatch(entry.Key, `^([^/]{1,253}/)?[^/]+$`),
 					).Message("metadata.annotations keys must be qualified names after lowercasing"),
 				}
 			},
 		),
 		constraint.ForEach(r.IgnoreAnnotations, func(pattern string) []constraint.Constraint {
 			return []constraint.Constraint{
-				constraint.Must(constraint.IsRegex(pattern)).
+				constraint.Must(constraint.IsFormat(pattern, constraint.FormatRegex)).
 					Message("ignore-annotations entries must be valid regular expressions"),
 			}
 		}),
 		constraint.ForEach(r.IgnoreLabels, func(pattern string) []constraint.Constraint {
 			return []constraint.Constraint{
-				constraint.Must(constraint.IsRegex(pattern)).
+				constraint.Must(constraint.IsFormat(pattern, constraint.FormatRegex)).
 					Message("ignore-labels entries must be valid regular expressions"),
 			}
 		}),
