@@ -1,0 +1,27 @@
+factory: {
+  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: { storage: { server: 'https://127.0.0.1:1' } }
+  resources: {
+    class: storage.storage-class {
+      metadata: {
+        name:        'example.test'
+        labels:      { 'example.com/Label': '' }
+        annotations: { 'EXAMPLE.COM/KEY': 'any value' }
+      }
+      provisioner:            'example/provisioner'
+      reclaim-policy:         'Recycle'
+      volume-binding-mode:    'WaitForFirstConsumer'
+      allow-volume-expansion: false
+      mount-options:          ['one', 'two']
+      allowed-topologies:     [{ match-label-expressions: [{}, { key: 'zone', values: ['west'] }] }]
+      ignore-labels:          ['prefix']
+      ignore-annotations:     ['^annotation$']
+    }
+  }
+  outputs: {
+    name:       { value: resource.class.metadata.name }
+    uid:        { value: resource.class.metadata.uid }
+    parameters: { value: resource.class.parameters }
+    topologies: { value: resource.class.allowed-topologies }
+  }
+}

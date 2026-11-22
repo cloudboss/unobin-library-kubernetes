@@ -1,0 +1,69 @@
+factory: {
+  imports: { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: {
+    storage: {
+      server:                   input.server
+      token:                    input.token
+      kubeconfig:               input.kubeconfig
+      current-context:          input.context
+      insecure-skip-tls-verify: true
+    }
+  }
+  inputs: {
+    server:     { type: string }
+    token:      { type: string, default: 'initial' }
+    kubeconfig: { type: string, default: null }
+    context:    { type: string, default: null }
+    metadata: {
+      type: object(
+        {
+          name:          optional(string)
+          generate-name: optional(string)
+          labels:        optional(map(string))
+          annotations:   optional(map(string))
+        },
+      )
+    }
+    provisioner:   { type: string, default: 'example/provisioner' }
+    parameters:    { type: map(string), default: null }
+    policy:        { type: string, default: null }
+    binding:       { type: string, default: null }
+    expansion:     { type: boolean, default: null }
+    mount-options: { type: list(string), default: null }
+    topologies: {
+      type: list(
+        object(
+          {
+            match-label-expressions: optional(
+              list(
+                object(
+                  {
+                    key:    optional(string)
+                    values: optional(list(string))
+                  },
+                ),
+              ),
+            )
+          },
+        ),
+      )
+      default: null
+    }
+    ignore-labels:      { type: list(string), default: null }
+    ignore-annotations: { type: list(string), default: null }
+  }
+  resources: {
+    class: storage.storage-class {
+      metadata:               input.metadata
+      provisioner:            input.provisioner
+      parameters:             input.parameters
+      reclaim-policy:         input.policy
+      volume-binding-mode:    input.binding
+      allow-volume-expansion: input.expansion
+      mount-options:          input.mount-options
+      allowed-topologies:     input.topologies
+      ignore-labels:          input.ignore-labels
+      ignore-annotations:     input.ignore-annotations
+    }
+  }
+}

@@ -1,0 +1,24 @@
+factory: {
+  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: { storage: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs: {
+    server: { type: string }
+    policy: { type: string }
+  }
+  resources: {
+    seed: storage.storage-class {
+      metadata:    { name: 'seed' }
+      provisioner: 'seed/provisioner'
+      parameters:  { policy: input.policy }
+    }
+    class: storage.storage-class {
+      metadata: {
+        name:          'example'
+        generate-name: 'example-'
+        labels:        { source: resource.seed.metadata.uid }
+      }
+      provisioner:    'example/provisioner'
+      reclaim-policy: input.policy
+    }
+  }
+}

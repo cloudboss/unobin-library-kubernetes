@@ -1,0 +1,20 @@
+factory: {
+  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: { storage: { server: 'https://127.0.0.1:1' } }
+  resources: {
+    seed: storage.storage-class {
+      metadata:      { name: 'seed', labels: { tracker: 'pending' } }
+      provisioner:   'seed/provisioner'
+      mount-options: ['west']
+    }
+    class: storage.storage-class {
+      metadata: {
+        name:          'example'
+        generate-name: 'example-'
+        labels:        { source: resource.seed.metadata.uid }
+      }
+      provisioner:    'example/provisioner'
+      reclaim-policy: 'retain'
+    }
+  }
+}

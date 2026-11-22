@@ -1,0 +1,28 @@
+factory: {
+  description:     'Creates and updates a generated StorageClass.'
+  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: { storage: {} }
+  inputs: {
+    revision:  { type: string }
+    expansion: { type: boolean }
+  }
+  resources: {
+    class: storage.storage-class {
+      metadata: {
+        generate-name: 'unobin-it-storage-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'storage-v1-storage-class' }
+        annotations:   { 'test.unobin.cloudboss.io/revision': input.revision }
+      }
+      provisioner:            'kubernetes.io/no-provisioner'
+      volume-binding-mode:    'WaitForFirstConsumer'
+      allow-volume-expansion: input.expansion
+      mount-options:          ['nosuid', 'noexec', 'nosuid']
+    }
+  }
+  outputs: {
+    name:          { value: resource.class.metadata.name }
+    uid:           { value: resource.class.metadata.uid }
+    expansion:     { value: resource.class.allow-volume-expansion }
+    mount-options: { value: resource.class.mount-options }
+  }
+}
