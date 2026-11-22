@@ -8,6 +8,7 @@ import (
 
 	"github.com/cloudboss/unobin/pkg/constraint"
 	"github.com/cloudboss/unobin/pkg/runtime"
+	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -162,12 +163,21 @@ func (r *StorageClassResource) Update(
 	}
 	desired := storageClassMetadata(r.Metadata)
 	priorMetadata := storageClassMetadata(p.Inputs.Metadata)
+	var live *storagev1.StorageClass
+	annotations, labels := previous.Metadata.Annotations, previous.Metadata.Labels
+	if !equalStorageClassPatterns(p.Inputs.IgnoreAnnotations, r.IgnoreAnnotations) ||
+		!equalStorageClassPatterns(p.Inputs.IgnoreLabels, r.IgnoreLabels) {
+		live, err = readStorageClass(ctx, api, target)
+		if err != nil {
+			return nil, err
+		}
+		annotations, labels = live.Annotations, live.Labels
+	}
 	operations := []storageClassPatchOperation{{Op: "test", Path: "/metadata/uid", Value: target.UID}}
 	operations = append(operations, storageClassMetadataPatch("/metadata/annotations",
-		previous.Metadata.Annotations, priorMetadata.Annotations, desired.Annotations,
-		r.IgnoreAnnotations)...)
+		annotations, priorMetadata.Annotations, desired.Annotations, r.IgnoreAnnotations)...)
 	operations = append(operations, storageClassMetadataPatch("/metadata/labels",
-		previous.Metadata.Labels, priorMetadata.Labels, desired.Labels, r.IgnoreLabels)...)
+		labels, priorMetadata.Labels, desired.Labels, r.IgnoreLabels)...)
 
 	baseline := *previous
 	baseline.Server, baseline.Metadata = p.Outputs.Server, p.Outputs.Metadata
@@ -188,6 +198,8 @@ func (r *StorageClassResource) Update(
 		if err != nil {
 			return nil, fmt.Errorf("patch StorageClass: %w", err)
 		}
+	} else if live != nil {
+		return r.output(live, &baseline, desired), nil
 	}
 	return r.refresh(ctx, api, &baseline, desired, false)
 }
@@ -236,18 +248,27 @@ func (r *StorageClassResource) refresh(
 	ctx context.Context, api typedstoragev1.StorageClassInterface,
 	baseline *StorageClassResourceOutput, tracked metav1.ObjectMeta, ordinaryRead bool,
 ) (*StorageClassResourceOutput, error) {
-	target := baseline.target()
-	observed, err := api.Get(ctx, target.Name, metav1.GetOptions{})
+	observed, err := readStorageClass(ctx, api, baseline.target())
 	if ordinaryRead && apierrors.IsNotFound(err) {
 		return nil, runtime.ErrNotFound
 	}
+	if err != nil {
+		return nil, err
+	}
+	return r.output(observed, baseline, tracked), nil
+}
+
+func readStorageClass(
+	ctx context.Context, api typedstoragev1.StorageClassInterface, target object.Target,
+) (*storagev1.StorageClass, error) {
+	observed, err := api.Get(ctx, target.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("read StorageClass: %w", err)
 	}
 	if err := object.CheckUID(target, observed); err != nil {
 		return nil, err
 	}
-	return r.output(observed, baseline, tracked), nil
+	return observed, nil
 }
 
 func (o *StorageClassResourceOutput) target() object.Target {

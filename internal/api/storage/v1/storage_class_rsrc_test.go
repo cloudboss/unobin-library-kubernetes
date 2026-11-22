@@ -1121,6 +1121,25 @@ func TestStorageClassSavedUpdateMetadataFilters(t *testing.T) {
 	step = classStep(t, plan(executor(), runtime.DecisionNoOp))
 	assertMetadata(step.PriorOutputs, map[string]any{}, map[string]any{})
 	assertMetadata(step.ObservedOutputs, map[string]any{}, map[string]any{})
+
+	inputs["ignore-labels"] = []any{}
+	inputs["ignore-annotations"] = []any{}
+	e = executor()
+	before = len(*calls)
+	require.NoError(t, savedApply(t, e, plan(e, runtime.DecisionUpdate)))
+	require.Equal(t, []request{
+		get, get,
+		{method: "PATCH", path: classPath + "/example", token: "Bearer initial",
+			body: `[{"op":"test","path":"/metadata/uid","value":"uid-1"},` +
+				`{"op":"remove","path":"/metadata/annotations/example.org~1controller"},` +
+				`{"op":"remove","path":"/metadata/labels/example.org~1controller"}]`},
+		get,
+	}, (*calls)[before:])
+	require.Empty(t, obj.Annotations)
+	require.Empty(t, obj.Labels)
+	step = classStep(t, plan(executor(), runtime.DecisionNoOp))
+	assertMetadata(step.PriorOutputs, map[string]any{}, map[string]any{})
+	assertMetadata(step.ObservedOutputs, map[string]any{}, map[string]any{})
 }
 
 func TestStorageClassSavedNoOpConstraints(t *testing.T) {
