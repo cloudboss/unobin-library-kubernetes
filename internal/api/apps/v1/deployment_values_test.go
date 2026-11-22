@@ -176,8 +176,7 @@ func TestMetadataValidatorsAtEveryLocation(t *testing.T) {
 		r := deployment()
 		values := new(map[string]string{"Example.COM/key": "value"})
 		r.Metadata.Labels, r.Metadata.Annotations = values, values
-		_, err := r.expand(nil)
-		require.Error(t, err)
+		require.NotEmpty(t, checkNativeDeploymentInputs(t, r))
 	})
 	for _, location := range []string{"outer", "template", "claim"} {
 		for _, tc := range []struct {
@@ -213,13 +212,10 @@ func TestMetadataValidatorsAtEveryLocation(t *testing.T) {
 					}}})
 				}
 				if !tc.valid {
-					c := testAPI(t, func(_ http.ResponseWriter, req *http.Request) {
-						t.Errorf("invalid metadata reached API: %s", req.Method)
-					})
-					_, err := r.Create(t.Context(), c)
-					require.Error(t, err)
+					require.NotEmpty(t, checkNativeDeploymentInputs(t, r))
 					return
 				}
+				require.Empty(t, checkNativeDeploymentInputs(t, r))
 				obj, err := r.expand(nil)
 				require.NoError(t, err)
 				annotations := obj.Annotations
@@ -253,11 +249,10 @@ func TestDownwardItemPathValidation(t *testing.T) {
 					}}}}
 				}
 				r.Spec.Template.Spec.Volume = new([]Volume{volume})
-				_, err := r.expand(nil)
 				if value == "dir/file" {
-					require.NoError(t, err)
+					require.Empty(t, checkNativeDeploymentInputs(t, r))
 				} else {
-					require.Error(t, err)
+					require.NotEmpty(t, checkNativeDeploymentInputs(t, r))
 				}
 			})
 		}
@@ -297,8 +292,18 @@ func TestNestedInt32Casts(t *testing.T) {
 		TopologySpreadConstraint{MaxSkew: new(int64(0))},
 		GRPC{Port: large}, Port{ContainerPort: large}, Port{ContainerPort: 80, HostPort: new(large)},
 	} {
-		_, err := expandValue(reflect.ValueOf(value), reflect.Value{}, "test")
-		require.Error(t, err)
+		r := deployment()
+		switch v := value.(type) {
+		case Probe:
+			(*r.Spec.Template.Spec.Container)[0].LivenessProbe = &v
+		case TopologySpreadConstraint:
+			r.Spec.Template.Spec.TopologySpreadConstraint = new([]TopologySpreadConstraint{v})
+		case GRPC:
+			(*r.Spec.Template.Spec.Container)[0].LivenessProbe = &Probe{GRPC: &v}
+		case Port:
+			(*r.Spec.Template.Spec.Container)[0].Port = new([]Port{v})
+		}
+		require.NotEmpty(t, checkNativeDeploymentInputs(t, r))
 	}
 	for _, value := range []any{
 		GRPC{Port: 65535}, Port{ContainerPort: 65535, HostPort: new(int64(1))},

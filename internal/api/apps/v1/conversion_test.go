@@ -184,8 +184,7 @@ func TestMetadataNameValidation(t *testing.T) {
 		} else {
 			r.Metadata.GenerateName = new("")
 		}
-		_, err := r.expand(nil)
-		require.Error(t, err, field)
+		require.NotEmpty(t, checkNativeDeploymentInputs(t, r), field)
 	}
 	r := deployment()
 	r.Metadata.Name = nil

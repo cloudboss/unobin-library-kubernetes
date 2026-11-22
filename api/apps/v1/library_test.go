@@ -66,11 +66,19 @@ func TestLibrarySchemaAndFixtures(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			errs := check.NewSyntax(file.Factory.Body, map[string]*runtime.Library{
+			checker := check.NewSyntax(file.Factory.Body, map[string]*runtime.Library{
 				"apps": {Schema: schema},
-			}, nil, "").References(nil)
+			}, nil, "")
+			errs := checker.References(nil)
+			if errs.Err() == nil {
+				errs = checker.LiteralConstraints()
+			}
 			if strings.Contains(fixture, "invalid-") {
 				require.Error(t, errs.Err())
+				if strings.Contains(fixture, "invalid-identity") ||
+					strings.Contains(fixture, "invalid-integer") {
+					require.ErrorContains(t, errs.Err(), "constraints[")
+				}
 				return
 			}
 			require.NoError(t, errs.Err())
@@ -83,8 +91,9 @@ func TestLibrarySchemaAndFixtures(t *testing.T) {
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(directory)) })
 	var log bytes.Buffer
 	err = compile.Run(compile.Options{
-		FactoryPath: "testdata/ub/full", OutDir: directory, StackName: "deployment-schema",
-		GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "v0.13.0-a.2",
+		ReplaceUnobin: runtimeRoot,
+		FactoryPath:   "testdata/ub/full", OutDir: directory, StackName: "deployment-schema",
+		GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "dev",
 		ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		},
@@ -94,6 +103,9 @@ func TestLibrarySchemaAndFixtures(t *testing.T) {
 }
 
 func TestDeploymentIntegrationFactory(t *testing.T) {
+	out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
+		"github.com/cloudboss/unobin").Output()
+	require.NoError(t, err)
 	root, err := filepath.Abs("../../..")
 	require.NoError(t, err)
 	scenario := filepath.Join(root, "tests", "integration", "scenarios", "apps-v1-deployment")
@@ -104,8 +116,9 @@ func TestDeploymentIntegrationFactory(t *testing.T) {
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(directory)) })
 	var log bytes.Buffer
 	err = compile.Run(compile.Options{
-		FactoryPath: scenario, OutDir: directory, StackName: "deployment-integration",
-		GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "v0.13.0-a.2",
+		ReplaceUnobin: strings.TrimSpace(string(out)),
+		FactoryPath:   scenario, OutDir: directory, StackName: "deployment-integration",
+		GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "dev",
 		ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		},

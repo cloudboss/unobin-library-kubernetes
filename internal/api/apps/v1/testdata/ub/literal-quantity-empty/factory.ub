@@ -1,0 +1,17 @@
+factory: {
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs:          { server: { type: string } }
+  resources: {
+    workload: apps.deployment {
+      metadata: { name: 'workload' }
+      spec: {
+        template: {
+          metadata: {}
+          spec:     { volume: [{ name: 'scratch', empty-dir: { size-limit: '' } }] }
+        }
+      }
+      wait-for-rollout: false
+    }
+  }
+}

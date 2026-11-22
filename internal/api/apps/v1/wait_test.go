@@ -216,8 +216,20 @@ func TestDeleteWaitsAndFailures(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 10*time.Minute, value)
 		for _, invalid := range []string{"", "0s", "-1s", "not-a-duration"} {
-			_, err := duration(&invalid, field)
-			require.Error(t, err)
+			r := deployment()
+			switch field {
+			case "create-timeout":
+				r.CreateTimeout = &invalid
+			case "update-timeout":
+				r.UpdateTimeout = &invalid
+			case "delete-timeout":
+				r.DeleteTimeout = &invalid
+			}
+			require.NotEmpty(t, checkNativeDeploymentInputs(t, r))
+		}
+		for _, text := range []string{"0s", "-1s"} {
+			_, err := duration(&text, field)
+			require.NoError(t, err)
 		}
 	}
 }

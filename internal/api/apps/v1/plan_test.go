@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/cloudboss/unobin/pkg/encoding/ub"
@@ -24,13 +25,20 @@ import (
 func TestStateBackedPlanApply(t *testing.T) {
 	var stored *appsv1.Deployment
 	var credentials []string
+	mutations := 0
 	c := testAPI(t, func(w http.ResponseWriter, req *http.Request) {
 		credentials = append(credentials, req.Header.Get("Authorization"))
+		if req.Method != "GET" {
+			mutations++
+		}
 		switch req.Method {
 		case "POST":
 			stored = &appsv1.Deployment{}
 			require.NoError(t, json.NewDecoder(req.Body).Decode(stored))
 			stored.UID = "uid"
+			if stored.Name == "" {
+				stored.Name = "example"
+			}
 			stored.Spec.Replicas = new(int32(1))
 			stored.Spec.Strategy = appsv1.DeploymentStrategy{Type: "RollingUpdate"}
 			stored.Spec.Template.Spec.ServiceAccountName = "default"
@@ -78,6 +86,7 @@ func TestStateBackedPlanApply(t *testing.T) {
 		},
 	}
 	libs := map[string]*runtime.Library{"apps": lib}
+	addNativeDeploymentConstraints(t, lib)
 	store, err := local.NewStore(t.TempDir(), "deployment", "test", encrypters.Noop{})
 	require.NoError(t, err)
 	input := deployment()
@@ -132,7 +141,128 @@ func TestStateBackedPlanApply(t *testing.T) {
 	}
 	exec, p := plan(input, runtime.DecisionCreate, nil)
 	apply(exec, p)
-	plan(input, runtime.DecisionNoOp, nil)
+	exec, p = plan(input, runtime.DecisionNoOp, nil)
+	apply(exec, p)
+	exec, p = plan(input, runtime.DecisionNoOp, nil)
+	t.Run("invalid evaluated unchanged input", func(t *testing.T) {
+		before := mutations
+		in := inputs(input)
+		in["name"] = ""
+		_, err := executor(in).Plan(t.Context())
+		require.ErrorContains(t, err, "resource.workload")
+		require.ErrorContains(t, err, "constraint")
+		require.Equal(t, before, mutations)
+	})
+	for _, value := range []string{"", "malformed", "1Gi"} {
+		t.Run("evaluated quantity="+value, func(t *testing.T) {
+			before := mutations
+			r := deployment()
+			r.Spec.Template.Spec.Volume = new([]Volume{{
+				Name: new("scratch"), EmptyDir: &EmptyDirVolume{SizeLimit: &value},
+			}})
+			exec := executor(inputs(r))
+			p, err := exec.Plan(t.Context())
+			require.NoError(t, err)
+			if value == "1Gi" {
+				return
+			} else {
+				encoded, err := runtime.EncodePlan(p)
+				require.NoError(t, err)
+				file, err := runtime.DecodePlan(encoded)
+				require.NoError(t, err)
+				_, err = exec.ApplyPlan(t.Context(), file)
+				require.ErrorContains(t, err, "sizeLimit")
+			}
+			require.Equal(t, before, mutations)
+		})
+	}
+	t.Run("native int64 with request int32 overflow", func(t *testing.T) {
+		before := mutations
+		r := deployment()
+		r.Spec.Replicas = new("2147483648")
+		require.Empty(t, checkNativeDeploymentInputs(t, r))
+		exec := executor(inputs(r))
+		p, err := exec.Plan(t.Context())
+		require.NoError(t, err)
+		encoded, err := runtime.EncodePlan(p)
+		require.NoError(t, err)
+		file, err := runtime.DecodePlan(encoded)
+		require.NoError(t, err)
+		_, err = exec.ApplyPlan(t.Context(), file)
+		require.ErrorContains(t, err, "value out of range")
+		require.Equal(t, before, mutations)
+	})
+	t.Run("invalid saved NoOp", func(t *testing.T) {
+		before := mutations
+		encoded, err := runtime.EncodePlan(p)
+		require.NoError(t, err)
+		file, err := runtime.DecodePlan(encoded)
+		require.NoError(t, err)
+		file.Inputs["name"] = ""
+		exec.Inputs["name"] = ""
+		t.Cleanup(func() { exec.Inputs["name"] = "example" })
+		for i := range file.Steps {
+			step := &file.Steps[i]
+			if step.Address == "resource.workload" {
+				require.Equal(t, runtime.DecisionNoOp, step.Decision)
+				step.Inputs["metadata"].(map[string]any)["name"] = ""
+			}
+		}
+		_, err = exec.ApplyPlan(t.Context(), file)
+		require.ErrorContains(t, err, "resource.workload")
+		require.ErrorContains(t, err, "constraint")
+		require.Equal(t, before, mutations)
+	})
+	t.Run("invalid saved replacement integer", func(t *testing.T) {
+		before := mutations
+		replacement, replacementPlan := plan(input, runtime.DecisionReplace, func(in map[string]any) {
+			in["name"] = "replacement"
+		})
+		encoded, err := runtime.EncodePlan(replacementPlan)
+		require.NoError(t, err)
+		file, err := runtime.DecodePlan(encoded)
+		require.NoError(t, err)
+		file.Inputs["spec"].(map[string]any)["replicas"] = "9223372036854775808"
+		replacement.Inputs["spec"].(map[string]any)["replicas"] = "9223372036854775808"
+		for i := range file.Steps {
+			if step := &file.Steps[i]; step.Address == "resource.workload" {
+				step.Inputs["spec"].(map[string]any)["replicas"] = "9223372036854775808"
+			}
+		}
+		_, err = replacement.ApplyPlan(t.Context(), file)
+		require.ErrorContains(t, err, "resource.workload: schema: constraints[")
+		require.Equal(t, before, mutations)
+	})
+	for _, value := range []string{"", "invalid"} {
+		if !t.Run("invalid saved replacement quantity="+value, func(t *testing.T) {
+			before := mutations
+			replacement, replacementPlan := plan(input, runtime.DecisionReplace, func(in map[string]any) {
+				in["name"] = "replacement"
+			})
+			encoded, err := runtime.EncodePlan(replacementPlan)
+			require.NoError(t, err)
+			file, err := runtime.DecodePlan(encoded)
+			require.NoError(t, err)
+			setQuantity := func(spec map[string]any) {
+				pod := spec["template"].(map[string]any)["spec"].(map[string]any)
+				pod["volume"] = []any{map[string]any{
+					"name": "scratch", "empty-dir": map[string]any{"size-limit": value},
+				}}
+			}
+			setQuantity(file.Inputs["spec"].(map[string]any))
+			setQuantity(replacement.Inputs["spec"].(map[string]any))
+			for i := range file.Steps {
+				if step := &file.Steps[i]; step.Address == "resource.workload" {
+					setQuantity(step.Inputs["spec"].(map[string]any))
+				}
+			}
+			_, err = replacement.ApplyPlan(t.Context(), file)
+			require.ErrorContains(t, err, "quantities must match")
+			require.Equal(t, before, mutations)
+		}) {
+			return
+		}
+	}
 	stored.Generation = 99
 	stored.ResourceVersion = "changed"
 	stored.Status = appsv1.DeploymentStatus{ObservedGeneration: 98}
@@ -218,7 +348,9 @@ func TestStateBackedPlanApply(t *testing.T) {
 		{"image", func(s *DeploymentSpec) {
 			(*s.Template.Spec.Container)[0].Image = new("other")
 		}, runtime.DecisionUpdate},
-		{"env", func(s *DeploymentSpec) { (*s.Template.Spec.Container)[0].Env = nil }, runtime.DecisionUpdate},
+		{"env", func(s *DeploymentSpec) {
+			(*s.Template.Spec.Container)[0].Env = nil
+		}, runtime.DecisionUpdate},
 		{"replicas", func(s *DeploymentSpec) { s.Replicas = new("4") }, runtime.DecisionUpdate},
 		{"node expression", func(s *DeploymentSpec) {
 			(*requiredNodeTerm(s).MatchExpressions)[0].Key = new("other")
@@ -332,6 +464,24 @@ func TestStateBackedPlanApply(t *testing.T) {
 			require.True(t, equivalentSpec(input.Spec, r.Spec))
 		}
 	}
+	t.Run("destroy historical inputs without identity", func(t *testing.T) {
+		stored = nil
+		lib.Constraints = nil
+		exec, p := plan(deployment(), runtime.DecisionCreate, func(in map[string]any) {
+			in["name"] = ""
+		})
+		apply(exec, p)
+		addNativeDeploymentConstraints(t, lib)
+		_, err := exec.Plan(t.Context())
+		require.ErrorContains(t, err, "resource.workload: schema: constraints[")
+		before := mutations
+		exec.Destroy = true
+		p, err = exec.Plan(t.Context())
+		require.NoError(t, err)
+		apply(exec, p)
+		require.Nil(t, stored)
+		require.Equal(t, before+1, mutations)
+	})
 }
 
 func requiredNodeTerm(s *DeploymentSpec) *NodeTerm {
@@ -341,4 +491,130 @@ func requiredNodeTerm(s *DeploymentSpec) *NodeTerm {
 
 func claimSpec(s *DeploymentSpec) *ClaimSpec {
 	return &(*s.Template.Spec.Volume)[0].Ephemeral.VolumeClaimTemplate.Spec
+}
+
+func TestDeferredDeploymentNativeConstraints(t *testing.T) {
+	for _, test := range []struct {
+		fixture string
+		name    string
+		valid   bool
+	}{
+		{"deferred", "valid", true}, {"deferred", "BAD", false},
+		{"deferred-integer", "0001", true},
+		{"deferred-integer", "9223372036854775808", false},
+		{"deferred-quantity", "1Gi", true},
+		{"deferred-quantity", "", false},
+		{"deferred-quantity", "malformed", false},
+		{"deferred-replacement-quantity", "malformed", false},
+		{"literal-quantity-empty", "", false},
+		{"literal-quantity-invalid", "malformed", false},
+		{"literal-quantity-valid", "1Gi", true},
+	} {
+		t.Run(test.fixture+"/"+test.name, func(t *testing.T) {
+			name := test.name
+			mutations := 0
+			initializing := test.fixture == "deferred-replacement-quantity"
+			c := testAPI(t, func(w http.ResponseWriter, req *http.Request) {
+				if req.Method != http.MethodGet {
+					mutations++
+				}
+				obj := readyDeployment(t)
+				obj.Name = name
+				if strings.Contains(test.fixture, "quantity") {
+					obj.Name = "seed"
+					obj.Annotations = map[string]string{"quantity": name}
+				}
+				if initializing || strings.HasSuffix(req.URL.Path, "/example") {
+					obj.Name = "example"
+				}
+				require.NoError(t, json.NewEncoder(w).Encode(obj))
+			})
+			source, err := os.ReadFile("testdata/ub/" + test.fixture + "/factory.ub")
+			require.NoError(t, err)
+			parsed, err := syntax.ParseSource("factory.ub", source)
+			require.NoError(t, err)
+			lib := &runtime.Library{
+				Name: "kubernetes-apps-v1", Configuration: config.LibraryConfiguration(),
+				Resources: map[string]runtime.ResourceRegistration{
+					"deployment": runtime.MakeResource[
+						DeploymentResource, *DeploymentResourceOutput, *config.Configuration,
+					]((&DeploymentResource{}).ResourceDefinition()),
+				},
+			}
+			addNativeDeploymentConstraints(t, lib)
+			libs := map[string]*runtime.Library{"apps": lib}
+			store, err := local.NewStore(t.TempDir(), "deployment", "test", encrypters.Noop{})
+			require.NoError(t, err)
+			if test.fixture == "deferred-replacement-quantity" {
+				source, err := os.ReadFile("testdata/ub/state/factory.ub")
+				require.NoError(t, err)
+				baseline, err := syntax.ParseSource("factory.ub", source)
+				require.NoError(t, err)
+				spec, err := ub.Marshal(deployment().Spec)
+				require.NoError(t, err)
+				var values map[string]any
+				require.NoError(t, ub.Unmarshal(spec, &values))
+				initial := &runtime.Executor{
+					DAG:          runtime.BuildSyntaxDAG(baseline.Factory.Body, libs),
+					SyntaxSource: &baseline.Factory.Body, Libraries: libs,
+					Inputs: map[string]any{
+						"server": *c.Server, "spec": values, "name": "example", "token": "first",
+						"labels": map[string]any{"app": "example"},
+					}, Store: store,
+					Factory: state.FactoryInfo{Name: "deferred", Version: "v0", ContentRevision: "c0"},
+				}
+				p, err := initial.Plan(t.Context())
+				require.NoError(t, err)
+				encoded, err := runtime.EncodePlan(p)
+				require.NoError(t, err)
+				file, err := runtime.DecodePlan(encoded)
+				require.NoError(t, err)
+				_, err = initial.ApplyPlan(t.Context(), file)
+				require.NoError(t, err)
+				mutations = 0
+				initializing = false
+			}
+			exec := &runtime.Executor{
+				DAG:          runtime.BuildSyntaxDAG(parsed.Factory.Body, libs),
+				SyntaxSource: &parsed.Factory.Body, Libraries: libs,
+				Inputs: map[string]any{"server": *c.Server}, Store: store,
+				Factory: state.FactoryInfo{Name: "deferred", Version: "v0", ContentRevision: "c0"},
+			}
+			plan, err := exec.Plan(t.Context())
+			require.NoError(t, err)
+			if test.fixture == "deferred-replacement-quantity" {
+				for _, step := range plan.Steps {
+					if step.Address == "resource.workload" {
+						require.Equal(t, runtime.DecisionReplace, step.Decision)
+					}
+				}
+			}
+			require.Zero(t, mutations)
+			encoded, err := runtime.EncodePlan(plan)
+			require.NoError(t, err)
+			file, err := runtime.DecodePlan(encoded)
+			require.NoError(t, err)
+			_, err = exec.ApplyPlan(t.Context(), file)
+			if !test.valid {
+				require.ErrorContains(t, err, "resource.workload")
+				if strings.Contains(test.fixture, "quantity") {
+					require.ErrorContains(t, err, "sizeLimit")
+				} else {
+					require.ErrorContains(t, err, "constraint")
+				}
+				if strings.HasPrefix(test.fixture, "literal-") {
+					require.Zero(t, mutations)
+				} else {
+					require.Equal(t, 1, mutations)
+				}
+			} else {
+				require.NoError(t, err)
+				if strings.HasPrefix(test.fixture, "literal-") {
+					require.Equal(t, 1, mutations)
+				} else {
+					require.Equal(t, 2, mutations)
+				}
+			}
+		})
+	}
 }

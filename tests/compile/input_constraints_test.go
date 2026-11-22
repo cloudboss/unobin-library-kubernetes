@@ -15,7 +15,7 @@ import (
 func TestResourceIdentityConstraints(t *testing.T) {
 	for _, resource := range []string{
 		"config-map", "namespace", "service", "secret", "service-account",
-		"role", "role-binding",
+		"role", "role-binding", "deployment",
 	} {
 		for _, name := range []string{"missing", "conflict", "empty", "named", "generated"} {
 			t.Run(resource+"/"+name, func(t *testing.T) {

@@ -33,42 +33,45 @@ func visitFields(
 
 func TestValidationMatrix(t *testing.T) {
 	type invalid struct {
-		path  string
-		value any
+		path       string
+		value      any
+		conversion bool
 	}
 	var cases []invalid
 	visitFields(reflect.ValueOf(fullInput(t)).Elem(), "", func(
 		field reflect.StructField, value reflect.Value, key string,
 	) {
 		if choices := field.Tag.Get("enum"); choices != "" {
-			cases = append(cases, invalid{key, "invalid"})
+			cases = append(cases, invalid{path: key, value: "invalid"})
 			if !strings.HasPrefix(choices, ",") {
-				cases = append(cases, invalid{key, ""})
+				cases = append(cases, invalid{path: key, value: ""})
 			}
 		}
 		if field.Tag.Get("min") != "" {
-			cases = append(cases, invalid{key, int64(-1)})
+			cases = append(cases, invalid{path: key, value: int64(-1)})
 		}
 		switch field.Tag.Get("format") {
 		case "int32", "int64", "mode", "threshold", "quantity", "quantities":
-			cases = append(cases, invalid{key, "malformed"})
+			conversion := field.Tag.Get("format") == "quantity" ||
+				field.Tag.Get("format") == "quantities"
+			cases = append(cases, invalid{key, "malformed", conversion})
 			if field.Tag.Get("format") == "mode" || field.Tag.Get("format") == "quantity" {
-				if field.Tag.Get("omit") != "true" {
-					cases = append(cases, invalid{key, ""})
-				}
+				cases = append(cases, invalid{key, "", conversion})
 			}
 		case "relative-path":
 			for _, text := range []string{"/absolute", "a/../b", "..prefix"} {
-				cases = append(cases, invalid{key, text})
+				cases = append(cases, invalid{path: key, value: text})
 			}
 		case "ip", "ips":
-			cases = append(cases, invalid{key, "invalid-IP"})
+			cases = append(cases, invalid{path: key, value: "invalid-IP"})
 		case "names":
-			cases = append(cases, invalid{key, "INVALID_DNS"})
+			cases = append(cases, invalid{path: key, value: "INVALID_DNS"})
 		case "port-number":
-			cases = append(cases, invalid{key, int64(65536)}, invalid{key, int64(0)})
+			cases = append(cases, invalid{path: key, value: int64(65536)},
+				invalid{path: key, value: int64(0)})
 		case "port", "port-name":
-			cases = append(cases, invalid{key, "invalid_port"}, invalid{key, ""})
+			cases = append(cases, invalid{path: key, value: "invalid_port"},
+				invalid{path: key, value: ""})
 		}
 	})
 	for _, tc := range cases {
@@ -96,8 +99,12 @@ func TestValidationMatrix(t *testing.T) {
 					value.SetMapIndex(reflect.ValueOf("cpu"), reflect.ValueOf(tc.value.(string)))
 				}
 			})
-			_, err := r.expand(nil)
-			require.Error(t, err)
+			if tc.conversion {
+				_, err := r.expand(nil)
+				require.Error(t, err)
+			} else {
+				require.NotEmpty(t, checkNativeDeploymentInputs(t, r))
+			}
 		})
 	}
 }
@@ -122,8 +129,7 @@ func TestQuantityModeSetSemantics(t *testing.T) {
 	for _, mode := range []string{"644", "0788", "01000", "999999999999999999999"} {
 		r := deployment()
 		r.Spec.Template.Spec.Volume = new([]Volume{{ConfigMap: &ConfigMapVolume{DefaultMode: &mode}}})
-		_, err := r.expand(nil)
-		require.Error(t, err)
+		require.NotEmpty(t, checkNativeDeploymentInputs(t, r))
 	}
 	a, b := fullInput(t), fullInput(t)
 	(*a.Spec.Template.Spec.Container)[0].Resources.Requests = new(map[string]string{"cpu": "0.1"})

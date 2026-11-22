@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -246,32 +245,8 @@ func duration(value *string, field string) (time.Duration, error) {
 		return 10 * time.Minute, nil
 	}
 	parsed, err := time.ParseDuration(*value)
-	if err != nil || parsed <= 0 {
-		return 0, fmt.Errorf("%s must be a positive Go duration", field)
+	if err != nil {
+		return 0, fmt.Errorf("parse %s: %w", field, err)
 	}
 	return parsed, nil
-}
-
-func (r *DeploymentResource) validateControls() error {
-	for _, entry := range []struct {
-		name  string
-		value *string
-	}{
-		{"create-timeout", r.CreateTimeout}, {"update-timeout", r.UpdateTimeout},
-		{"delete-timeout", r.DeleteTimeout},
-	} {
-		if _, err := duration(entry.value, entry.name); err != nil {
-			return err
-		}
-	}
-	for _, patterns := range []*[]string{r.IgnoreAnnotations, r.IgnoreLabels} {
-		if patterns != nil {
-			for _, pattern := range *patterns {
-				if _, err := regexp.Compile(pattern); err != nil {
-					return fmt.Errorf("invalid metadata ignore expression: %w", err)
-				}
-			}
-		}
-	}
-	return nil
 }

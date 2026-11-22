@@ -1,0 +1,13 @@
+factory: {
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: {} }
+  resources: {
+    workload: apps.deployment {
+      metadata: { name: 'test' }
+      spec: {
+        replicas: '9223372036854775808'
+        template: { metadata: {}, spec: {} }
+      }
+    }
+  }
+}
