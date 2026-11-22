@@ -1,0 +1,10 @@
+factory: {
+  imports:         { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' }
+  library-configs: { batch: {} }
+  resources: {
+    subject: batch.job {
+      metadata: { name: 'test' }
+      spec:     { parallelism: -1, template: { metadata: {} } }
+    }
+  }
+}

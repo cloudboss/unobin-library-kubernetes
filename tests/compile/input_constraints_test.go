@@ -75,3 +75,24 @@ func TestDeclaredValidationConstraints(t *testing.T) {
 		}
 	}
 }
+
+func TestJobInputConstraints(t *testing.T) {
+	for _, name := range []string{"missing", "conflict", "empty", "named", "generated"} {
+		t.Run(name, func(t *testing.T) {
+			err := compileFixture(t, filepath.Join("job", name))
+			if name == "named" || name == "generated" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, "resource.subject")
+			require.ErrorContains(t, err, "constraints[")
+		})
+	}
+	for _, name := range []string{"parallelism", "completion-mode", "exit-zero", "restart"} {
+		t.Run(name, func(t *testing.T) {
+			err := compileFixture(t, filepath.Join("reject", "job-"+name))
+			require.ErrorContains(t, err, "resource.subject")
+			require.ErrorContains(t, err, "constraints[")
+		})
+	}
+}

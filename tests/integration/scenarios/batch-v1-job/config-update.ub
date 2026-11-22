@@ -1,0 +1,17 @@
+stack: {
+  factory: {
+    inputs: {
+      api-name:            'unobin-it-job-api'
+      completion-name:     'unobin-it-job-completion'
+      labels:              { app: 'job-api', stage: 'updated' }
+      annotations:         { stage: 'updated' }
+      parallelism:         2
+      backoff-limit:       4
+      wait-for-completion: true
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
