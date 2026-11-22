@@ -1,0 +1,10 @@
+factory: {
+  imports:         { k: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { k: {} }
+  resources: {
+    subject: k.service {
+      metadata: { name: 'test' }
+      spec:     { session-affinity: 'invalid' }
+    }
+  }
+}

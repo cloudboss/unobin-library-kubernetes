@@ -1,17 +1,12 @@
 package v1
 
 import (
-	"context"
 	"fmt"
 	"maps"
 	"reflect"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/cloudboss/unobin/pkg/runtime"
-	apivalidation "k8s.io/apimachinery/pkg/api/validation"
-	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 )
@@ -24,9 +19,6 @@ func (r *SecretResource) ResourceDefinition() runtime.ResourceDefinition[
 		SecretResource, *SecretResourceOutput, *config.Configuration,
 	]{
 		SchemaVersion: 1,
-		Validate: func(_ context.Context, input SecretResource, _ *config.Configuration) error {
-			return input.validate()
-		},
 		Equality: []runtime.InputEqualityRule[SecretResource]{
 			runtime.EqualBy(field, func(before, after SecretObject) bool {
 				return reflect.DeepEqual(normalizeSecret(before), normalizeSecret(after))
@@ -41,7 +33,10 @@ func (r *SecretResource) ResourceDefinition() runtime.ResourceDefinition[
 			}), func(before, after *string) bool {
 				left, err := secretCreateTimeout(before)
 				right, other := secretCreateTimeout(after)
-				return err == nil && other == nil && left == right
+				if err != nil || other != nil {
+					return configMapValue(before) == configMapValue(after)
+				}
+				return left == right
 			}),
 			runtime.EqualBy(runtime.InputField(func(r *SecretResource) **[]string {
 				return &r.IgnoreAnnotations
@@ -74,45 +69,6 @@ func (r *SecretResource) ResourceDefinition() runtime.ResourceDefinition[
 			},
 		},
 	}
-}
-
-func (r *SecretResource) validate() error {
-	metadata := r.Object.Metadata
-	if metadata.Name != nil && metadata.GenerateName != nil {
-		return fmt.Errorf("metadata.name conflicts with metadata.generate-name")
-	}
-	if metadata.Name != nil {
-		if problems := validation.IsDNS1123Subdomain(*metadata.Name); len(problems) > 0 {
-			return fmt.Errorf("invalid metadata.name: %s", strings.Join(problems, "; "))
-		}
-	}
-	if metadata.GenerateName != nil {
-		if problems := apivalidation.NameIsDNSLabel(*metadata.GenerateName, true); len(problems) > 0 {
-			return fmt.Errorf("invalid metadata.generate-name: %s", strings.Join(problems, "; "))
-		}
-	}
-	for key, value := range configMapValues(metadata.Labels) {
-		if problems := validation.IsQualifiedName(key); len(problems) > 0 {
-			return fmt.Errorf("invalid metadata label key: %s", strings.Join(problems, "; "))
-		}
-		if problems := validation.IsValidLabelValue(value); len(problems) > 0 {
-			return fmt.Errorf("invalid metadata label value: %s", strings.Join(problems, "; "))
-		}
-	}
-	for key := range configMapValues(metadata.Annotations) {
-		if problems := validation.IsQualifiedName(strings.ToLower(key)); len(problems) > 0 {
-			return fmt.Errorf("invalid metadata annotation key: %s", strings.Join(problems, "; "))
-		}
-	}
-	for _, expressions := range []*[]string{r.IgnoreAnnotations, r.IgnoreLabels} {
-		for _, expression := range configMapValue(expressions) {
-			if _, err := regexp.Compile(expression); err != nil {
-				return fmt.Errorf("invalid metadata ignore expression: %w", err)
-			}
-		}
-	}
-	_, err := secretCreateTimeout(r.CreateTimeout)
-	return err
 }
 
 func normalizeSecret(input SecretObject) SecretObjectOutput {
@@ -156,8 +112,8 @@ func secretCreateTimeout(input *string) (time.Duration, error) {
 		return time.Minute, nil
 	}
 	timeout, err := time.ParseDuration(*input)
-	if err != nil || timeout <= 0 {
-		return 0, fmt.Errorf("create-timeout must be a positive Go duration")
+	if err != nil {
+		return 0, fmt.Errorf("parse create-timeout: %w", err)
 	}
 	return timeout, nil
 }

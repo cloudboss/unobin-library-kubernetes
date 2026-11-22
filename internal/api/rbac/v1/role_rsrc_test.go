@@ -159,7 +159,7 @@ func TestRoleNamespaceAndEmptyCollections(t *testing.T) {
 				require.Equal(t, []any{map[string]any{"verbs": []any{}}}, body["rules"])
 				metadata := body["metadata"].(map[string]any)
 				require.NotContains(t, metadata, "name")
-				require.NotContains(t, metadata, "generateName")
+				require.Equal(t, "reader-", metadata["generateName"])
 				if tt.want == "" {
 					require.NotContains(t, metadata, "namespace")
 				} else {
@@ -169,10 +169,11 @@ func TestRoleNamespaceAndEmptyCollections(t *testing.T) {
 				respond(t, w, metav1.Status{Status: "Failure", Reason: metav1.StatusReasonInvalid,
 					Code: 422, Message: "API validation"})
 			})
-			r := &RoleResource{Metadata: RoleMetadata{Namespace: tt.namespace}, Rule: []RoleRule{{
-				APIGroups: []string{}, Resources: []string{}, Verbs: []string{},
-			}}}
-			require.NoError(t, r.ResourceDefinition().Validate(t.Context(), *r, c))
+			r := &RoleResource{
+				Metadata: RoleMetadata{Namespace: tt.namespace, GenerateName: new("reader-")},
+				Rule:     []RoleRule{{APIGroups: []string{}, Resources: []string{}, Verbs: []string{}}},
+			}
+			require.Empty(t, checkNativeRBACInputs(t, "role", r))
 			_, err := r.Create(t.Context(), c)
 			require.True(t, apierrors.IsInvalid(err), "%v", err)
 			require.Equal(t, 1, calls)
@@ -197,7 +198,7 @@ func TestRoleCreateAPIRejections(t *testing.T) {
 					Message: "API rejected create"})
 			})
 			r := validRole()
-			r.Metadata = RoleMetadata{Name: new("")}
+			r.Metadata = RoleMetadata{Name: new("reader")}
 			_, err := r.Create(t.Context(), c)
 			require.ErrorContains(t, err, "create Role")
 			require.Equal(t, reason, apierrors.ReasonForError(err))
@@ -272,15 +273,12 @@ func TestRoleValidation(t *testing.T) {
 				} else {
 					r.Metadata.GenerateName = &value
 				}
-				require.Error(t, r.ResourceDefinition().Validate(t.Context(), *r, nil))
-				_, err := r.Create(t.Context(), nil)
-				require.Error(t, err)
+				require.NotEmpty(t, checkNativeRBACInputs(t, "role", r))
 			})
 		}
 	}
 	for _, change := range []string{"conflict", "label key", "label value", "annotation key",
-		"annotation regex", "label regex", "no rules", "empty rules",
-		"api-groups", "resources", "verbs"} {
+		"annotation regex", "label regex", "no rules", "empty rules"} {
 		t.Run(change, func(t *testing.T) {
 			r := validRole()
 			switch change {
@@ -300,22 +298,14 @@ func TestRoleValidation(t *testing.T) {
 				r.Rule = nil
 			case "empty rules":
 				r.Rule = []RoleRule{}
-			case "api-groups":
-				r.Rule[0].APIGroups = nil
-			case "resources":
-				r.Rule[0].Resources = nil
-			case "verbs":
-				r.Rule[0].Verbs = nil
 			}
-			require.Error(t, r.ResourceDefinition().Validate(t.Context(), *r, nil))
-			_, err := r.Create(t.Context(), nil)
-			require.Error(t, err)
+			require.NotEmpty(t, checkNativeRBACInputs(t, "role", r))
 		})
 	}
-	for _, name := range []string{"system:reader", "", "UPPER case"} {
+	for _, name := range []string{"system:reader", "UPPER case"} {
 		r := validRole()
 		r.Metadata = RoleMetadata{Name: &name}
-		require.NoError(t, r.ResourceDefinition().Validate(t.Context(), *r, nil))
+		require.Empty(t, checkNativeRBACInputs(t, "role", r))
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"maps"
 	"reflect"
 
+	"github.com/cloudboss/unobin/pkg/constraint"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,8 +27,8 @@ import (
 type RoleBindingResource struct {
 	capturePrior *roleBindingPrior `ub:"-"`
 	// Metadata selects identity and managed maps. Namespace defaults to default.
-	// Name and generate-name conflict; both accept RBAC path-segment names.
-	// Omitted names retain existing identity. Empty maps remove tracked keys.
+	// Exactly one nonempty name or generate-name is required; both accept RBAC path-segment names.
+	// Generated names retain existing identity. Empty maps remove tracked keys.
 	Metadata RoleMetadata
 	// RoleRef selects a Role in this namespace or a ClusterRole. Its API group must
 	// be rbac.authorization.k8s.io. Reference changes require replacement.
@@ -86,9 +87,6 @@ type roleBindingPrior = runtime.Prior[
 func (r *RoleBindingResource) Create(
 	ctx context.Context, c *config.Configuration,
 ) (*RoleBindingResourceOutput, error) {
-	if err := r.validate(); err != nil {
-		return nil, err
-	}
 	metadata := normalizeRoleMetadata(r.Metadata)
 	subjects, computed := bindingSubjects(r.Subject, nil)
 	api, server, err := roleBindingClient(c, nil, metadata.Namespace)
@@ -144,9 +142,6 @@ func (r *RoleBindingResource) Update(
 ) (*RoleBindingResourceOutput, error) {
 	if p.Outputs == nil {
 		return nil, fmt.Errorf("missing RoleBinding identity in prior state")
-	}
-	if err := r.validate(); err != nil {
-		return nil, err
 	}
 	previous := p.Outputs
 	if p.Observed != nil {
@@ -310,4 +305,83 @@ func (r *RoleBindingResource) writeOutput(
 		}
 	}
 	return out
+}
+
+func (r RoleBindingResource) Constraints() []constraint.Constraint {
+	return []constraint.Constraint{
+		constraint.ExactlyOneOf(r.Metadata.Name, r.Metadata.GenerateName),
+		constraint.When(constraint.Present(r.Metadata.Name)).
+			Require(constraint.NotEmpty(r.Metadata.Name)).
+			Message("metadata.name must not be empty"),
+		constraint.When(constraint.Present(r.Metadata.GenerateName)).
+			Require(constraint.NotEmpty(r.Metadata.GenerateName)).
+			Message("metadata.generate-name must not be empty"),
+		constraint.Must(
+			constraint.Matches(r.Metadata.Name, `^[^/%]*$`),
+			constraint.Not(constraint.OneOf(r.Metadata.Name, ".", "..")),
+		).Message("metadata.name must be an RBAC path segment"),
+		constraint.Must(
+			constraint.Matches(r.Metadata.GenerateName, `^[^/%]*$`),
+			constraint.Not(constraint.OneOf(r.Metadata.GenerateName, ".", "..")),
+		).Message("metadata.generate-name must be an RBAC path segment"),
+		constraint.ForEach(
+			r.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key, `^([a-z0-9]([-a-z0-9]*[a-z0-9])?`+
+							`(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?`+
+							`[A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]+$`),
+					).Message("metadata.labels keys must be Kubernetes qualified names"),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(constraint.Matches(entry.Value,
+						`^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$`,
+					)).Message("metadata.labels values must be valid Kubernetes label values"),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Metadata.Annotations,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key, `^([A-Za-z0-9İK]([-A-Za-z0-9İK]*`+
+							`[A-Za-z0-9İK])?(\.[A-Za-z0-9İK]([-A-Za-z0-9İK]*`+
+							`[A-Za-z0-9İK])?)*/)?[A-Za-z0-9İK]`+
+							`([-A-Za-z0-9İK_.]{0,61}[A-Za-z0-9İK])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]+$`),
+					).Message("metadata.annotations keys must be qualified names after lowercasing"),
+				}
+			},
+		),
+		constraint.ForEach(r.IgnoreAnnotations, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{
+				constraint.Must(constraint.IsRegex(pattern)).
+					Message("ignore-annotations entries must be valid regular expressions"),
+			}
+		}),
+		constraint.ForEach(r.IgnoreLabels, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{
+				constraint.Must(constraint.IsRegex(pattern)).
+					Message("ignore-labels entries must be valid regular expressions"),
+			}
+		}),
+		constraint.Must(
+			constraint.Equals(r.RoleRef.APIGroup, "rbac.authorization.k8s.io"),
+			constraint.OneOf(r.RoleRef.Kind, "Role", "ClusterRole"),
+			constraint.NotEmpty(r.Subject),
+		),
+		constraint.ForEach(r.Subject, func(s RoleBindingSubject) []constraint.Constraint {
+			return []constraint.Constraint{
+				constraint.Must(constraint.OneOf(s.Kind, "User", "Group", "ServiceAccount")),
+			}
+		}),
+	}
 }

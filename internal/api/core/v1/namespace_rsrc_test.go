@@ -134,34 +134,28 @@ func TestNamespaceValidation(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &NamespaceResource{Object: NamespaceObject{Metadata: tt.metadata}}
-			c := configMapAPI(t, func(_ http.ResponseWriter, req *http.Request) {
-				t.Errorf("invalid input sent %s %s", req.Method, req.URL)
-			})
-			require.Error(t, r.ResourceDefinition().Validate(t.Context(), *r, c))
-			_, err := r.Create(t.Context(), c)
-			require.Error(t, err)
-			_, err = r.Update(t.Context(), c, namespacePrior{Outputs: savedNamespace(*c.Server)})
-			require.Error(t, err)
+			if r.Object.Metadata.Name == nil && r.Object.Metadata.GenerateName == nil {
+				r.Object.Metadata.Name = new("valid")
+			}
+			require.NotEmpty(t, checkNativeCoreInputs(t, "namespace", r))
 		})
 	}
 	for _, r := range []*NamespaceResource{
 		{IgnoreAnnotations: &[]string{"["}}, {IgnoreLabels: &[]string{"["}},
 		{DeleteTimeout: new("invalid")}, {DeleteTimeout: new("0s")}, {DeleteTimeout: new("-1s")},
 	} {
-		c := configMapAPI(t, func(_ http.ResponseWriter, req *http.Request) {
-			t.Errorf("invalid control sent %s %s", req.Method, req.URL)
-		})
-		require.Error(t, r.ResourceDefinition().Validate(t.Context(), *r, c))
-		_, err := r.Create(t.Context(), c)
-		require.Error(t, err)
+		if r.Object.Metadata.Name == nil && r.Object.Metadata.GenerateName == nil {
+			r.Object.Metadata.Name = new("valid")
+		}
+		require.NotEmpty(t, checkNativeCoreInputs(t, "namespace", r))
 	}
 	for _, metadata := range []NamespaceMetadata{
-		{}, {Name: new("dns.subdomain")}, {GenerateName: new("prefix-")},
-		{Annotations: &map[string]string{"EXAMPLE.COM/KEY": ""},
+		{Name: new("valid")}, {Name: new("dns.subdomain")}, {GenerateName: new("prefix-")},
+		{Name: new("valid"), Annotations: &map[string]string{"EXAMPLE.COM/KEY": ""},
 			Labels: &map[string]string{"example.com/key": ""}},
 	} {
 		r := &NamespaceResource{Object: NamespaceObject{Metadata: metadata}}
-		require.NoError(t, r.ResourceDefinition().Validate(t.Context(), *r, nil))
+		require.Empty(t, checkNativeCoreInputs(t, "namespace", r))
 	}
 }
 

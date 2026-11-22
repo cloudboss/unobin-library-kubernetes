@@ -160,17 +160,15 @@ func TestRoleBindingValidationAndDefaults(t *testing.T) {
 		{"regex", func(r *RoleBindingResource) { r.IgnoreLabels = &[]string{"["} }},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			c := roleAPI(t, func(http.ResponseWriter, *http.Request) { t.Error("unexpected request") })
 			r := validRoleBinding()
 			tt.edit(r)
-			_, err := r.Create(t.Context(), c)
-			require.Error(t, err)
+			require.NotEmpty(t, checkNativeRBACInputs(t, "role-binding", r))
 		})
 	}
 	for _, namespace := range []*string{nil, new("team"), new("")} {
 		t.Run("namespace "+roleValue(namespace), func(t *testing.T) {
 			r := validRoleBinding()
-			r.Metadata = RoleMetadata{Namespace: namespace, Name: new("")}
+			r.Metadata = RoleMetadata{Namespace: namespace, Name: new("reader")}
 			r.RoleRef.Kind, r.RoleRef.Name = "ClusterRole", ""
 			r.Subject = []RoleBindingSubject{
 				{Kind: "User", Name: ""}, {Kind: "Group", Name: ""},

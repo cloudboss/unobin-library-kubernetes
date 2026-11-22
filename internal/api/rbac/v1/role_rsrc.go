@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/cloudboss/unobin/pkg/constraint"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,8 +41,8 @@ type RoleResource struct {
 // from read projection unless tracked, with exceptions for app.kubernetes.io
 // and service.beta.kubernetes.io. Tracked keys override ignore patterns.
 type RoleMetadata struct {
-	// Name accepts RBAC path-segment names, including system:reader. Omission on an
-	// existing Role retains its concrete name. Name conflicts with generate-name.
+	// Name accepts RBAC path-segment names, including system:reader.
+	// Exactly one nonempty name or generate-name is required.
 	Name *string
 	// GenerateName asks Kubernetes to generate a name with this prefix.
 	GenerateName *string
@@ -102,9 +103,6 @@ type rolePrior = runtime.Prior[RoleResource, *RoleResourceOutput, *config.Config
 func (r *RoleResource) Create(
 	ctx context.Context, c *config.Configuration,
 ) (*RoleResourceOutput, error) {
-	if err := r.validate(); err != nil {
-		return nil, err
-	}
 	desired := normalizeRoleMetadata(r.Metadata)
 	api, server, err := roleClient(c, nil, desired.Namespace)
 	if err != nil {
@@ -155,9 +153,6 @@ func (r *RoleResource) Update(
 ) (*RoleResourceOutput, error) {
 	if p.Outputs == nil {
 		return nil, fmt.Errorf("missing Role identity in prior state")
-	}
-	if err := r.validate(); err != nil {
-		return nil, err
 	}
 	desired := normalizeRoleMetadata(r.Metadata)
 	if (r.Metadata.Name != nil && desired.Name != p.Outputs.Name) ||
@@ -297,4 +292,74 @@ func (r *RoleResource) writeOutput(observed *rbacv1.Role, server string) *RoleRe
 	out.Metadata.Name, out.Metadata.Namespace = observed.Name, observed.Namespace
 	out.Rule = normalizeRoleRules(r.Rule)
 	return out
+}
+
+func (r RoleResource) Constraints() []constraint.Constraint {
+	return []constraint.Constraint{
+		constraint.ExactlyOneOf(r.Metadata.Name, r.Metadata.GenerateName),
+		constraint.When(constraint.Present(r.Metadata.Name)).
+			Require(constraint.NotEmpty(r.Metadata.Name)).
+			Message("metadata.name must not be empty"),
+		constraint.When(constraint.Present(r.Metadata.GenerateName)).
+			Require(constraint.NotEmpty(r.Metadata.GenerateName)).
+			Message("metadata.generate-name must not be empty"),
+		constraint.Must(
+			constraint.Matches(r.Metadata.Name, `^[^/%]*$`),
+			constraint.Not(constraint.OneOf(r.Metadata.Name, ".", "..")),
+		).Message("metadata.name must be an RBAC path segment"),
+		constraint.Must(
+			constraint.Matches(r.Metadata.GenerateName, `^[^/%]*$`),
+			constraint.Not(constraint.OneOf(r.Metadata.GenerateName, ".", "..")),
+		).Message("metadata.generate-name must be an RBAC path segment"),
+		constraint.ForEach(
+			r.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key, `^([a-z0-9]([-a-z0-9]*[a-z0-9])?`+
+							`(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?`+
+							`[A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]+$`),
+					).Message("metadata.labels keys must be Kubernetes qualified names"),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(constraint.Matches(entry.Value,
+						`^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$`,
+					)).Message("metadata.labels values must be valid Kubernetes label values"),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Metadata.Annotations,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key, `^([A-Za-z0-9İK]([-A-Za-z0-9İK]*`+
+							`[A-Za-z0-9İK])?(\.[A-Za-z0-9İK]([-A-Za-z0-9İK]*`+
+							`[A-Za-z0-9İK])?)*/)?[A-Za-z0-9İK]`+
+							`([-A-Za-z0-9İK_.]{0,61}[A-Za-z0-9İK])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]+$`),
+					).Message("metadata.annotations keys must be qualified names after lowercasing"),
+				}
+			},
+		),
+		constraint.ForEach(r.IgnoreAnnotations, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{
+				constraint.Must(constraint.IsRegex(pattern)).
+					Message("ignore-annotations entries must be valid regular expressions"),
+			}
+		}),
+		constraint.ForEach(r.IgnoreLabels, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{
+				constraint.Must(constraint.IsRegex(pattern)).
+					Message("ignore-labels entries must be valid regular expressions"),
+			}
+		}),
+		constraint.Must(constraint.NotEmpty(r.Rule)),
+	}
 }

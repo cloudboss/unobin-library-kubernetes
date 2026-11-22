@@ -119,7 +119,8 @@ func TestCompiledRoleFixtures(t *testing.T) {
 	base := filepath.Join(root, "_output/tests/rbac-v1-role")
 	require.NoError(t, os.MkdirAll(base, 0o700))
 	for _, name := range []string{"valid", "missing-metadata", "list-metadata", "missing-rule",
-		"missing-members", "null-member", "null-map", "unsupported-rule", "server-metadata"} {
+		"missing-members", "missing-api-groups", "missing-resources", "missing-verbs",
+		"null-member", "null-map", "unsupported-rule", "server-metadata"} {
 		t.Run(name, func(t *testing.T) {
 			work, err := os.MkdirTemp(base, name+"-")
 			require.NoError(t, err)
@@ -127,9 +128,13 @@ func TestCompiledRoleFixtures(t *testing.T) {
 			fixture, err := filepath.Abs(filepath.Join("testdata/ub", name))
 			require.NoError(t, err)
 			var log bytes.Buffer
+			sdk, err := exec.CommandContext(t.Context(), "go", "list", "-m", "-f", "{{.Dir}}",
+				"github.com/cloudboss/unobin").Output()
+			require.NoError(t, err)
 			result, err := compile.RunResult(compile.Options{
-				FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-				StackName: "role-test", Version: "v0.0.0", CLIVersion: "v0.12.0",
+				ReplaceUnobin: strings.TrimSpace(string(sdk)),
+				FactoryPath:   filepath.Join(fixture, "factory.ub"), OutDir: work,
+				StackName: "role-test", Version: "v0.0.0", CLIVersion: "dev",
 				GoVersion: "1.26.2",
 				ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,
@@ -140,6 +145,8 @@ func TestCompiledRoleFixtures(t *testing.T) {
 				field := map[string]string{
 					"missing-metadata": "metadata", "list-metadata": "metadata",
 					"missing-rule": "rule", "missing-members": "api-groups",
+					"missing-api-groups": "api-groups", "missing-resources": "resources",
+					"missing-verbs":    "verbs",
 					"null-member":      "expected string, got null",
 					"null-map":         "expected optional(map(string))",
 					"unsupported-rule": "non-resource-urls", "server-metadata": "uid",

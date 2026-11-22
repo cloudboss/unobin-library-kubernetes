@@ -111,9 +111,13 @@ func compileBindingFixture(t *testing.T, fixture, wantError string) {
 	require.NoError(t, err)
 	work := t.TempDir()
 	var log bytes.Buffer
+	sdk, err := exec.CommandContext(t.Context(), "go", "list", "-m", "-f", "{{.Dir}}",
+		"github.com/cloudboss/unobin").Output()
+	require.NoError(t, err)
 	result, err := compile.RunResult(compile.Options{
-		FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-		StackName: "role-binding-test", Version: "v0.0.0", CLIVersion: "v0.12.0",
+		ReplaceUnobin: strings.TrimSpace(string(sdk)),
+		FactoryPath:   filepath.Join(fixture, "factory.ub"), OutDir: work,
+		StackName: "role-binding-test", Version: "v0.0.0", CLIVersion: "dev",
 		GoVersion: "1.26.2", Build: wantError == "",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,

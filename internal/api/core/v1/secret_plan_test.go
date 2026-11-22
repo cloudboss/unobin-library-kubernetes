@@ -47,6 +47,7 @@ func TestSecretStateBackedMissingPlan(t *testing.T) {
 			SecretResource, *SecretResourceOutput, *config.Configuration,
 		]((&SecretResource{}).ResourceDefinition())},
 	}}
+	addNativeCoreConstraints(t, libs["core"])
 	store, err := local.NewStore(t.TempDir(), "secret", "test", encrypters.Noop{})
 	require.NoError(t, err)
 	plan := func() (*runtime.Executor, *runtime.Plan, error) {

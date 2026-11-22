@@ -63,6 +63,7 @@ func TestNamespaceStateBackedPlanApply(t *testing.T) {
 			]((&NamespaceResource{}).ResourceDefinition()),
 		},
 	}}
+	addNativeCoreConstraints(t, libs["core"])
 	store, err := local.NewStore(t.TempDir(), "namespace", "test", encrypters.Noop{})
 	require.NoError(t, err)
 	plan := func(value string, waiting bool, want runtime.Decision) (

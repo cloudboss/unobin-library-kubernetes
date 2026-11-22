@@ -101,7 +101,6 @@ func TestConfigMapAPIValidation(t *testing.T) {
 			if key == "overlap" {
 				r.Object.BinaryData = &map[string]string{key: "AAE="}
 			}
-			require.NoError(t, r.ResourceDefinition().Validate(t.Context(), *r, nil))
 			_, err := r.Create(t.Context(), nil)
 			require.True(t, apierrors.IsInvalid(err), "%v", err)
 		})

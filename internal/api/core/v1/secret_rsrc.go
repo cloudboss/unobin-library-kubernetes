@@ -8,6 +8,7 @@ import (
 	"maps"
 	"time"
 
+	"github.com/cloudboss/unobin/pkg/constraint"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -101,10 +102,10 @@ type secretPrior = runtime.Prior[SecretResource, *SecretResourceOutput, *config.
 func (r *SecretResource) Create(
 	ctx context.Context, c *config.Configuration,
 ) (*SecretResourceOutput, error) {
-	if err := r.validate(); err != nil {
+	timeout, err := secretCreateTimeout(r.CreateTimeout)
+	if err != nil {
 		return nil, err
 	}
-	timeout, _ := secretCreateTimeout(r.CreateTimeout)
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	if err := ctx.Err(); err != nil {
@@ -171,9 +172,6 @@ func (r *SecretResource) Update(
 	defer cancel()
 	if p.Outputs == nil {
 		return nil, fmt.Errorf("missing Secret identity in prior state")
-	}
-	if err := r.validate(); err != nil {
-		return nil, err
 	}
 	if replaceSecret(p.Inputs.Object, r.Object) {
 		return nil, fmt.Errorf("change to Secret requires replacement")
@@ -310,4 +308,69 @@ func getSecret(
 		return nil, err
 	}
 	return observed, nil
+}
+
+func (r SecretResource) Constraints() []constraint.Constraint {
+	return []constraint.Constraint{
+		constraint.ExactlyOneOf(r.Object.Metadata.Name, r.Object.Metadata.GenerateName),
+		constraint.Must(
+			constraint.Matches(r.Object.Metadata.Name,
+				`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`),
+			constraint.MaxItems(r.Object.Metadata.Name, 253),
+		),
+		// Generated-prefix validation masks the final two bytes before checking DNS label syntax.
+		constraint.Must(constraint.Matches(r.Object.Metadata.GenerateName,
+			`^([a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?|[\x00-\x7f]-|`+
+				`[a-z0-9][-a-z0-9]{0,61}[\x00-\x7f]-)$`)),
+		constraint.ForEach(
+			r.Object.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key,
+							`^([a-z0-9]([-a-z0-9]*[a-z0-9])?`+
+								`(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?`+
+								`[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+					),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Object.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(constraint.Matches(entry.Value,
+						`^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$`)),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Object.Metadata.Annotations,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key,
+							`^([a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?`+
+								`(\.[a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?)*/)?`+
+								`[A-Za-z0-9İK]([-A-Za-z0-9_.İK]*[A-Za-z0-9İK])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+					),
+				}
+			},
+		),
+		constraint.ForEach(r.IgnoreAnnotations, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+		}),
+		constraint.ForEach(r.IgnoreLabels, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+		}),
+		constraint.ForEach(
+			r.Object.BinaryData,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{constraint.Must(constraint.IsBase64(entry.Value))}
+			},
+		),
+		constraint.Must(constraint.IsPositiveDuration(r.CreateTimeout)),
+	}
 }

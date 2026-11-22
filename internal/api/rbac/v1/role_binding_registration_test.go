@@ -168,7 +168,6 @@ func TestRoleBindingPriorCapture(t *testing.T) {
 
 func TestRoleBindingRestoredNameValidation(t *testing.T) {
 	calls := 0
-	c := roleAPI(t, func(http.ResponseWriter, *http.Request) { calls++ })
 	reg := roleBindingResourceRegistration()
 	for _, name := range []string{".", "..", "bad/name", "bad%name", "system:reader-actual"} {
 		t.Run(name, func(t *testing.T) {
@@ -188,17 +187,7 @@ func TestRoleBindingRestoredNameValidation(t *testing.T) {
 			equal, err = reg.KnownInputsEqual(&after, encoded, nil)
 			require.NoError(t, err)
 			require.False(t, equal)
-			out := savedRoleBinding(*c.Server)
-			out.Name = name
-			p := roleBindingPrior{Inputs: *before, Outputs: out, Observed: out}
-			err = reg.ValidateInputs(t.Context(), &after, c)
-			if name == "system:reader-actual" {
-				require.ErrorContains(t, err, "conflicts with")
-			} else {
-				require.ErrorContains(t, err, "invalid metadata.name")
-			}
-			_, err = after.Update(t.Context(), c, p)
-			require.Error(t, err)
+			require.NotEmpty(t, checkNativeRBACInputs(t, "role-binding", &after))
 		})
 	}
 	require.Zero(t, calls)

@@ -89,6 +89,7 @@ func TestServiceStateBackedPlanApply(t *testing.T) {
 			"service": runtime.MakeResource[ServiceResource, *ServiceResourceOutput, *config.Configuration](
 				(&ServiceResource{}).ResourceDefinition()),
 		}}}
+	addNativeCoreConstraints(t, libs["core"])
 	store, err := local.NewStore(t.TempDir(), "service", "test", encrypters.Noop{})
 	require.NoError(t, err)
 	encode := func(v any) any {
@@ -133,7 +134,8 @@ func TestServiceStateBackedPlanApply(t *testing.T) {
 	exec, p := plan(r, runtime.DecisionCreate)
 	apply(exec, p)
 	uid := stored.UID
-	plan(r, runtime.DecisionNoOp)
+	exec, p = plan(r, runtime.DecisionNoOp)
+	apply(exec, p)
 	stored.Generation, stored.ResourceVersion = 100, "new"
 	stored.CreationTimestamp = metav1.Now()
 	plan(r, runtime.DecisionNoOp)
@@ -242,6 +244,7 @@ func TestServiceClassRemovalReplacement(t *testing.T) {
 					]((&ServiceResource{}).ResourceDefinition()),
 				},
 			}}
+			addNativeCoreConstraints(t, libs["core"])
 			store, err := local.NewStore(t.TempDir(), "service", "test", encrypters.Noop{})
 			require.NoError(t, err)
 			spec := map[string]any{"type": "LoadBalancer", "load-balancer-class": "example.com/controller"}
@@ -279,6 +282,137 @@ func TestServiceClassRemovalReplacement(t *testing.T) {
 			require.NotContains(t, posts[1], "loadBalancerClass")
 			require.Nil(t, stored.Spec.LoadBalancerClass)
 			require.Equal(t, types.UID("uid-2"), stored.UID)
+		})
+	}
+}
+
+func TestServiceNativeChecksHistoricalNoOp(t *testing.T) {
+	mutations := 0
+	deleted := false
+	c := configMapAPI(t, func(w http.ResponseWriter, req *http.Request) {
+		if serviceDiscovery(t, w, req) {
+			return
+		}
+		if req.Method != http.MethodGet {
+			mutations++
+		}
+		if req.Method == http.MethodDelete {
+			deleted = true
+			respond(t, w, &metav1.Status{Status: "Success"})
+			return
+		}
+		if deleted {
+			namespaceStatus(t, w, 404)
+			return
+		}
+		respond(t, w, liveService())
+	})
+	source, err := os.ReadFile("testdata/ub/service-state/factory.ub")
+	require.NoError(t, err)
+	parsed, err := syntax.ParseSource("factory.ub", source)
+	require.NoError(t, err)
+	library := &runtime.Library{Name: "kubernetes-core-v1",
+		Configuration: config.LibraryConfiguration(), Resources: map[string]runtime.ResourceRegistration{
+			"service": runtime.MakeResource[ServiceResource, *ServiceResourceOutput, *config.Configuration](
+				(&ServiceResource{}).ResourceDefinition()),
+		}}
+	libs := map[string]*runtime.Library{"core": library}
+	store, err := local.NewStore(t.TempDir(), "service-native", "test", encrypters.Noop{})
+	require.NoError(t, err)
+	executor := &runtime.Executor{DAG: runtime.BuildSyntaxDAG(parsed.Factory.Body, libs),
+		SyntaxSource: &parsed.Factory.Body, Libraries: libs, Inputs: map[string]any{
+			"server": *c.Server, "token": "current", "metadata": map[string]any{},
+			"spec": map[string]any{}, "wait": false,
+		}, Store: store, Factory: state.FactoryInfo{
+			Name: "service-native", Version: "v0", ContentRevision: "c0"}}
+	create, err := executor.Plan(t.Context())
+	require.NoError(t, err)
+	encoded, err := runtime.EncodePlan(create)
+	require.NoError(t, err)
+	file, err := runtime.DecodePlan(encoded)
+	require.NoError(t, err)
+	_, err = executor.ApplyPlan(t.Context(), file)
+	require.NoError(t, err)
+	unchanged, err := executor.Plan(t.Context())
+	require.NoError(t, err)
+	var decisions []runtime.Decision
+	for _, step := range unchanged.Steps {
+		if step.Address == "resource.endpoint" {
+			decisions = append(decisions, step.Decision)
+		}
+	}
+	require.Equal(t, []runtime.Decision{runtime.DecisionNoOp}, decisions)
+	encoded, err = runtime.EncodePlan(unchanged)
+	require.NoError(t, err)
+	file, err = runtime.DecodePlan(encoded)
+	require.NoError(t, err)
+	before := mutations
+	addNativeCoreConstraints(t, library)
+	_, err = executor.Plan(t.Context())
+	require.ErrorContains(t, err, "resource.endpoint: schema: constraints[0] (exactly-one-of")
+	_, err = executor.ApplyPlan(t.Context(), file)
+	require.ErrorContains(t, err, "resource.endpoint: schema: constraints[0] (exactly-one-of")
+	require.Equal(t, before, mutations)
+	executor.Destroy = true
+	destroy, err := executor.Plan(t.Context())
+	require.NoError(t, err)
+	encoded, err = runtime.EncodePlan(destroy)
+	require.NoError(t, err)
+	file, err = runtime.DecodePlan(encoded)
+	require.NoError(t, err)
+	_, err = executor.ApplyPlan(t.Context(), file)
+	require.NoError(t, err)
+	require.True(t, deleted)
+	require.Equal(t, before+1, mutations)
+}
+
+func TestServiceNativeDeferredName(t *testing.T) {
+	for _, name := range []string{"valid", "BAD"} {
+		t.Run(name, func(t *testing.T) {
+			posts := 0
+			c := configMapAPI(t, func(w http.ResponseWriter, req *http.Request) {
+				if req.Method == http.MethodPost {
+					posts++
+				}
+				obj := liveService()
+				obj.Name = name
+				respond(t, w, obj)
+			})
+			source, err := os.ReadFile("testdata/ub/service-deferred/factory.ub")
+			require.NoError(t, err)
+			parsed, err := syntax.ParseSource("factory.ub", source)
+			require.NoError(t, err)
+			library := &runtime.Library{Name: "kubernetes-core-v1",
+				Configuration: config.LibraryConfiguration(),
+				Resources: map[string]runtime.ResourceRegistration{
+					"service": runtime.MakeResource[
+						ServiceResource, *ServiceResourceOutput, *config.Configuration,
+					]((&ServiceResource{}).ResourceDefinition()),
+				}}
+			addNativeCoreConstraints(t, library)
+			libs := map[string]*runtime.Library{"core": library}
+			store, err := local.NewStore(t.TempDir(), "service-deferred", "test", encrypters.Noop{})
+			require.NoError(t, err)
+			executor := &runtime.Executor{DAG: runtime.BuildSyntaxDAG(parsed.Factory.Body, libs),
+				SyntaxSource: &parsed.Factory.Body, Libraries: libs,
+				Inputs: map[string]any{"server": *c.Server}, Store: store,
+				Factory: state.FactoryInfo{Name: "service-deferred", Version: "v0",
+					ContentRevision: "c0"}}
+			plan, err := executor.Plan(t.Context())
+			require.NoError(t, err)
+			require.Zero(t, posts)
+			encoded, err := runtime.EncodePlan(plan)
+			require.NoError(t, err)
+			file, err := runtime.DecodePlan(encoded)
+			require.NoError(t, err)
+			_, err = executor.ApplyPlan(t.Context(), file)
+			if name == "BAD" {
+				require.ErrorContains(t, err, "resource.dependent: schema: constraints[")
+				require.Equal(t, 1, posts)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, 2, posts)
+			}
 		})
 	}
 }

@@ -34,8 +34,8 @@ func TestServiceAPIAuthority(t *testing.T) {
 				string(mustServiceJSON(t, sent.Spec)))
 			namespaceStatus(t, w, 422)
 		})
-		r := &ServiceResource{Spec: spec}
-		require.NoError(t, r.validate())
+		r := &ServiceResource{Metadata: ServiceMetadata{Name: new("valid")}, Spec: spec}
+		require.Empty(t, checkNativeCoreInputs(t, "service", r))
 		out, err := r.Create(t.Context(), c)
 		require.Error(t, err)
 		require.Nil(t, out)

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudboss/unobin/pkg/constraint"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,9 +32,6 @@ const serviceOperationTimeout = 20 * time.Minute
 func (r *ServiceResource) Create(
 	ctx context.Context, c *config.Configuration,
 ) (*ServiceResourceOutput, error) {
-	if err := r.validate(); err != nil {
-		return nil, err
-	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -101,9 +99,6 @@ func (r *ServiceResource) Read(
 func (r *ServiceResource) Update(
 	ctx context.Context, c *config.Configuration, p servicePrior,
 ) (*ServiceResourceOutput, error) {
-	if err := r.validate(); err != nil {
-		return nil, err
-	}
 	if p.Outputs == nil || serviceIdentity(p.Inputs.Metadata) != serviceIdentity(r.Metadata) ||
 		replaceServiceSpec(p.Inputs.Spec, r.Spec) {
 		return nil, fmt.Errorf("service identity or immutable field changed; replacement is required")
@@ -289,4 +284,119 @@ func serviceWaitFailure(
 		return fmt.Errorf("wait for Service load balancer: %w", cause)
 	}
 	return fmt.Errorf("wait for Service load balancer: %w; %s", cause, strings.Join(messages, "; "))
+}
+
+func (r ServiceResource) Constraints() []constraint.Constraint {
+	return []constraint.Constraint{
+		constraint.ExactlyOneOf(r.Metadata.Name, r.Metadata.GenerateName),
+		constraint.Must(
+			constraint.Matches(r.Metadata.Name,
+				`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`),
+			constraint.MaxItems(r.Metadata.Name, 253),
+		),
+		// Generated-prefix validation masks the final two bytes before checking DNS label syntax.
+		constraint.Must(constraint.Matches(r.Metadata.GenerateName,
+			`^([a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?|[\x00-\x7f]-|`+
+				`[a-z0-9][-a-z0-9]{0,61}[\x00-\x7f]-)$`)),
+		constraint.ForEach(
+			r.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key,
+							`^([a-z0-9]([-a-z0-9]*[a-z0-9])?`+
+								`(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?`+
+								`[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+					),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(constraint.Matches(entry.Value,
+						`^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$`)),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Metadata.Annotations,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key,
+							`^([a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?`+
+								`(\.[a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?)*/)?`+
+								`[A-Za-z0-9İK]([-A-Za-z0-9_.İK]*[A-Za-z0-9İK])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+					),
+				}
+			},
+		),
+		constraint.ForEach(r.IgnoreAnnotations, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+		}),
+		constraint.ForEach(r.IgnoreLabels, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+		}),
+		constraint.Must(constraint.IsPositiveDuration(r.CreateTimeout)),
+		constraint.Must(constraint.Any(
+			constraint.Equals(r.Spec.ClusterIP, "None"), constraint.IsIP(r.Spec.ClusterIP),
+		)),
+		constraint.ForEach(r.Spec.ClusterIps, func(address string) []constraint.Constraint {
+			return []constraint.Constraint{
+				constraint.Must(constraint.Any(
+					constraint.Equals(address, "None"), constraint.IsIP(address),
+				)),
+			}
+		}),
+		constraint.ForEach(r.Spec.ExternalIps, func(address string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsIP(address))}
+		}),
+		constraint.Must(constraint.IsIP(r.Spec.LoadBalancerIP)),
+		constraint.ForEach(r.Spec.LoadBalancerSourceRanges, func(cidr string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsCIDR(cidr))}
+		}),
+		constraint.When(constraint.Present(r.Spec.Type)).
+			Require(constraint.OneOf(r.Spec.Type, "ClusterIP", "NodePort", "LoadBalancer", "ExternalName")),
+		constraint.When(constraint.Present(r.Spec.SessionAffinity)).
+			Require(constraint.OneOf(r.Spec.SessionAffinity, "None", "ClientIP")),
+		constraint.When(constraint.Present(r.Spec.ExternalTrafficPolicy)).
+			Require(constraint.OneOf(r.Spec.ExternalTrafficPolicy, "Cluster", "Local")),
+		constraint.When(constraint.Present(r.Spec.InternalTrafficPolicy)).
+			Require(constraint.OneOf(r.Spec.InternalTrafficPolicy, "Cluster", "Local")),
+		constraint.When(constraint.Present(r.Spec.IPFamilyPolicy)).
+			Require(
+				constraint.OneOf(r.Spec.IPFamilyPolicy, "SingleStack", "PreferDualStack", "RequireDualStack"),
+			),
+		constraint.Must(constraint.MaxItems(r.Spec.ClusterIps, 2)),
+		constraint.Must(constraint.MaxItems(r.Spec.IPFamilies, 2)),
+		constraint.Must(
+			constraint.AtLeast(r.Spec.HealthCheckNodePort, 1),
+			constraint.AtMost(r.Spec.HealthCheckNodePort, 65535),
+		).
+			Message("spec.health-check-node-port must be in 1–65535"),
+		constraint.Must(
+			constraint.AtLeast(r.Spec.SessionAffinityConfig.ClientIP.TimeoutSeconds, 1),
+			constraint.AtMost(r.Spec.SessionAffinityConfig.ClientIP.TimeoutSeconds, 86400),
+		).
+			Message("spec.session-affinity-config.client-ip.timeout-seconds must be in 1–86400"),
+		constraint.ForEach(r.Spec.IPFamilies, func(f string) []constraint.Constraint {
+			return []constraint.Constraint{
+				constraint.Must(constraint.OneOf(f, "IPv4", "IPv6")),
+			}
+		}),
+		constraint.ForEach(r.Spec.Port, func(p ServicePort) []constraint.Constraint {
+			return []constraint.Constraint{
+				constraint.Must(constraint.AtLeast(p.Port, 1), constraint.AtMost(p.Port, 65535)).
+					Message("spec.port.port must be in 1–65535"),
+				constraint.Must(constraint.AtLeast(p.NodePort, 0), constraint.AtMost(p.NodePort, 65535)).
+					Message("spec.port.node-port must be in 0–65535"),
+				constraint.When(constraint.Present(p.Protocol)).
+					Require(constraint.OneOf(p.Protocol, "TCP", "UDP", "SCTP")),
+			}
+		}),
+	}
 }

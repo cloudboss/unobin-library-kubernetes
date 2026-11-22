@@ -64,6 +64,7 @@ func TestServiceAccountStateBackedPlanApply(t *testing.T) {
 			ServiceAccountResource, *ServiceAccountResourceOutput, *config.Configuration,
 		]((&ServiceAccountResource{}).ResourceDefinition())},
 	}}
+	addNativeCoreConstraints(t, libs["core"])
 	store, err := local.NewStore(t.TempDir(), "service-account", "test", encrypters.Noop{})
 	require.NoError(t, err)
 	inputs := map[string]any{"server": *c.Server, "value": "first", "prefix": "generated-",

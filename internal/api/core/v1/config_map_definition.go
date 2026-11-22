@@ -1,18 +1,12 @@
 package v1
 
 import (
-	"context"
-	"encoding/base64"
 	"fmt"
 	"maps"
 	"reflect"
-	"regexp"
 	"slices"
-	"strings"
 
 	"github.com/cloudboss/unobin/pkg/runtime"
-	apivalidation "k8s.io/apimachinery/pkg/api/validation"
-	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 )
@@ -27,9 +21,6 @@ func (r *ConfigMapResource) ResourceDefinition() runtime.ResourceDefinition[
 		ConfigMapResource, *ConfigMapResourceOutput, *config.Configuration,
 	]{
 		SchemaVersion: 1,
-		Validate: func(_ context.Context, input ConfigMapResource, _ *config.Configuration) error {
-			return input.validate()
-		},
 		Equality: []runtime.InputEqualityRule[ConfigMapResource]{
 			runtime.EqualBy(objectField, func(before, after ConfigMapObject) bool {
 				return reflect.DeepEqual(normalizeConfigMap(before), normalizeConfigMap(after))
@@ -67,52 +58,6 @@ func (r *ConfigMapResource) ResourceDefinition() runtime.ResourceDefinition[
 			},
 		},
 	}
-}
-
-func (r *ConfigMapResource) validate() error {
-	metadata := r.Object.Metadata
-	if metadata.Name != nil && metadata.GenerateName != nil {
-		return fmt.Errorf("metadata.name conflicts with metadata.generate-name")
-	}
-	if metadata.Name != nil {
-		if errors := validation.IsDNS1123Subdomain(*metadata.Name); len(errors) > 0 {
-			return fmt.Errorf("invalid metadata.name: %s", strings.Join(errors, "; "))
-		}
-	}
-	if metadata.GenerateName != nil {
-		if errors := apivalidation.NameIsDNSLabel(*metadata.GenerateName, true); len(errors) > 0 {
-			return fmt.Errorf("invalid metadata.generate-name: %s", strings.Join(errors, "; "))
-		}
-	}
-	for key, value := range configMapValues(metadata.Labels) {
-		if errors := validation.IsQualifiedName(key); len(errors) > 0 {
-			return fmt.Errorf("invalid label key %q: %s", key, strings.Join(errors, "; "))
-		}
-		if errors := validation.IsValidLabelValue(value); len(errors) > 0 {
-			return fmt.Errorf("invalid label value %q: %s", value, strings.Join(errors, "; "))
-		}
-	}
-	for key := range configMapValues(metadata.Annotations) {
-		if errors := validation.IsQualifiedName(strings.ToLower(key)); len(errors) > 0 {
-			return fmt.Errorf("invalid annotation key %q: %s", key, strings.Join(errors, "; "))
-		}
-	}
-	for key, value := range configMapValues(r.Object.BinaryData) {
-		if _, err := base64.StdEncoding.DecodeString(value); err != nil {
-			return fmt.Errorf("invalid binary-data %q: %w", key, err)
-		}
-	}
-	for _, expressions := range []*[]string{r.IgnoreAnnotations, r.IgnoreLabels} {
-		if expressions == nil {
-			continue
-		}
-		for _, expression := range *expressions {
-			if _, err := regexp.Compile(expression); err != nil {
-				return fmt.Errorf("invalid metadata ignore expression: %w", err)
-			}
-		}
-	}
-	return nil
 }
 
 func normalizeConfigMap(input ConfigMapObject) ConfigMapObjectOutput {

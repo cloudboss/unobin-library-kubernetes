@@ -12,8 +12,8 @@ import (
 )
 
 func TestServiceDefaultsAndExpansion(t *testing.T) {
-	r := &ServiceResource{}
-	require.NoError(t, r.validate())
+	r := &ServiceResource{Metadata: ServiceMetadata{Name: new("valid")}}
+	require.Empty(t, checkNativeCoreInputs(t, "service", r))
 	obj := r.expand(nil)
 	require.Equal(t, "default", obj.Namespace)
 	require.Equal(t, corev1.ServiceTypeClusterIP, obj.Spec.Type)
@@ -38,7 +38,7 @@ func TestServiceDefaultsAndExpansion(t *testing.T) {
 			{Port: 81, TargetPort: new("http"), NodePort: new(int64(0))}},
 		SessionAffinityConfig: &ServiceAffinityConfig{ClientIP: &ServiceClientIP{}},
 	}
-	require.NoError(t, r.validate())
+	require.Empty(t, checkNativeCoreInputs(t, "service", r))
 	obj = r.expand(nil)
 	require.Equal(t, new(false), obj.Spec.AllocateLoadBalancerNodePorts)
 	require.Equal(t, r.Spec.LoadBalancerClass, obj.Spec.LoadBalancerClass)
@@ -84,35 +84,43 @@ func TestServiceValidation(t *testing.T) {
 		{"internal policy", ServiceResource{Spec: ServiceSpec{InternalTrafficPolicy: new("bad")}}},
 		{"affinity", ServiceResource{Spec: ServiceSpec{SessionAffinity: new("bad")}}},
 	} {
-		t.Run(tt.name, func(t *testing.T) { require.Error(t, tt.r.validate()) })
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.r.Metadata.Name == nil && tt.r.Metadata.GenerateName == nil {
+				tt.r.Metadata.Name = new("valid")
+			}
+			require.NotEmpty(t, checkNativeCoreInputs(t, "service", tt.r))
+		})
 	}
 	for _, port := range []int64{-1, 0, 65536} {
-		r := &ServiceResource{Spec: ServiceSpec{Port: &[]ServicePort{{Port: port}}}}
-		require.Error(t, r.validate())
+		r := &ServiceResource{Metadata: ServiceMetadata{Name: new("valid")},
+			Spec: ServiceSpec{Port: &[]ServicePort{{Port: port}}}}
+		require.NotEmpty(t, checkNativeCoreInputs(t, "service", r))
 	}
 	for _, node := range []int64{-1, 65536} {
-		r := &ServiceResource{Spec: ServiceSpec{Port: &[]ServicePort{{Port: 1, NodePort: &node}}}}
-		require.Error(t, r.validate())
+		r := &ServiceResource{Metadata: ServiceMetadata{Name: new("valid")},
+			Spec: ServiceSpec{Port: &[]ServicePort{{Port: 1, NodePort: &node}}}}
+		require.NotEmpty(t, checkNativeCoreInputs(t, "service", r))
 	}
-	r := &ServiceResource{Spec: ServiceSpec{Port: &[]ServicePort{{Port: 80, Protocol: new("tcp")}}}}
-	require.Error(t, r.validate())
+	r := &ServiceResource{Metadata: ServiceMetadata{Name: new("valid")},
+		Spec: ServiceSpec{Port: &[]ServicePort{{Port: 80, Protocol: new("tcp")}}}}
+	require.NotEmpty(t, checkNativeCoreInputs(t, "service", r))
 	for _, port := range []int64{0, 65536} {
 		r.Spec = ServiceSpec{HealthCheckNodePort: &port}
-		require.Error(t, r.validate())
+		require.NotEmpty(t, checkNativeCoreInputs(t, "service", r))
 	}
 	for _, timeout := range []int64{0, 86401} {
 		r.Spec = ServiceSpec{SessionAffinityConfig: &ServiceAffinityConfig{
 			ClientIP: &ServiceClientIP{TimeoutSeconds: &timeout}}}
-		require.Error(t, r.validate())
+		require.NotEmpty(t, checkNativeCoreInputs(t, "service", r))
 	}
 	for _, timeout := range []int64{1, 86400} {
 		r.Spec = ServiceSpec{SessionAffinityConfig: &ServiceAffinityConfig{
 			ClientIP: &ServiceClientIP{TimeoutSeconds: &timeout}}}
-		require.NoError(t, r.validate())
+		require.Empty(t, checkNativeCoreInputs(t, "service", r))
 	}
 	for _, timeout := range []string{"bad", "0s", "-1s"} {
-		r = &ServiceResource{CreateTimeout: &timeout}
-		require.Error(t, r.validate())
+		r = &ServiceResource{Metadata: ServiceMetadata{Name: new("valid")}, CreateTimeout: &timeout}
+		require.NotEmpty(t, checkNativeCoreInputs(t, "service", r))
 	}
 	r = &ServiceResource{Metadata: ServiceMetadata{Name: new("dotted.name"),
 		Annotations: &map[string]string{"EXAMPLE.COM/Key": ""}}, Spec: ServiceSpec{
@@ -122,7 +130,7 @@ func TestServiceValidation(t *testing.T) {
 			Name: new("BAD /"), AppProtocol: new("BAD /"), TargetPort: new("BAD /")}},
 		ExternalName: new("BAD /"), Selector: &map[string]string{"BAD /": "BAD /"},
 	}}
-	require.NoError(t, r.validate())
+	require.Empty(t, checkNativeCoreInputs(t, "service", r))
 	require.Equal(t, r.Metadata.Annotations, &r.expand(nil).Annotations)
 }
 

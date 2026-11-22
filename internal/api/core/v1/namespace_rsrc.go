@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cloudboss/unobin/pkg/constraint"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,9 +36,8 @@ import (
 // finalizers or force finalization.
 type NamespaceResource struct {
 	// Object contains the required metadata object. Its writable fields are
-	// name, generate-name, annotations, and labels. Name and generate-name are
-	// optional and mutually exclusive; Kubernetes validates a request with
-	// neither field. Changing either configured identity field replaces the
+	// name, generate-name, annotations, and labels. Exactly one nonempty name
+	// or generate-name is required. Changing either configured identity field replaces the
 	// Namespace. A generated actual name is returned in object.metadata.name.
 	//
 	// Annotations and labels accept string values, including empty strings.
@@ -117,9 +117,6 @@ const namespaceCreateTimeout = 20 * time.Minute
 func (r *NamespaceResource) Create(
 	ctx context.Context, c *config.Configuration,
 ) (*NamespaceResourceOutput, error) {
-	if err := r.validateNamespace(); err != nil {
-		return nil, err
-	}
 	ctx, cancel := context.WithTimeout(ctx, namespaceCreateTimeout)
 	defer cancel()
 	api, server, err := namespaceClient(c, nil)
@@ -195,9 +192,6 @@ func (r *NamespaceResource) Update(
 ) (*NamespaceResourceOutput, error) {
 	if p.Outputs == nil {
 		return nil, fmt.Errorf("missing Namespace identity in prior state")
-	}
-	if err := r.validateNamespace(); err != nil {
-		return nil, err
 	}
 	previousInput := normalizeNamespaceMetadata(p.Inputs.Object.Metadata)
 	desired := normalizeNamespaceMetadata(r.Object.Metadata)
@@ -334,5 +328,64 @@ func namespaceOutput(
 	return &NamespaceResourceOutput{
 		Server: server, APIVersion: "v1", Kind: "Namespace",
 		Object: NamespaceObjectOutput{Metadata: metadata},
+	}
+}
+
+func (r NamespaceResource) Constraints() []constraint.Constraint {
+	return []constraint.Constraint{
+		constraint.ExactlyOneOf(r.Object.Metadata.Name, r.Object.Metadata.GenerateName),
+		constraint.Must(
+			constraint.Matches(r.Object.Metadata.Name,
+				`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`),
+			constraint.MaxItems(r.Object.Metadata.Name, 253),
+		),
+		// Generated-prefix validation masks the final two bytes before checking DNS label syntax.
+		constraint.Must(constraint.Matches(r.Object.Metadata.GenerateName,
+			`^([a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?|[\x00-\x7f]-|`+
+				`[a-z0-9][-a-z0-9]{0,61}[\x00-\x7f]-)$`)),
+		constraint.ForEach(
+			r.Object.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key,
+							`^([a-z0-9]([-a-z0-9]*[a-z0-9])?`+
+								`(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?`+
+								`[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+					),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Object.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(constraint.Matches(entry.Value,
+						`^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$`)),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Object.Metadata.Annotations,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key,
+							`^([a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?`+
+								`(\.[a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?)*/)?`+
+								`[A-Za-z0-9İK]([-A-Za-z0-9_.İK]*[A-Za-z0-9İK])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+					),
+				}
+			},
+		),
+		constraint.ForEach(r.IgnoreAnnotations, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+		}),
+		constraint.ForEach(r.IgnoreLabels, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+		}),
+		constraint.Must(constraint.IsPositiveDuration(r.DeleteTimeout)),
 	}
 }

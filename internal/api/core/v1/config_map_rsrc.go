@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cloudboss/unobin/pkg/constraint"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -69,9 +70,6 @@ type configMapPrior = runtime.Prior[
 func (r *ConfigMapResource) Create(
 	ctx context.Context, c *config.Configuration,
 ) (*ConfigMapResourceOutput, error) {
-	if err := r.validate(); err != nil {
-		return nil, err
-	}
 	desired := normalizeConfigMap(r.Object)
 	api, server, err := configMapClient(c, nil, desired.Metadata.Namespace)
 	if err != nil {
@@ -79,7 +77,11 @@ func (r *ConfigMapResource) Create(
 	}
 	binary := make(map[string][]byte, len(desired.BinaryData))
 	for key, value := range desired.BinaryData {
-		binary[key], _ = base64.StdEncoding.DecodeString(value)
+		decoded, err := base64.StdEncoding.DecodeString(value)
+		if err != nil {
+			return nil, fmt.Errorf("decode ConfigMap binary-data: %w", err)
+		}
+		binary[key] = decoded
 	}
 	created, err := api.Create(ctx, &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -115,9 +117,6 @@ func (r *ConfigMapResource) Update(
 ) (*ConfigMapResourceOutput, error) {
 	if p.Outputs == nil {
 		return nil, fmt.Errorf("missing ConfigMap identity in prior state")
-	}
-	if err := r.validate(); err != nil {
-		return nil, err
 	}
 	previousInput, desired := normalizeConfigMap(p.Inputs.Object), normalizeConfigMap(r.Object)
 	if previousInput.Metadata.Name != desired.Metadata.Name ||
@@ -233,4 +232,68 @@ func (r *ConfigMapResource) refresh(
 		return nil, err
 	}
 	return r.project(observed, saved.Server, tracked)
+}
+
+func (r ConfigMapResource) Constraints() []constraint.Constraint {
+	return []constraint.Constraint{
+		constraint.ExactlyOneOf(r.Object.Metadata.Name, r.Object.Metadata.GenerateName),
+		constraint.Must(
+			constraint.Matches(r.Object.Metadata.Name,
+				`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`),
+			constraint.MaxItems(r.Object.Metadata.Name, 253),
+		),
+		// Generated-prefix validation masks the final two bytes before checking DNS label syntax.
+		constraint.Must(constraint.Matches(r.Object.Metadata.GenerateName,
+			`^([a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?|[\x00-\x7f]-|`+
+				`[a-z0-9][-a-z0-9]{0,61}[\x00-\x7f]-)$`)),
+		constraint.ForEach(
+			r.Object.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key,
+							`^([a-z0-9]([-a-z0-9]*[a-z0-9])?`+
+								`(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?`+
+								`[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+					),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Object.Metadata.Labels,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(constraint.Matches(entry.Value,
+						`^([A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?)?$`)),
+				}
+			},
+		),
+		constraint.ForEach(
+			r.Object.Metadata.Annotations,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{
+					constraint.Must(
+						constraint.Matches(entry.Key,
+							`^([a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?`+
+								`(\.[a-zA-Z0-9İK]([-a-zA-Z0-9İK]*[a-zA-Z0-9İK])?)*/)?`+
+								`[A-Za-z0-9İK]([-A-Za-z0-9_.İK]*[A-Za-z0-9İK])?$`),
+						constraint.Matches(entry.Key, `^([^/]{1,253}/)?[^/]{1,63}$`),
+					),
+				}
+			},
+		),
+		constraint.ForEach(r.IgnoreAnnotations, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+		}),
+		constraint.ForEach(r.IgnoreLabels, func(pattern string) []constraint.Constraint {
+			return []constraint.Constraint{constraint.Must(constraint.IsRegex(pattern))}
+		}),
+		constraint.ForEach(
+			r.Object.BinaryData,
+			func(entry constraint.MapEntry[string]) []constraint.Constraint {
+				return []constraint.Constraint{constraint.Must(constraint.IsBase64(entry.Value))}
+			},
+		),
+	}
 }

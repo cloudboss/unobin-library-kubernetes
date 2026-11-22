@@ -15,6 +15,7 @@ import (
 
 	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/goschema"
+	"github.com/cloudboss/unobin/pkg/lang"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/cloudboss/unobin/pkg/typecheck"
 	"github.com/stretchr/testify/require"
@@ -175,7 +176,8 @@ func TestCompiledServiceFixtures(t *testing.T) {
 			var log bytes.Buffer
 			result, err := compile.RunResult(compile.Options{
 				FactoryPath: factory, OutDir: work, StackName: "service-test", Version: "v0.0.0",
-				CLIVersion: "v0.12.0", GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
+				CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
+				GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,
 				}, Build: name == "valid", Stdout: &log, Stderr: &log,
 			})
@@ -209,7 +211,8 @@ func TestServiceScenarioFactory(t *testing.T) {
 	var log bytes.Buffer
 	_, err = compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(root, "tests/integration/scenarios/core-v1-service/factory.ub"),
-		OutDir:      work, StackName: "service-scenario", Version: "v0.0.0", CLIVersion: "v0.12.0",
+		OutDir:      work, StackName: "service-scenario", Version: "v0.0.0",
+		CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		}, Stdout: &log, Stderr: &log,
@@ -218,16 +221,20 @@ func TestServiceScenarioFactory(t *testing.T) {
 }
 
 func TestServiceIntegerRegistrationValidation(t *testing.T) {
-	reg := Library().Resources["service"]
+	root, err := filepath.Abs("../../..")
+	require.NoError(t, err)
+	schema, warnings, err := goschema.Read(".", goschema.ModuleRoot{
+		Path: "github.com/cloudboss/unobin-library-kubernetes", Dir: root,
+	}, goschema.ModuleRoot{
+		Path: "github.com/cloudboss/unobin", Dir: unobinSource(t),
+	})
+	require.NoError(t, err)
+	require.Empty(t, warnings)
+	entries, parseErrors := lang.ParseSpecs(schema.Resources["service"].Constraints)
+	require.Empty(t, parseErrors.Errors())
 	for _, field := range []string{"port", "node-port", "health-check-node-port", "timeout-seconds"} {
 		for _, offset := range []int64{1 << 32, -(1 << 32)} {
 			t.Run(fmt.Sprintf("%s/%d", field, offset), func(t *testing.T) {
-				requests := 0
-				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					requests++
-					http.Error(w, "unexpected API request", http.StatusInternalServerError)
-				}))
-				t.Cleanup(server.Close)
 				port := map[string]any{"port": int64(80)}
 				spec := map[string]any{"port": []any{port}}
 				switch field {
@@ -242,17 +249,16 @@ func TestServiceIntegerRegistrationValidation(t *testing.T) {
 						"client-ip": map[string]any{field: offset + 60},
 					}
 				}
-				receiver := reg.NewReceiver()
-				require.NoError(t, runtime.Decode(receiver, map[string]any{
-					"metadata": map[string]any{"name": "range-test"}, "spec": spec,
-				}))
-				c := &config.Configuration{Server: &server.URL}
-				err := reg.ValidateInputs(t.Context(), receiver, c)
-				require.ErrorContains(t, err, field+" must be in")
-				out, err := reg.Create(t.Context(), receiver, c)
-				require.ErrorContains(t, err, field+" must be in")
-				require.Nil(t, out)
-				require.Zero(t, requests)
+				inputs := map[string]any{"metadata": map[string]any{"name": "range-test"},
+					"spec": spec}
+				eval := func(expr lang.Expr, binds []lang.EachBinding) (any, error) {
+					ctx := &runtime.EvalContext{Inputs: inputs, MissingAsNull: true}
+					runtime.ApplyBindings(ctx, binds)
+					return runtime.Eval(expr, ctx)
+				}
+				diagnostics := lang.CheckConstraintEntries(entries, inputs, eval,
+					lang.DisplayNodeRelative).Messages()
+				require.Contains(t, strings.Join(diagnostics, "; "), field+" must be in")
 			})
 		}
 	}
@@ -271,7 +277,8 @@ func TestCompiledServiceIntegerValidation(t *testing.T) {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-		StackName: "service-integer-test", Version: "v0.0.0", CLIVersion: "v0.12.0",
+		StackName: "service-integer-test", Version: "v0.0.0",
+		CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		}, Build: true, Stdout: &log, Stderr: &log,
@@ -299,11 +306,8 @@ func TestCompiledServiceIntegerValidation(t *testing.T) {
 					"plan", "-c", "config.ub", "-o", "plan.ub")
 				plan.Dir = work
 				out, err = plan.CombinedOutput()
-				require.NoError(t, err, "%s", out)
-				apply := exec.CommandContext(t.Context(), result.BinaryPath, "apply", "plan.ub")
-				apply.Dir = work
-				out, err = apply.CombinedOutput()
 				require.Error(t, err, "%s", out)
+				require.Contains(t, string(out), "constraints[")
 				require.Contains(t, string(out), field+" must be in")
 				require.Zero(t, requests)
 			})
@@ -330,20 +334,20 @@ func TestCompiledServiceIntegerValidation(t *testing.T) {
 			require.NoError(t, json.NewEncoder(w).Encode(stored))
 		}))
 		t.Cleanup(server.Close)
-		configure := func(name string) {
+		configure := func(t *testing.T, name string) ([]byte, error) {
 			t.Helper()
 			body, err := os.ReadFile(filepath.Join(fixture, name+".ub"))
 			require.NoError(t, err)
 			body = bytes.ReplaceAll(body, []byte("SERVICE_TEST_SERVER"), []byte(server.URL))
 			require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), body, 0o600))
-			for _, args := range [][]string{
-				{"pin", "-c", "config.ub"}, {"plan", "-c", "config.ub", "-o", "plan.ub"},
-			} {
-				cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
-				cmd.Dir = work
-				out, err := cmd.CombinedOutput()
-				require.NoError(t, err, "%s", out)
-			}
+			pin := exec.CommandContext(t.Context(), result.BinaryPath, "pin", "-c", "config.ub")
+			pin.Dir = work
+			out, err := pin.CombinedOutput()
+			require.NoError(t, err, "%s", out)
+			plan := exec.CommandContext(t.Context(), result.BinaryPath,
+				"plan", "-c", "config.ub", "-o", "plan.ub")
+			plan.Dir = work
+			return plan.CombinedOutput()
 		}
 		apply := func() ([]byte, error) {
 			t.Helper()
@@ -351,8 +355,9 @@ func TestCompiledServiceIntegerValidation(t *testing.T) {
 			cmd.Dir = work
 			return cmd.CombinedOutput()
 		}
-		configure("valid")
-		out, err := apply()
+		out, err := configure(t, "valid")
+		require.NoError(t, err, "%s", out)
+		out, err = apply()
 		require.NoError(t, err, "%s", out)
 		require.Equal(t, []string{http.MethodPost}, mutations)
 		require.Equal(t, int32(80), stored.Spec.Ports[0].Port)
@@ -362,9 +367,9 @@ func TestCompiledServiceIntegerValidation(t *testing.T) {
 		for _, field := range []string{"port", "node-port", "timeout-seconds"} {
 			for _, sign := range []string{"positive", "negative"} {
 				t.Run(field+"/"+sign, func(t *testing.T) {
-					configure(field + "-" + sign)
-					out, err := apply()
+					out, err := configure(t, field+"-"+sign)
 					require.Error(t, err, "%s", out)
+					require.Contains(t, string(out), "constraints[")
 					require.Contains(t, string(out), field+" must be in")
 					require.Equal(t, []string{http.MethodPost}, mutations)
 					require.Equal(t, before, stored)

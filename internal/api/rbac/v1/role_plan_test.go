@@ -84,6 +84,7 @@ func TestRoleStateBackedPlanApply(t *testing.T) {
 			"role": roleResourceRegistration(),
 		},
 	}
+	addNativeRBACConstraints(t, lib)
 	libs := map[string]*runtime.Library{"rbac": lib}
 	store, err := local.NewStore(t.TempDir(), "role", "test", encrypters.Noop{})
 	require.NoError(t, err)
@@ -229,6 +230,7 @@ func TestRoleStateBackedNameRestoration(t *testing.T) {
 		Name: "kubernetes-rbac-v1", Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{"role": reg},
 	}}
+	addNativeRBACConstraints(t, libs["rbac"])
 	dir := t.TempDir()
 	metadata := map[string]any{"name": "system:reader"}
 	rules := []any{map[string]any{"api-groups": []any{""}, "resources": []any{"pods"},
@@ -245,6 +247,11 @@ func TestRoleStateBackedNameRestoration(t *testing.T) {
 			Factory: state.FactoryInfo{Name: "role", Version: "v0", ContentRevision: "c0"},
 		}
 		p, err := exec.Plan(t.Context())
+		if want == "invalid" {
+			require.ErrorContains(t, err, "schema: constraints[")
+			require.ErrorContains(t, err, "metadata.name")
+			return
+		}
 		require.NoError(t, err)
 		found := false
 		for _, step := range p.Steps {
@@ -265,15 +272,13 @@ func TestRoleStateBackedNameRestoration(t *testing.T) {
 	}
 	plan(runtime.DecisionCreate, true)
 	delete(metadata, "name")
+	plan("invalid", false)
+	metadata["name"] = "system:reader"
 	rules[0].(map[string]any)["verbs"] = []any{"get", "list"}
 	plan(runtime.DecisionUpdate, true)
 	require.Equal(t, []string{"get", "list"}, stored.Rules[0].Verbs)
-	metadata["name"] = "system:reader"
-	before := len(calls)
-	plan(runtime.DecisionUpdate, true)
-	require.Equal(t, []string{"GET", "GET"}, calls[before:])
 	require.Equal(t, "uid-1", string(stored.UID))
-	plan(runtime.DecisionNoOp, false)
+	plan(runtime.DecisionNoOp, true)
 	metadata["name"] = "system:renamed"
 	plan(runtime.DecisionReplace, true)
 	require.Equal(t, "system:renamed", stored.Name)

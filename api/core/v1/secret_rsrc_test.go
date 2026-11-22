@@ -179,7 +179,8 @@ func compileSecretFixture(t *testing.T, factory string, build bool) (*compile.Re
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: factory, OutDir: work, StackName: "secret-test", Version: "v0.0.0",
-		CLIVersion: "v0.12.0", GoVersion: "1.26.2", Build: build,
+		CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
+		GoVersion: "1.26.2", Build: build,
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
 	})
@@ -266,14 +267,17 @@ func TestCompiledSecretMaskingAndPersistence(t *testing.T) {
 func TestCompiledSecretInvalidFields(t *testing.T) {
 	root, err := filepath.Abs("../../..")
 	require.NoError(t, err)
-	for _, name := range []string{"missing-metadata", "write-only", "revision", "file-reference"} {
+	for _, name := range []string{
+		"missing-metadata", "write-only", "revision", "file-reference", "conflict",
+	} {
 		t.Run(name, func(t *testing.T) {
 			factory, err := filepath.Abs("testdata/ub/secret/" + name + "/factory.ub")
 			require.NoError(t, err)
 			var log bytes.Buffer
 			_, err = compile.RunResult(compile.Options{
-				FactoryPath: factory, OutDir: t.TempDir(), StackName: "secret-test", Version: "v0",
-				CLIVersion: "v0.12.0", GoVersion: "1.26.2",
+				FactoryPath: factory, OutDir: coreCompileDirectory(t), StackName: "secret-test", Version: "v0",
+				CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
+				GoVersion:        "1.26.2",
 				ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 				Stdout:           &log, Stderr: &log,
 			})
@@ -286,26 +290,4 @@ func TestSecretScenarioFactory(t *testing.T) {
 	factory, err := filepath.Abs("../../../tests/integration/scenarios/core-v1-secret/factory.ub")
 	require.NoError(t, err)
 	compileSecretFixture(t, factory, true)
-}
-
-func TestCompiledSecretConflictingName(t *testing.T) {
-	factory, err := filepath.Abs("testdata/ub/secret/conflict/factory.ub")
-	require.NoError(t, err)
-	result, work := compileSecretFixture(t, factory, true)
-	body, err := os.ReadFile("testdata/ub/secret/conflict/config.ub")
-	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), body, 0o600))
-	for _, args := range [][]string{
-		{"pin", "-c", "config.ub"}, {"plan", "-c", "config.ub", "-o", "plan.ub"},
-	} {
-		cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
-		cmd.Dir = work
-		out, err := cmd.CombinedOutput()
-		require.NoError(t, err, "%s", out)
-	}
-	cmd := exec.CommandContext(t.Context(), result.BinaryPath, "apply", "plan.ub")
-	cmd.Dir = work
-	out, err := cmd.CombinedOutput()
-	require.Error(t, err)
-	require.Contains(t, string(out), "metadata.name conflicts with metadata.generate-name")
 }

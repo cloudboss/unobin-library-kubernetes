@@ -7,8 +7,8 @@ package v1
 // Live load-balancer endpoints remain available in status. Endpoint changes can
 // cause reconciliation, which refreshes outputs without a mutation.
 type ServiceResource struct {
-	// Metadata is required. Name and generate-name are optional and mutually
-	// exclusive. Namespace defaults to default. Changes to name, generate-name,
+	// Metadata is required. Exactly one nonempty name or generate-name is required.
+	// Namespace defaults to default. Changes to name, generate-name,
 	// or effective namespace replace the Service. Generated names come from the
 	// API response. Annotation and label maps contain strings. Tracked keys use
 	// actual API values even when an internal-key or ignore filter matches.

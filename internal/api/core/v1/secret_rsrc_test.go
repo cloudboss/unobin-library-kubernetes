@@ -101,26 +101,20 @@ func TestSecretValidation(t *testing.T) {
 		{IgnoreAnnotations: &[]string{"["}}, {IgnoreLabels: &[]string{"["}},
 		{CreateTimeout: new("0s")}, {CreateTimeout: new("-1m")}, {CreateTimeout: new("invalid")},
 	} {
-		c := configMapAPI(t, func(_ http.ResponseWriter, _ *http.Request) {
-			t.Error("unexpected API call")
-		})
-		require.Error(t, r.ResourceDefinition().Validate(t.Context(), r, c))
-		_, err := r.Create(t.Context(), c)
-		require.Error(t, err)
+		if r.Object.Metadata.Name == nil && r.Object.Metadata.GenerateName == nil {
+			r.Object.Metadata.Name = new("valid")
+		}
+		require.NotEmpty(t, checkNativeCoreInputs(t, "secret", r))
 	}
 	r := &SecretResource{Object: SecretObject{Metadata: SecretMetadata{
-		Namespace:   new("namespace validated by API"),
+		Name: new("valid"), Namespace: new("namespace validated by API"),
 		Annotations: &map[string]string{"EXAMPLE.COM/KEY": ""},
-	}, Type: new("arbitrary"), Data: &map[string]string{"invalid/key": ""}}}
-	require.NoError(t, r.validate())
+	}, Type: new("arbitrary"), Data: &map[string]string{"invalid/key": ""},
+		BinaryData: &map[string]string{"newline": "AAE=\n", "empty": ""}}}
+	require.Empty(t, checkNativeCoreInputs(t, "secret", r))
 	for _, value := range []string{"invalid", "_w=="} {
 		r.Object.BinaryData = &map[string]string{"bytes": value}
-		c := configMapAPI(t, func(_ http.ResponseWriter, _ *http.Request) {
-			t.Error("unexpected API call")
-		})
-		_, err := r.Create(t.Context(), c)
-		require.Error(t, err)
-		require.NotContains(t, err.Error(), value)
+		require.NotEmpty(t, checkNativeCoreInputs(t, "secret", r))
 	}
 }
 
@@ -321,4 +315,10 @@ func TestSecretNamespaceIsAPIControlled(t *testing.T) {
 	_, err := r.Create(t.Context(), c)
 	require.True(t, apierrors.IsInvalid(err))
 	require.Equal(t, 1, calls)
+}
+
+func TestSecretCreateDurationConversionError(t *testing.T) {
+	input := &SecretResource{CreateTimeout: new("invalid")}
+	_, err := input.Create(t.Context(), nil)
+	require.ErrorContains(t, err, "parse create-timeout")
 }

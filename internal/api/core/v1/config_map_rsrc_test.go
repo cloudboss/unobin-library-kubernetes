@@ -158,23 +158,21 @@ func TestConfigMapValidation(t *testing.T) {
 		{name: "label regex", input: ConfigMapResource{IgnoreLabels: &[]string{"["}}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			c := configMapAPI(t, func(w http.ResponseWriter, req *http.Request) {
-				t.Errorf("unexpected mutation %s %s", req.Method, req.URL)
-			})
-			require.Error(t, tt.input.ResourceDefinition().Validate(t.Context(), tt.input, c))
-			_, err := tt.input.Create(t.Context(), c)
-			require.Error(t, err)
+			if tt.input.Object.Metadata.Name == nil && tt.input.Object.Metadata.GenerateName == nil {
+				tt.input.Object.Metadata.Name = new("valid")
+			}
+			require.NotEmpty(t, checkNativeCoreInputs(t, "config-map", tt.input))
 		})
 	}
 	valid := &ConfigMapResource{Object: ConfigMapObject{
 		Metadata: ConfigMapMetadata{GenerateName: new("prefix-"),
 			Annotations: &map[string]string{"EXAMPLE.COM/KEY": "value"}},
 	}}
-	require.NoError(t, valid.ResourceDefinition().Validate(t.Context(), *valid, nil))
-	valid.Object.Metadata = ConfigMapMetadata{}
+	require.Empty(t, checkNativeCoreInputs(t, "config-map", valid))
+	valid.Object.Metadata = ConfigMapMetadata{Name: new("valid")}
 	valid.Object.Data = &map[string]string{"invalid/key": "server validates this"}
-	valid.Object.BinaryData = &map[string]string{"invalid/key": ""}
-	require.NoError(t, valid.ResourceDefinition().Validate(t.Context(), *valid, nil))
+	valid.Object.BinaryData = &map[string]string{"invalid/key": "", "newline": "AAE=\n"}
+	require.Empty(t, checkNativeCoreInputs(t, "config-map", valid))
 }
 
 func TestConfigMapErrors(t *testing.T) {

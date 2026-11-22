@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"slices"
@@ -23,9 +22,6 @@ func (r *ServiceAccountResource) ResourceDefinition() runtime.ResourceDefinition
 		ServiceAccountResource, *ServiceAccountResourceOutput, *config.Configuration,
 	]{
 		SchemaVersion: 1,
-		Validate: func(_ context.Context, input ServiceAccountResource, _ *config.Configuration) error {
-			return input.validate()
-		},
 		Equality: []runtime.InputEqualityRule[ServiceAccountResource]{
 			runtime.EqualBy(objectField, func(a, b ServiceAccountObject) bool {
 				return reflect.DeepEqual(normalizeServiceAccount(a), normalizeServiceAccount(b))
@@ -35,7 +31,10 @@ func (r *ServiceAccountResource) ResourceDefinition() runtime.ResourceDefinition
 			}), func(a, b *string) bool {
 				left, err := serviceAccountCreateDuration(a)
 				right, other := serviceAccountCreateDuration(b)
-				return err == nil && other == nil && left == right
+				if err != nil || other != nil {
+					return configMapValue(a) == configMapValue(b)
+				}
+				return left == right
 			}),
 			runtime.EqualBy(runtime.InputField(func(r *ServiceAccountResource) **[]string {
 				return &r.IgnoreAnnotations
@@ -67,23 +66,13 @@ func (r *ServiceAccountResource) ResourceDefinition() runtime.ResourceDefinition
 	}
 }
 
-func (r *ServiceAccountResource) validate() error {
-	metadata := &ConfigMapResource{Object: ConfigMapObject{Metadata: r.Object.Metadata},
-		IgnoreAnnotations: r.IgnoreAnnotations, IgnoreLabels: r.IgnoreLabels}
-	if err := metadata.validate(); err != nil {
-		return err
-	}
-	_, err := serviceAccountCreateDuration(r.CreateTimeout)
-	return err
-}
-
 func serviceAccountCreateDuration(input *string) (time.Duration, error) {
 	if input == nil {
 		return 30 * time.Second, nil
 	}
 	duration, err := time.ParseDuration(*input)
-	if err != nil || duration <= 0 {
-		return 0, fmt.Errorf("create-timeout must be a positive Go duration")
+	if err != nil {
+		return 0, fmt.Errorf("parse create-timeout: %w", err)
 	}
 	return duration, nil
 }

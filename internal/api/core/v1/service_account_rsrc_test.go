@@ -125,23 +125,18 @@ func TestServiceAccountValidation(t *testing.T) {
 		"zero timeout", "negative timeout", "invalid timeout"}
 	for index, input := range cases {
 		t.Run(names[index], func(t *testing.T) {
-			c := configMapAPI(t,
-				func(w http.ResponseWriter,
-					req *http.Request) {
-					t.Errorf("unexpected request %s",
-						req.URL)
-				})
-			require.Error(t, input.ResourceDefinition().Validate(t.Context(), input, c))
-			_, err := input.Create(t.Context(), c)
-			require.Error(t, err)
+			if input.Object.Metadata.Name == nil && input.Object.Metadata.GenerateName == nil {
+				input.Object.Metadata.Name = new("valid")
+			}
+			require.NotEmpty(t, checkNativeCoreInputs(t, "service-account", input))
 		})
 	}
 	valid := &ServiceAccountResource{Object: ServiceAccountObject{
-		Metadata: ServiceAccountMetadata{Namespace: new("INVALID namespace"),
+		Metadata: ServiceAccountMetadata{Name: new("valid"), Namespace: new("INVALID namespace"),
 			Annotations: &map[string]string{"EXAMPLE.COM/KEY": "value"}},
 		Secrets: &[]ServiceAccountReference{{}},
 	}}
-	require.NoError(t, valid.validate())
+	require.Empty(t, checkNativeCoreInputs(t, "service-account", valid))
 	duration, err := serviceAccountCreateDuration(nil)
 	require.NoError(t, err)
 	require.Equal(t, 30*time.Second, duration)
@@ -965,4 +960,10 @@ func TestServiceAccountClearReferencesWithoutDefault(t *testing.T) {
 	saved.Object.AutomountServiceAccountToken = true
 	_, err := (&ServiceAccountResource{}).Update(t.Context(), c, serviceAccountPrior{Outputs: saved})
 	require.NoError(t, err)
+}
+
+func TestServiceAccountCreateDurationConversionError(t *testing.T) {
+	input := &ServiceAccountResource{CreateTimeout: new("invalid")}
+	_, err := input.Create(t.Context(), nil)
+	require.ErrorContains(t, err, "parse create-timeout")
 }

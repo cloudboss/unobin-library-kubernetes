@@ -45,11 +45,11 @@ factory: {
       ignore-labels:          []
     }
     empty: core.service {
-      metadata: {}
+      metadata: { name: 'empty' }
       spec:     {}
     }
     zero-ports: core.service {
-      metadata: {}
+      metadata: { name: 'zero-ports' }
       spec:     { port: [] }
     }
   }

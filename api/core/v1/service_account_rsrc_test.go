@@ -162,7 +162,8 @@ func TestCompiledServiceAccountFixtures(t *testing.T) {
 			var log bytes.Buffer
 			result, err := compile.RunResult(compile.Options{
 				FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-				StackName: "service-account-test", Version: "v0.0.0", CLIVersion: "v0.12.0",
+				StackName: "service-account-test", Version: "v0.0.0",
+				CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
 				GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,
 				}, Build: build, Stdout: &log, Stderr: &log,

@@ -73,6 +73,7 @@ func TestRoleBindingStateBackedPlanApply(t *testing.T) {
 			"role-binding": roleBindingResourceRegistration(),
 		},
 	}
+	addNativeRBACConstraints(t, lib)
 	libs := map[string]*runtime.Library{"rbac": lib}
 	store, err := local.NewStore(t.TempDir(), "binding", "test", encrypters.Noop{})
 	require.NoError(t, err)
@@ -112,11 +113,11 @@ func TestRoleBindingStateBackedPlanApply(t *testing.T) {
 		}
 	}
 	plan(runtime.DecisionCreate, true)
-	plan(runtime.DecisionNoOp, false)
+	plan(runtime.DecisionNoOp, true)
 	stored.ResourceVersion, stored.Generation, stored.CreationTimestamp = "changed", 99, metav1.Now()
-	plan(runtime.DecisionNoOp, false)
+	plan(runtime.DecisionNoOp, true)
 	inputs["token"] = "current"
-	plan(runtime.DecisionNoOp, false)
+	plan(runtime.DecisionNoOp, true)
 	require.Contains(t, credentials, "Bearer current")
 	inputs["labels"] = map[string]any{"app": "binding"}
 	plan(runtime.DecisionUpdate, true)
@@ -124,7 +125,7 @@ func TestRoleBindingStateBackedPlanApply(t *testing.T) {
 		{Op: "test", Path: "/metadata/uid", Value: "uid"},
 		{Op: "add", Path: "/metadata/labels", Value: map[string]any{"app": "binding"}},
 	}, patches[len(patches)-1])
-	plan(runtime.DecisionNoOp, false)
+	plan(runtime.DecisionNoOp, true)
 	inputs["subject-namespace"] = "other"
 	plan(runtime.DecisionUpdate, true)
 	require.Equal(t, rbacv1.GroupName, stored.Subjects[0].APIGroup)
@@ -133,7 +134,7 @@ func TestRoleBindingStateBackedPlanApply(t *testing.T) {
 	require.Equal(t, rbacv1.Subject{Kind: "ServiceAccount", Name: "account", Namespace: "other"},
 		stored.Subjects[0])
 	require.Equal(t, "uid", string(stored.UID))
-	plan(runtime.DecisionNoOp, false)
+	plan(runtime.DecisionNoOp, true)
 	stored.Subjects[0].Name = "drift"
 	plan(runtime.DecisionUpdate, true)
 	require.Equal(t, "account", stored.Subjects[0].Name)
@@ -199,6 +200,7 @@ func TestRoleBindingStateBackedNameRestoration(t *testing.T) {
 		Name: "kubernetes-rbac-v1", Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{"role-binding": reg},
 	}}
+	addNativeRBACConstraints(t, libs["rbac"])
 	dir := t.TempDir()
 	metadata := map[string]any{"name": "system:reader"}
 	inputs := map[string]any{"server": *c.Server, "metadata": metadata, "subject-name": "alice"}
@@ -212,6 +214,11 @@ func TestRoleBindingStateBackedNameRestoration(t *testing.T) {
 			Factory: state.FactoryInfo{Name: "binding", Version: "v0", ContentRevision: "c0"},
 		}
 		p, err := exec.Plan(t.Context())
+		if want == "invalid" {
+			require.ErrorContains(t, err, "schema: constraints[")
+			require.ErrorContains(t, err, "metadata.name")
+			return
+		}
 		require.NoError(t, err)
 		found := false
 		for _, step := range p.Steps {
@@ -232,15 +239,13 @@ func TestRoleBindingStateBackedNameRestoration(t *testing.T) {
 	}
 	plan(runtime.DecisionCreate, true)
 	delete(metadata, "name")
+	plan("invalid", false)
+	metadata["name"] = "system:reader"
 	inputs["subject-name"] = "bob"
 	plan(runtime.DecisionUpdate, true)
 	require.Equal(t, "bob", stored.Subjects[0].Name)
-	metadata["name"] = "system:reader"
-	before := len(calls)
-	plan(runtime.DecisionUpdate, true)
-	require.Equal(t, []string{"GET", "PATCH"}, calls[before:])
 	require.Equal(t, "uid-1", string(stored.UID))
-	plan(runtime.DecisionNoOp, false)
+	plan(runtime.DecisionNoOp, true)
 	metadata["name"] = "system:renamed"
 	plan(runtime.DecisionReplace, true)
 	require.Equal(t, "system:renamed", stored.Name)

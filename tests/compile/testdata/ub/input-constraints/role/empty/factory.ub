@@ -1,0 +1,10 @@
+factory: {
+  imports:         { k: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { k: {} }
+  resources: {
+    subject: k.role {
+      metadata: { name: '' }
+      rule:     [{ api-groups: [''], resources: ['pods'], verbs: ['get'] }]
+    }
+  }
+}

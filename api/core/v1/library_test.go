@@ -120,7 +120,9 @@ func TestCompiledConfigMapFixtures(t *testing.T) {
 			var log bytes.Buffer
 			result, err := compile.RunResult(compile.Options{
 				FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-				StackName: "config-map-test", Version: "v0.0.0", CLIVersion: "v0.12.0", GoVersion: "1.26.2",
+				StackName: "config-map-test", Version: "v0.0.0",
+				CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
+				GoVersion: "1.26.2",
 				ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,
 				}, Build: name == "valid", Stdout: &log, Stderr: &log,
@@ -253,4 +255,24 @@ func TestConfigMapNormalizedPlanning(t *testing.T) {
 	}
 	require.Empty(t, replacementReasons(t, reg, before, before, nil, nil,
 		map[string]any{"namespace": "old"}, &config.Configuration{Namespace: new("new")}))
+}
+
+func unobinSource(t *testing.T) string {
+	t.Helper()
+	module, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}",
+		"github.com/cloudboss/unobin").Output()
+	require.NoError(t, err)
+	return strings.TrimSpace(string(module))
+}
+
+func coreCompileDirectory(t *testing.T) string {
+	t.Helper()
+	root, err := filepath.Abs("../../..")
+	require.NoError(t, err)
+	base := filepath.Join(root, "_output/tests/core-v1")
+	require.NoError(t, os.MkdirAll(base, 0o700))
+	work, err := os.MkdirTemp(base, "compile-")
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
+	return work
 }
