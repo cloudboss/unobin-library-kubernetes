@@ -34,7 +34,7 @@ func TestCompiledNamespaceInfoScenario(t *testing.T) {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(scenario, "factory.ub"), OutDir: work,
-		StackName: "namespace-info-scenario", Version: "v0.0.0", CLIVersion: "v0.13.0-a.4",
+		StackName: "namespace-info-scenario", Version: "v0.0.0", CLIVersion: "v0.13.0-a.5",
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		}, Build: true, Stdout: &log, Stderr: &log,

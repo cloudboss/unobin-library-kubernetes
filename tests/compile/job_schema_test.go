@@ -60,7 +60,7 @@ func TestJobSchemaAndFixtures(t *testing.T) {
 		output := filepath.Join(directory, filepath.Base(fixture))
 		err = compile.Run(compile.Options{
 			FactoryPath: fixture, OutDir: output, StackName: "job-schema",
-			GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "v0.13.0-a.4",
+			GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "v0.13.0-a.5",
 			ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 			Build:            true, Stdout: &log, Stderr: &log,
 		})
