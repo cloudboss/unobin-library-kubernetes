@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -27,6 +29,8 @@ func TestDynamicDiscovery(t *testing.T) {
 				Name: "example.com",
 				Versions: []metav1.GroupVersionForDiscovery{{
 					GroupVersion: "example.com/v1", Version: "v1",
+				}, {
+					GroupVersion: "example.com/v2", Version: "v2",
 				}},
 				PreferredVersion: metav1.GroupVersionForDiscovery{
 					GroupVersion: "example.com/v1", Version: "v1",
@@ -40,6 +44,13 @@ func TestDynamicDiscovery(t *testing.T) {
 		case "/apis/example.com/v1":
 			body = metav1.APIResourceList{GroupVersion: "example.com/v1",
 				APIResources: []metav1.APIResource{{Name: "people", Kind: "Person", Namespaced: true}}}
+		case "/apis/example.com/v2":
+			w.WriteHeader(http.StatusForbidden)
+			body = metav1.Status{
+				TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "Status"},
+				Status:   metav1.StatusFailure, Reason: metav1.StatusReasonForbidden,
+				Message: "example.com/v2 discovery is forbidden", Code: http.StatusForbidden,
+			}
 		default:
 			require.Equal(t, "/apis/example.com/v1/namespaces/team/people/alice", r.URL.Path)
 			body = map[string]any{"apiVersion": "example.com/v1", "kind": "Person",
@@ -68,7 +79,12 @@ func TestDynamicDiscovery(t *testing.T) {
 	_, _, err = c.Resolve(schema.GroupVersionKind{Version: "v1", Kind: "Namespace"}, "team")
 	require.ErrorContains(t, err, "cluster-scoped")
 	_, _, err = c.Resolve(schema.GroupVersionKind{Version: "v1", Kind: "Unknown"}, "")
-	require.Error(t, err)
+	require.True(t, meta.IsNoMatchError(err), "%v", err)
+	_, _, err = c.Resolve(schema.GroupVersionKind{
+		Group: "example.com", Version: "v2", Kind: "Person",
+	}, "")
+	require.ErrorContains(t, err, "discover Kubernetes kind")
+	require.True(t, apierrors.IsForbidden(err), "%v", err)
 	resource, namespace, err := c.Resolve(schema.GroupVersionKind{
 		Group: "example.com", Version: "v1", Kind: "Person",
 	}, "")

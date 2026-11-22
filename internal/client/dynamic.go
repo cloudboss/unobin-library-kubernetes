@@ -2,10 +2,13 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
@@ -19,7 +22,24 @@ import (
 type DynamicClient struct {
 	api       dynamic.Interface
 	mapper    meta.RESTMapper
+	discovery *mappingDiscovery
 	namespace string
+}
+
+type mappingDiscovery struct {
+	discovery.CachedDiscoveryInterface
+	failures atomic.Pointer[discovery.ErrGroupDiscoveryFailed]
+}
+
+func (d *mappingDiscovery) ServerGroupsAndResources() (
+	[]*metav1.APIGroup, []*metav1.APIResourceList, error,
+) {
+	groups, resources, err := d.CachedDiscoveryInterface.ServerGroupsAndResources()
+	// The REST mapper uses successful group results and discards partial discovery errors.
+	var failures *discovery.ErrGroupDiscoveryFailed
+	errors.As(err, &failures)
+	d.failures.Store(failures)
+	return groups, resources, err
 }
 
 func NewDynamic(c *config.Configuration) (*DynamicClient, error) {
@@ -49,9 +69,10 @@ func NewDynamicContext(ctx context.Context, c *config.Configuration) (*DynamicCl
 	if err != nil {
 		return nil, err
 	}
+	cached := &mappingDiscovery{CachedDiscoveryInterface: memory.NewMemCacheClient(discoveryClient)}
 	return &DynamicClient{
-		api: api, namespace: namespace,
-		mapper: restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(discoveryClient)),
+		api: api, namespace: namespace, discovery: cached,
+		mapper: restmapper.NewDeferredDiscoveryRESTMapper(cached),
 	}, nil
 }
 
@@ -60,6 +81,11 @@ func (c *DynamicClient) Resolve(
 ) (dynamic.ResourceInterface, string, error) {
 	mapping, err := c.mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
+		if failures := c.discovery.failures.Load(); failures != nil && meta.IsNoMatchError(err) {
+			if cause := failures.Groups[gvk.GroupVersion()]; cause != nil {
+				err = cause
+			}
+		}
 		return nil, "", fmt.Errorf("discover Kubernetes kind %s: %w", gvk, err)
 	}
 	resource := c.api.Resource(mapping.Resource)
