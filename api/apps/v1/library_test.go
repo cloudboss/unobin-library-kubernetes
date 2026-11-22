@@ -84,7 +84,7 @@ func TestLibrarySchemaAndFixtures(t *testing.T) {
 	var log bytes.Buffer
 	err = compile.Run(compile.Options{
 		FactoryPath: "testdata/ub/full", OutDir: directory, StackName: "deployment-schema",
-		GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "v0.13.0-a.1",
+		GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "v0.13.0-a.2",
 		ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		},
@@ -105,7 +105,7 @@ func TestDeploymentIntegrationFactory(t *testing.T) {
 	var log bytes.Buffer
 	err = compile.Run(compile.Options{
 		FactoryPath: scenario, OutDir: directory, StackName: "deployment-integration",
-		GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "v0.13.0-a.1",
+		GoVersion: compile.GoMajorMinor(), Version: "v0.0.0", CLIVersion: "v0.13.0-a.2",
 		ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		},
