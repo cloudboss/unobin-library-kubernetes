@@ -1,0 +1,38 @@
+factory: {
+  description:     'Updates PodDisruptionBudget metadata and replaces immutable specifications.'
+  imports:         { policy: 'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1' }
+  library-configs: { policy: {} }
+  inputs: {
+    revision: { type: string }
+    minimum:  { type: string }
+  }
+  resources: {
+    mutable: policy.pod-disruption-budget {
+      metadata: {
+        generate-name: 'unobin-it-pdb-metadata-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'policy-v1-pod-disruption-budget'
+          role:                                'metadata'
+          revision:                            input.revision
+        }
+      }
+      spec: { min-available: '1', selector: {} }
+    }
+    immutable: policy.pod-disruption-budget {
+      metadata: {
+        generate-name: 'unobin-it-pdb-spec-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'policy-v1-pod-disruption-budget'
+          role:                                'spec'
+        }
+      }
+      spec: { min-available: input.minimum, selector: { match-labels: { app: 'pdb-test' } } }
+    }
+  }
+  outputs: {
+    mutable-name:   { value: resource.mutable.name }
+    mutable-uid:    { value: resource.mutable.uid }
+    immutable-name: { value: resource.immutable.name }
+    immutable-uid:  { value: resource.immutable.uid }
+  }
+}

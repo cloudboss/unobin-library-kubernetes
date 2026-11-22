@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { revision: 'before', minimum: '1' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

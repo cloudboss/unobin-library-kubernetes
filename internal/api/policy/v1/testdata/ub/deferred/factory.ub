@@ -1,0 +1,20 @@
+factory: {
+  imports:         { policy: 'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1' }
+  library-configs: { policy: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs: {
+    server:   { type: string }
+    metadata: { type: opaque }
+    spec:     { type: opaque }
+  }
+  actions: {
+    seed: policy.seed {
+      echo: input.metadata
+    }
+  }
+  resources: {
+    budget: policy.pod-disruption-budget {
+      metadata: action.seed.value
+      spec:     input.spec
+    }
+  }
+}

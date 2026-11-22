@@ -1,0 +1,11 @@
+factory: {
+  imports:         { policy: 'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1' }
+  library-configs: { policy: {} }
+  resources: {
+    budget: policy.pod-disruption-budget {
+      metadata:      { name: 'budget' }
+      ignore-labels: ['[']
+      spec:          { min-available: '+01', selector: {} }
+    }
+  }
+}
