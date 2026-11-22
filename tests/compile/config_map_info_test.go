@@ -36,7 +36,7 @@ func TestCompiledConfigMapInfoFixtures(t *testing.T) {
 			var log bytes.Buffer
 			result, err := compile.RunResult(compile.Options{
 				FactoryPath: factory, OutDir: work, StackName: "config-map-info-test", Version: "v0.0.0",
-				CLIVersion: "v0.13.0-a.5", GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
+				CLIVersion: "v0.13.0-a.7", GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,
 				}, Build: name == "valid", Stdout: &log, Stderr: &log,
 			})
@@ -78,7 +78,7 @@ func TestCompiledConfigMapInfoInputs(t *testing.T) {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-		StackName: "config-map-info-inputs", Version: "v0.0.0", CLIVersion: "v0.13.0-a.5",
+		StackName: "config-map-info-inputs", Version: "v0.0.0", CLIVersion: "v0.13.0-a.7",
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		}, Build: true, Stdout: &log, Stderr: &log,
@@ -150,7 +150,7 @@ func TestCompiledConfigMapInfoScenario(t *testing.T) {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(scenario, "factory.ub"), OutDir: work,
-		StackName: "config-map-info-scenario", Version: "v0.0.0", CLIVersion: "v0.13.0-a.5",
+		StackName: "config-map-info-scenario", Version: "v0.0.0", CLIVersion: "v0.13.0-a.7",
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		}, Build: true, Stdout: &log, Stderr: &log,

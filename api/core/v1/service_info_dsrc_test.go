@@ -233,7 +233,7 @@ func TestServiceInfoScenarioFactory(t *testing.T) {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(scenario, "factory.ub"), OutDir: work,
-		StackName: "service-info-scenario", Version: "v0.0.0", CLIVersion: "v0.13.0-a.5",
+		StackName: "service-info-scenario", Version: "v0.0.0", CLIVersion: "v0.13.0-a.7",
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		}, Build: true, Stdout: &log, Stderr: &log,

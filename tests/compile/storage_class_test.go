@@ -16,7 +16,8 @@ func TestCompiledStorageClassInputs(t *testing.T) {
 		name string
 		rule string
 	}{
-		{"valid", ""}, {"generated", ""}, {"deferred-metadata", ""}, {"deferred-topologies", ""},
+		{"valid", ""}, {"generated", ""},
+		{"deferred-metadata", "exactly one"}, {"deferred-topologies", "allowed-topologies"},
 		{"missing-metadata", "metadata"}, {"missing-provisioner", "provisioner"},
 		{"non-string-provisioner", "expected string, got integer"}, {"namespace", "namespace"},
 		{"missing-identity", "exactly one"}, {"both-identities", "exactly one"},
@@ -112,7 +113,7 @@ func compileStorageClass(
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-		StackName: "storage-class-test", Version: "v0", CLIVersion: "v0.13.0-a.5",
+		StackName: "storage-class-test", Version: "v0", CLIVersion: "v0.13.0-a.7",
 		GoVersion: "1.26.2", Build: build,
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,

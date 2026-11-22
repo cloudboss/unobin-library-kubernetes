@@ -65,7 +65,7 @@ func compileHPAFixture(t *testing.T, fixture, want string) {
 	work := t.TempDir()
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{FactoryPath: filepath.Join(fixture,
-		"factory.ub"), OutDir: work, StackName: "hpa-test", Version: "v0.0.0", CLIVersion: "v0.13.0-a.5",
+		"factory.ub"), OutDir: work, StackName: "hpa-test", Version: "v0.0.0", CLIVersion: "v0.13.0-a.7",
 		GoVersion: "1.26.2", Build: want == "", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root}, Stdout: &log, Stderr: &log})
 	if want != "" {
