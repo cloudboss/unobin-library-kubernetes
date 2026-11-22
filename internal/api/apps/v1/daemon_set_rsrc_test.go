@@ -68,6 +68,7 @@ func readyDaemonSet(t *testing.T) *appsv1.DaemonSet {
 	obj.Spec.UpdateStrategy.Type = "RollingUpdate"
 	obj.Status = appsv1.DaemonSetStatus{
 		ObservedGeneration: 2, DesiredNumberScheduled: 1, NumberReady: 1,
+		UpdatedNumberScheduled: 1, NumberAvailable: 1,
 	}
 	return obj
 }
@@ -120,11 +121,21 @@ func TestDaemonSetRolloutPredicates(t *testing.T) {
 			false, true},
 		{"not ready", func(o *appsv1.DaemonSet) { o.Status.NumberReady = 0 }, false, false},
 		{"too many ready", func(o *appsv1.DaemonSet) { o.Status.NumberReady++ }, false, false},
+		{"old pod still ready", func(o *appsv1.DaemonSet) {
+			o.Status.UpdatedNumberScheduled = 0
+		}, false, false},
+		{"updated pod not yet available", func(o *appsv1.DaemonSet) {
+			o.Status.NumberAvailable = 0
+		}, false, false},
+		{"on delete leaves the old pod ready", func(o *appsv1.DaemonSet) {
+			o.Spec.UpdateStrategy.Type = appsv1.OnDeleteDaemonSetStrategyType
+			o.Status.UpdatedNumberScheduled = 0
+		}, true, false},
 		{"zero", func(o *appsv1.DaemonSet) {
 			o.Status.NumberReady, o.Status.DesiredNumberScheduled = 0, 0
+			o.Status.NumberAvailable, o.Status.UpdatedNumberScheduled = 0, 0
 		}, true, false},
 		{"irrelevant status", func(o *appsv1.DaemonSet) {
-			o.Status.NumberAvailable, o.Status.UpdatedNumberScheduled = 0, 0
 			o.Status.NumberUnavailable, o.Status.NumberMisscheduled = 99, 99
 			o.Status.Conditions = []appsv1.DaemonSetCondition{{Type: "Failure", Status: "True"}}
 		}, true, false},

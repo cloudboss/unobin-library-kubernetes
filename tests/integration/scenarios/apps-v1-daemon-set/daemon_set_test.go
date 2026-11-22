@@ -116,6 +116,8 @@ func TestDaemonSetControllerRollout(t *testing.T) {
 		for _, condition := range pod.Status.Conditions {
 			if condition.Type == "Ready" && condition.Status == "True" &&
 				pod.DeletionTimestamp == nil {
+				require.Equal(t, "registry.k8s.io/pause:3.10", pod.Spec.Containers[0].Image)
+				require.Equal(t, "updated", pod.Annotations["rollout"])
 				ready++
 			}
 		}

@@ -26,7 +26,8 @@ type DaemonSetResource struct {
 	Metadata Metadata
 	// Spec defines the DaemonSet selector, strategy, and Pod template.
 	Spec DaemonSetSpec
-	// WaitForRollout defaults to true for create and every update.
+	// WaitForRollout defaults to true for create and every update. With RollingUpdate,
+	// the waiter also requires the new revision to be scheduled and available.
 	WaitForRollout *bool
 	// CreateTimeout bounds creation and rollout; the default is ten minutes.
 	CreateTimeout *string
@@ -293,7 +294,15 @@ func daemonSetRolloutReady(obj *appsv1.DaemonSet) (bool, error) {
 	if obj.Generation < obj.Status.ObservedGeneration {
 		return false, fmt.Errorf("observed DaemonSet generation exceeds generation")
 	}
-	return obj.Status.NumberReady == obj.Status.DesiredNumberScheduled, nil
+	status := obj.Status
+	desired := status.DesiredNumberScheduled
+	if status.NumberReady != desired {
+		return false, nil
+	}
+	if obj.Spec.UpdateStrategy.Type == appsv1.OnDeleteDaemonSetStrategyType {
+		return true, nil
+	}
+	return status.UpdatedNumberScheduled >= desired && status.NumberAvailable >= desired, nil
 }
 
 func (r DaemonSetResource) Constraints() []constraint.Constraint {
