@@ -1,0 +1,28 @@
+factory: {
+  inputs: { server: { type: string }, object: { type: opaque }, seed-path: { type: string } }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  actions: {
+    seed: core.seed {
+      echo: input.seed-path
+    }
+  }
+  resources: {
+    volume: core.persistent-volume {
+      object: {
+        metadata: input.object.metadata
+        spec: {
+          access-modes: input.object.spec.access-modes
+          capacity:     input.object.spec.capacity
+          persistent-volume-source: {
+            azure-disk: {
+              caching-mode:  'None'
+              disk-name:     'disk'
+              data-disk-uri: action.seed.value
+              kind:          input.object.spec.persistent-volume-source.azure-disk.kind
+            }
+          }
+        }
+      }
+    }
+  }
+}

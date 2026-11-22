@@ -1,0 +1,14 @@
+factory: {
+  inputs:          { server: { type: string }, object: { type: opaque } }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  actions: {
+    seed: core.seed {
+      echo: input.object
+    }
+  }
+  resources: {
+    volume: core.persistent-volume {
+      object: action.seed.value
+    }
+  }
+}

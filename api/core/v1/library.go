@@ -8,6 +8,9 @@ import (
 )
 
 func Library() *runtime.Library {
+	pv := runtime.MakeResource[
+		svc.PersistentVolumeResource, *svc.PersistentVolumeResourceOutput, *config.Configuration,
+	]((&svc.PersistentVolumeResource{}).ResourceDefinition())
 	pvc := runtime.MakeResource[
 		svc.PersistentVolumeClaimResource, *svc.PersistentVolumeClaimResourceOutput,
 		*config.Configuration,
@@ -32,6 +35,9 @@ func Library() *runtime.Library {
 			](),
 		},
 		Resources: map[string]runtime.ResourceRegistration{
+			"persistent-volume": svc.PersistentVolumeRegistration[
+				svc.PersistentVolumeResource, *svc.PersistentVolumeResourceOutput,
+			](pv, pv.Read, pv.KnownReplacementReasons),
 			"persistent-volume-claim": svc.PersistentVolumeClaimRegistration[
 				svc.PersistentVolumeClaimResource, *svc.PersistentVolumeClaimResourceOutput,
 			](pvc, pvc.Read, pvc.KnownReplacementReasons),

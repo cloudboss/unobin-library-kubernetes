@@ -1,0 +1,19 @@
+stack: {
+  factory: {
+    inputs: {
+      server: 'https://api-placeholder.invalid'
+      object: {
+        metadata: { name: 'volume' }
+        spec: {
+          access-modes:             ['ReadWriteOnce']
+          capacity:                 {}
+          persistent-volume-source: { host-path: { path: '/data' } }
+        }
+      }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

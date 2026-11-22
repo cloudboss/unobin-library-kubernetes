@@ -1,0 +1,12 @@
+factory: {
+  inputs:          { server: { type: string }, object: { type: opaque } }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    volume: core.persistent-volume {
+      object: input.object
+    }
+  }
+  outputs: {
+    source: { value: resource.volume.object.spec.persistent-volume-source }
+  }
+}

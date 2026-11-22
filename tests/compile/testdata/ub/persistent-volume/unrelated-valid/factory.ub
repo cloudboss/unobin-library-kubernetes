@@ -1,0 +1,25 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    volume: core.persistent-volume {
+
+      object: {
+        metadata: { name: 'volume' }
+        spec: {
+          capacity:     { storage: '1Gi' }
+          access-modes: ['ReadWriteOnce']
+          persistent-volume-source: {
+            azure-disk: {
+              caching-mode:  'None'
+              data-disk-uri: '/providers/microsoft.Compute/disks/disk'
+              disk-name:     'disk'
+              kind:          ''
+            }
+          }
+          persistent-volume-reclaim-policy: 'Retain'
+        }
+      }
+    }
+  }
+}

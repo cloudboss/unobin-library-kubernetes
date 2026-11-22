@@ -1,0 +1,62 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    volume: core.persistent-volume {
+      ignore-labels:      ['example']
+      ignore-annotations: ['^custom']
+      create-timeout:     '0s'
+      object: {
+        metadata: {
+          generate-name: 'volume-'
+          labels:        { 'example.com/empty': '' }
+          annotations:   { 'EXAMPLE.COM/value': 'anything!' }
+        }
+        spec: {
+          capacity:     { storage: '1Gi' }
+          access-modes: ['ReadWriteOnce', 'ReadOnlyMany', 'ReadWriteMany', 'ReadWriteOncePod']
+          persistent-volume-source: {
+            aws-elastic-block-store: { volume-id: 'vol', partition: 1 }
+            azure-disk: {
+              caching-mode:  'None'
+              data-disk-uri: 'https://blob.core.windows.net/d'
+              disk-name:     'disk'
+              kind:          null
+            }
+            azure-file: { secret-name: 'secret', share-name: 'share' }
+            ceph-fs:    { monitors: ['monitor'] }
+            cinder:     { volume-id: 'vol' }
+            csi: {
+              driver:                       'csi.example.com'
+              volume-handle:                'handle'
+              controller-expand-secret-ref: { namespace: 'default' }
+            }
+            fc:                     { lun: 0, target-ww-ns: ['wwn'] }
+            flex-volume:            { driver: 'driver', options: { x: 'y' } }
+            flocker:                { dataset-uuid: 'dataset' }
+            gce-persistent-disk:    { pd-name: 'disk' }
+            glusterfs:              { endpoints-name: 'endpoints', path: '/data' }
+            host-path:              { type: '', path: '/data' }
+            iscsi:                  { iqn: 'iqn', target-portal: 'target' }
+            local:                  { path: '/data' }
+            nfs:                    { path: '/data', server: 'server' }
+            photon-persistent-disk: { pd-id: 'disk' }
+            quobyte:                { registry: 'registry', volume: 'volume' }
+            rbd:                    { ceph-monitors: ['monitor'], rbd-image: 'image' }
+            vsphere-volume:         { volume-path: '/data' }
+          }
+          volume-mode:                      'Filesystem'
+          persistent-volume-reclaim-policy: 'Recycle'
+          claim-ref:                        { name: 'claim' }
+          node-affinity: {
+            required: {
+              node-selector-terms: [
+                { match-fields: [{ key: 'metadata.name', operator: 'In', values: ['node'] }] },
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

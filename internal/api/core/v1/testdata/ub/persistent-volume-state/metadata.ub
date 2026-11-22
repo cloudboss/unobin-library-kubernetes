@@ -1,0 +1,16 @@
+factory: {
+  inputs: {
+    server:             { type: string }
+    object:             { type: opaque }
+    ignore-labels:      { type: list(string) }
+    ignore-annotations: { type: list(string) }
+  }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    volume: core.persistent-volume {
+      object:             input.object
+      ignore-labels:      input.ignore-labels
+      ignore-annotations: input.ignore-annotations
+    }
+  }
+}
