@@ -1,0 +1,17 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs:          { server: { type: string } }
+  resources: {
+    seed: rbac.cluster-role-binding {
+      metadata: { generate-name: 'seed-' }
+      role-ref: { api-group: 'rbac.authorization.k8s.io', kind: 'ClusterRole', name: 'reader' }
+      subject:  [{ kind: 'Custom', name: 'seed' }]
+    }
+    binding: rbac.cluster-role-binding {
+      metadata: { generate-name: resource.seed.subject[0].api-group }
+      role-ref: { api-group: 'rbac.authorization.k8s.io', kind: 'ClusterRole', name: 'reader' }
+      subject:  [{ kind: 'User', name: 'alice' }]
+    }
+  }
+}

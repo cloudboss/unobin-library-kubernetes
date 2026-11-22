@@ -1,0 +1,13 @@
+stack: {
+  factory: {
+    inputs: {
+      name:     ''
+      group:    'rbac.authorization.k8s.io'
+      subjects: [{ kind: 'Custom', name: '' }]
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
