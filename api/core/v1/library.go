@@ -20,6 +20,11 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.0-a.4",
 		},
 		Configuration: config.LibraryConfiguration(),
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"service-info": runtime.MakeDataSource[
+				svc.ServiceDataSource, *svc.ServiceDataSourceOutput, *config.Configuration,
+			](),
+		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"persistent-volume-claim": svc.PersistentVolumeClaimRegistration[
 				svc.PersistentVolumeClaimResource, *svc.PersistentVolumeClaimResourceOutput,

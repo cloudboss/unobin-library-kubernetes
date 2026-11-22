@@ -1,0 +1,17 @@
+stack: {
+  factory: {
+    inputs: {
+      server: 'SERVICE_INFO_SERVER'
+      metadata: {
+        name:        'svc'
+        namespace:   'default'
+        annotations: { 'EXAMPLE.COM/Key': 'value' }
+        labels:      { app: 'value' }
+      }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
