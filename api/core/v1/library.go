@@ -24,6 +24,9 @@ func Library() *runtime.Library {
 			"config-map-info": runtime.MakeDataSource[
 				svc.ConfigMapDataSource, *svc.ConfigMapDataSourceOutput, *config.Configuration,
 			](),
+			"namespace-info": runtime.MakeDataSource[
+				svc.NamespaceDataSource, *svc.NamespaceDataSourceOutput, *config.Configuration,
+			](),
 			"service-info": runtime.MakeDataSource[
 				svc.ServiceDataSource, *svc.ServiceDataSourceOutput, *config.Configuration,
 			](),

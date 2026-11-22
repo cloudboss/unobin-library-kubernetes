@@ -1,0 +1,16 @@
+stack: {
+  factory: {
+    inputs: {
+      server: 'NAMESPACE_INFO_SERVER'
+      metadata: {
+        name:        'svc'
+        annotations: { 'EXAMPLE.COM/Key': 'value', 'İ.COM/Key': null }
+        labels:      { app: 'value', nullable: null, empty: '' }
+      }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

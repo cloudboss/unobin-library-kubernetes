@@ -1,0 +1,32 @@
+factory: {
+  description:     'Reads existing and missing Namespaces without changing them.'
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { namespace: 'ignored' } }
+  inputs:          { value: { type: string } }
+  data-sources: {
+    existing: core.namespace-info {
+      metadata: {
+        name:        'default'
+        annotations: { 'EXAMPLE.COM/Lookup': input.value }
+        labels:      { lookup: input.value }
+      }
+    }
+    empty: core.namespace-info {
+      metadata: { name: 'kube-public' }
+    }
+    missing: core.namespace-info {
+      metadata: {
+        name:        'unobin-it-namespace-info-absent'
+        annotations: { lookup: input.value, omitted: null }
+        labels:      { omitted: null }
+      }
+    }
+  }
+  outputs: {
+    metadata:         { value: data-source.existing.metadata }
+    spec:             { value: data-source.existing.spec }
+    empty-spec:       { value: data-source.empty.spec }
+    missing-metadata: { value: data-source.missing.metadata }
+    missing-spec:     { value: data-source.missing.spec }
+  }
+}

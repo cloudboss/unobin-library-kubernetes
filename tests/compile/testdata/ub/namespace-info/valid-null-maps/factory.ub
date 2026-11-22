@@ -1,0 +1,13 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    endpoint: core.namespace-info {
+      metadata: { name: 'dotted.name', annotations: null, labels: null }
+    }
+  }
+  outputs: {
+    metadata: { value: data-source.endpoint.metadata }
+    spec:     { value: data-source.endpoint.spec }
+  }
+}
