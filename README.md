@@ -59,12 +59,19 @@ plans and state as sensitive too, and configure Unobin state encryption.
 
 | Import | Resource |
 | --- | --- |
-| `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map`, `namespace`, `secret`, `service`, `service-account` |
-| `github.com/cloudboss/unobin-library-kubernetes//api/apps/v1` | `deployment` |
-| `github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1` | `role`, `role-binding` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` | `config-map`, `namespace`, `persistent-volume-claim`, `secret`, `service`, `service-account` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/apps/v1` | `daemon-set`, `deployment`, `stateful-set` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/batch/v1` | `cron-job`, `job` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/networking/v1` | `ingress`, `network-policy` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1` | `cluster-role`, `cluster-role-binding`, `role`, `role-binding` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2` | `horizontal-pod-autoscaler` |
+| `github.com/cloudboss/unobin-library-kubernetes//api/policy/v1` | `pod-disruption-budget` |
 
-Typed resources use Kubernetes create and JSON Patch operations. Namespaced
-resources default to `default`; set metadata namespace to use another namespace.
+Typed resources use Kubernetes API operations with resource-specific update and
+replacement behavior. Desired resource metadata requires exactly one of `name`
+or `generate-name`. Embedded workload template metadata can omit both, but cannot
+set both. Namespaced resources default to `default`; set metadata namespace to
+use another namespace.
 Reads and deletion use the saved server and object identity with current
 credentials. Resource outputs exclude volatile server metadata. Service outputs
 include current load-balancer ingress endpoints; changes to those endpoints
@@ -107,6 +114,27 @@ It waits for rollout after create and update unless `wait-for-rollout` is false.
 durations and default to `10m`. Deletion waits for the saved object to disappear.
 Selector and other immutable-field changes require replacement; normal container
 and replica changes update the existing Deployment.
+
+## Typed API data sources
+
+Import `github.com/cloudboss/unobin-library-kubernetes//api/core/v1` for these
+read-only lookups:
+
+| Data source | Result |
+| --- | --- |
+| `config-map-info` | Live metadata, string data, base64 binary data, and immutable flag. |
+| `namespace-info` | Live metadata and ordered namespace finalizers. |
+| `service-info` | Live metadata, service specification, and status. |
+
+Set `metadata.name` to select an object. ConfigMap and Service lookups default
+`metadata.namespace` to `default`. Namespace lookup is cluster-scoped. Metadata
+labels and annotations are not query selectors. Data sources use the current
+library configuration and return unfiltered live values.
+
+A missing ConfigMap returns empty data maps and its configured immutable value,
+or false. A missing Namespace returns a null `spec`; a missing Service returns
+null `spec` and `status`. These results describe absence without owning or
+creating the requested object.
 
 ## Dynamic objects
 

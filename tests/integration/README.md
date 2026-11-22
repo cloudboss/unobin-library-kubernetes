@@ -4,13 +4,17 @@ The `kind` and `live` tiers run the same scenarios. The configuration scenario
 uses the shared client loader to discover the server version, then create, read,
 update, and delete a temporary ConfigMap in the kubeconfig's namespace.
 
-The `core-v1-config-map` and `apps-v1-deployment` scenarios use the shared
-compile, pin, plan, apply, update, and destroy lifecycle. Each has a `factory.ub`,
-two configurations, and a read-only Kubernetes verifier. The ConfigMap scenario
-checks immutable-content replacement. The Deployment scenario uses default
-rollout waits and checks ready Pods after replica and container-image updates.
-The same factory also manages a second Deployment with waiting disabled. Both
-cases run together and require a cluster with working nodes.
+Typed construct scenarios use the shared compile, pin, plan, apply, update,
+and destroy lifecycle. Each scenario owns one factory, its initial/update
+configurations, and a read-only Kubernetes verifier. Related supporting objects
+stay in that scenario.
+
+ConfigMap checks immutable-content replacement. Deployment, StatefulSet,
+DaemonSet, and Job scenarios include their controller-dependent behavior;
+CronJob additionally checks scheduled child ownership. Their API-only
+configurations exercise CRUD and identity without requiring running workloads.
+The data-source scenarios exercise existing and missing objects, changed inputs,
+outputs, and removal without owning or deleting the looked-up objects.
 
 For an isolated API server without nodes, set `UNOBIN_KUBERNETES_API_ONLY=1`.
 The driver selects `config-api.ub` and `config-api-update.ub` when the scenario
@@ -60,9 +64,12 @@ CustomResourceDefinitions, and create/get/patch/update/delete access to the test
 custom API group and its status subresource. Set `SCENARIO=configuration` to run
 only the client configuration check.
 
-The typed scenarios use the `default` namespace. They need create, get, list,
-patch, and delete access to ConfigMaps; create, get, patch, and delete access to
-Deployments; and list access to Pods and ReplicaSets.
+Typed namespaced scenarios use the `default` namespace. The selected scenarios
+need permission for their resource kinds and supporting objects. Resource tests
+use create, get, list, update, patch, and delete as required by that resource's
+lifecycle. Workload verifiers also read Pods, ReplicaSets and Jobs. RBAC and
+Namespace scenarios require their cluster-scoped permissions. Data-source
+lookups require get access to ConfigMaps, Services or Namespaces.
 
 The container receives the caller's environment except for PATH and Go tool and
 cache paths. The home directory and additional kubeconfig directories are mounted
