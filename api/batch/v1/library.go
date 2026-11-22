@@ -18,7 +18,7 @@ func Library() *runtime.Library {
 		Name:        "kubernetes-batch-v1",
 		Description: "Kubernetes batch/v1 objects for Unobin.",
 		Compatibility: runtime.LibraryCompatibility{
-			RequiredAPI:            "1.0",
+			RequiredAPI:            "1.1",
 			SuggestedUnobinVersion: "v0.13.0-a.7",
 		},
 		Configuration: config.LibraryConfiguration(),
