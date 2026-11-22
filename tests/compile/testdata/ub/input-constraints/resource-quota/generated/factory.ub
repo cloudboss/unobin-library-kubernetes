@@ -1,0 +1,20 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    subject: core.resource-quota {
+      metadata: {
+        generate-name: 'prefix-'
+        labels:        { 'example.com/key': '' }
+        annotations:   { 'EXAMPLE.COM/key': 'any value' }
+      }
+      spec: {
+        hard:           { pods: '0' }
+        scopes:         ['BestEffort']
+        scope-selector: { match-expressions: [{ scope-name: 'PriorityClass', operator: 'Exists' }] }
+      }
+      ignore-labels:      ['^exclude']
+      ignore-annotations: ['drop$']
+    }
+  }
+}

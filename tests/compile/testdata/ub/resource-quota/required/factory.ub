@@ -1,0 +1,33 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server } }
+  inputs: {
+    server:      { type: string }
+    choice:      { type: string }
+    meta-choice: { type: string }
+  }
+  locals: {
+    meta: {
+      valid:      { name: 'subject' }
+      missing:    {}
+      null-value: null
+    }
+    quota-specs: {
+      valid:            { hard: { pods: '2' } }
+      missing-operator: { scope-selector: { match-expressions: [{ scope-name: 'PriorityClass' }] } }
+      null-operator: {
+        scope-selector: { match-expressions: [{ scope-name: 'PriorityClass', operator: null }] }
+      }
+      missing-scope: { scope-selector: { match-expressions: [{ operator: 'Exists' }] } }
+      null-scope: {
+        scope-selector: { match-expressions: [{ scope-name: null, operator: 'Exists' }] }
+      }
+    }
+  }
+  resources: {
+    subject: core.resource-quota {
+      metadata: @core.lookup(local.meta, input.meta-choice)
+      spec:     @core.lookup(local.quota-specs, input.choice)
+    }
+  }
+}

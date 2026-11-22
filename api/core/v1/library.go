@@ -35,6 +35,9 @@ func Library() *runtime.Library {
 			](),
 		},
 		Resources: map[string]runtime.ResourceRegistration{
+			"resource-quota": runtime.MakeResource[
+				svc.ResourceQuotaResource, *svc.ResourceQuotaResourceOutput, *config.Configuration,
+			]((&svc.ResourceQuotaResource{}).ResourceDefinition()),
 			"persistent-volume": svc.PersistentVolumeRegistration[
 				svc.PersistentVolumeResource, *svc.PersistentVolumeResourceOutput,
 			](pv, pv.Read, pv.KnownReplacementReasons),

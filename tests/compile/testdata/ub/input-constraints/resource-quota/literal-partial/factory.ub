@@ -1,0 +1,16 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    seed: core.config-map {
+      object: { metadata: { name: 'seed' }, data: { hard: '2' } }
+    }
+    subject: core.resource-quota {
+      metadata: { name: 'valid' }
+      spec: {
+        hard:           { pods: resource.seed.object.data['hard'] }
+        scope-selector: { match-expressions: [{ scope-name: 'PriorityClass', operator: 'other' }] }
+      }
+    }
+  }
+}

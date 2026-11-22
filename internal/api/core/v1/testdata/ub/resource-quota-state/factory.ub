@@ -1,0 +1,25 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: {
+    core: { server: input.server, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:             { type: string }
+    metadata:           { type: opaque }
+    spec:               { type: opaque }
+    create-timeout:     { type: opaque }
+    update-timeout:     { type: opaque }
+    ignore-annotations: { type: opaque }
+    ignore-labels:      { type: opaque }
+  }
+  resources: {
+    subject: core.resource-quota {
+      metadata:           input.metadata
+      spec:               input.spec
+      create-timeout:     input.create-timeout
+      update-timeout:     input.update-timeout
+      ignore-annotations: input.ignore-annotations
+      ignore-labels:      input.ignore-labels
+    }
+  }
+}

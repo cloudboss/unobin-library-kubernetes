@@ -1,0 +1,14 @@
+stack: {
+  factory: {
+    inputs: {
+      server:            'QUOTA_SERVER'
+      name:              'QUOTA_NAME'
+      operator:          'QUOTA_KNOWN_OPERATOR'
+      resolved-operator: 'QUOTA_RESOLVED_OPERATOR'
+    }
+  }
+  state: local {
+    path: 'state'
+  }
+  encryption: noop {}
+}
