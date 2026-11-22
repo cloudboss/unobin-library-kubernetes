@@ -1,0 +1,87 @@
+factory: {
+  description: 'Creates Ingress rules and TLS, clears configuration, and replaces a named Ingress.'
+  imports:     { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: {} }
+  inputs: {
+    spec: {
+      type: object(
+        {
+          default-backend: object(
+            {
+              service: object(
+                {
+                  name: string
+                  port: object({ number: optional(integer), name: optional(string) })
+                },
+              )
+            },
+          )
+          rule: optional(
+            list(
+              object(
+                {
+                  host: string
+                  http: object(
+                    {
+                      path: list(
+                        object(
+                          {
+                            path:      string
+                            path-type: optional(string)
+                            backend: object(
+                              {
+                                service: object(
+                                  {
+                                    name: string
+                                    port: object(
+                                      { number: optional(integer), name: optional(string) },
+                                    )
+                                  },
+                                )
+                              },
+                            )
+                          },
+                        ),
+                      )
+                    },
+                  )
+                },
+              ),
+            ),
+          )
+          tls: optional(list(object({ hosts: list(string), secret-name: string })))
+        },
+      )
+    }
+    replacement-name: { type: string }
+  }
+  resources: {
+    routing: networking.ingress {
+      metadata: {
+        generate-name: 'unobin-it-ingress-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'networking-v1-ingress'
+          'test.unobin.cloudboss.io/role':     'stable'
+        }
+      }
+      spec: input.spec
+    }
+    replaced: networking.ingress {
+      metadata: {
+        name: input.replacement-name
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'networking-v1-ingress'
+          'test.unobin.cloudboss.io/role':     'replaced'
+        }
+      }
+      spec: { default-backend: { service: { name: 'app', port: { number: 80 } } } }
+      wait-for-load-balancer: false
+    }
+  }
+  outputs: {
+    name:   { value: resource.routing.name }
+    uid:    { value: resource.routing.uid }
+    spec:   { value: resource.routing.spec }
+    status: { value: resource.routing.status }
+  }
+}

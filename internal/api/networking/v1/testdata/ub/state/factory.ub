@@ -1,0 +1,28 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: {
+    networking: { server: input.server, token: input.token, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:         { type: string }
+    token:          { type: string, default: 'first' }
+    metadata:       { type: opaque }
+    spec:           { type: opaque }
+    wait:           { type: boolean, default: false }
+    timeout:        { type: string, default: '2s' }
+    delete-timeout: { type: string, default: '2s' }
+    annotations:    { type: list(string), default: [] }
+    ignore:         { type: list(string), default: [] }
+  }
+  resources: {
+    routing: networking.ingress {
+      metadata:               input.metadata
+      spec:                   input.spec
+      wait-for-load-balancer: input.wait
+      create-timeout:         input.timeout
+      delete-timeout:         input.delete-timeout
+      ignore-annotations:     input.annotations
+      ignore-labels:          input.ignore
+    }
+  }
+}

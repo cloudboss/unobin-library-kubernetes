@@ -1,0 +1,34 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: {} }
+  resources: {
+    routing: networking.ingress {
+      metadata: { name: 'example' }
+      spec: {
+        default-backend: { service: { name: 'app', port: { number: 80 } } }
+        rule: [
+          {
+            host: 'example.com'
+            http: {
+              path: [
+                {
+                  path:    '/'
+                  backend: { resource: { api-group: '', kind: 'ConfigMap', name: 'settings' } }
+                },
+              ]
+            }
+          },
+        ]
+        tls: [
+          { hosts: ['b.example.com', 'a.example.com', 'b.example.com'], secret-name: 'secret' },
+          {},
+        ]
+      }
+      wait-for-load-balancer: false
+      create-timeout:         '1s'
+      delete-timeout:         '1s'
+      ignore-labels:          []
+      ignore-annotations:     []
+    }
+  }
+}

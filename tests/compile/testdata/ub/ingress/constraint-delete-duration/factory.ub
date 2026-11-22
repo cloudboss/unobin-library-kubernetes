@@ -1,0 +1,11 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: {} }
+  resources: {
+    routing: networking.ingress {
+      metadata:       { name: 'valid' }
+      spec:           {}
+      delete-timeout: 'bad'
+    }
+  }
+}

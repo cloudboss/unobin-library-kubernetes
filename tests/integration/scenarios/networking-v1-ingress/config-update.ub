@@ -1,0 +1,12 @@
+stack: {
+  factory: {
+    inputs: {
+      replacement-name: 'unobin-it-ingress-updated'
+      spec: { default-backend: { service: { name: 'updated', port: { number: 8080 } } } }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
