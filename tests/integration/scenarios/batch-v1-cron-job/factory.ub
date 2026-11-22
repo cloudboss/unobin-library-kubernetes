@@ -1,0 +1,55 @@
+factory: {
+  imports:         { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' }
+  library-configs: { batch: {} }
+  inputs: {
+    stage:   { type: string }
+    ttl:     { type: string }
+    suspend: { type: boolean }
+    image:   { type: string }
+  }
+  resources: {
+    mutable: batch.cron-job {
+      metadata: { name: 'unobin-it-cron-job-mutable', labels: { stage: input.stage } }
+      spec: {
+        schedule:                      '* * * * *'
+        timezone:                      'Etc/UTC'
+        concurrency-policy:            'Forbid'
+        successful-jobs-history-limit: 2
+        failed-jobs-history-limit:     0
+        suspend:                       input.suspend
+        job-template: {
+          metadata: { labels: { stage: input.stage } }
+          spec: {
+            ttl-seconds-after-finished: input.ttl
+            template: {
+              metadata: {}
+              spec:     { container: [{ name: 'app', image: 'busybox:1.37', command: ['true'] }] }
+            }
+          }
+        }
+      }
+      delete-timeout: '30s'
+    }
+    replaced: batch.cron-job {
+      metadata: { name: 'unobin-it-cron-job-replaced' }
+      spec: {
+        schedule: '@hourly'
+        suspend:  true
+        job-template: {
+          metadata: {}
+          spec: {
+            template: {
+              metadata: {}
+              spec:     { container: [{ name: 'app', image: input.image, command: ['true'] }] }
+            }
+          }
+        }
+      }
+      delete-timeout: '30s'
+    }
+  }
+  outputs: {
+    mutable-uid:  { value: resource.mutable.uid }
+    replaced-uid: { value: resource.replaced.uid }
+  }
+}

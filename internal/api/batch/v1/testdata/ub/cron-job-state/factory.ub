@@ -1,0 +1,19 @@
+factory: {
+  imports: { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' }
+  library-configs: {
+    batch: { server: input.server, token: input.token, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:   { type: string }
+    token:    { type: string, default: 'first' }
+    metadata: { type: opaque }
+    spec:     { type: opaque }
+  }
+  resources: {
+    workload: batch.cron-job {
+      metadata:       input.metadata
+      spec:           input.spec
+      delete-timeout: '2s'
+    }
+  }
+}
