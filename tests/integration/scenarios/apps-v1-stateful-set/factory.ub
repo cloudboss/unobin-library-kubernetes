@@ -1,0 +1,124 @@
+factory: {
+  imports: {
+    apps:    'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1'
+    objects: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+  }
+  library-configs: { apps: {}, objects: {} }
+  inputs: {
+    name:             { type: string }
+    image:            { type: string }
+    replicas:         { type: string }
+    wait-for-rollout: { type: boolean, default: true }
+  }
+  resources: {
+    service: objects.object {
+      manifest: @core.to-json(
+        {
+          apiVersion: 'v1'
+          kind:       'Service'
+          metadata:   { name: input.name, namespace: 'default' }
+          spec:       { clusterIP: 'None', selector: { app: input.name }, ports: [{ port: 80 }] }
+        },
+      )
+    }
+    storage-zero: objects.object {
+      manifest: @core.to-json(
+        {
+          apiVersion: 'v1'
+          kind:       'PersistentVolume'
+          metadata:   { name: 'unobin-it-stateful-set-pv-0' }
+          spec: {
+            capacity:                      { storage: '1Mi' }
+            accessModes:                   ['ReadWriteOnce']
+            persistentVolumeReclaimPolicy: 'Retain'
+            storageClassName:              'unobin-it-stateful-set'
+            claimRef: { namespace: 'default', name: 'data-unobin-it-stateful-set-0' }
+            hostPath: { path: '/var/lib/unobin-stateful-set-it/0', type: 'DirectoryOrCreate' }
+          }
+        },
+      )
+    }
+    storage-one: objects.object {
+      manifest: @core.to-json(
+        {
+          apiVersion: 'v1'
+          kind:       'PersistentVolume'
+          metadata:   { name: 'unobin-it-stateful-set-pv-1' }
+          spec: {
+            capacity:                      { storage: '1Mi' }
+            accessModes:                   ['ReadWriteOnce']
+            persistentVolumeReclaimPolicy: 'Retain'
+            storageClassName:              'unobin-it-stateful-set'
+            claimRef: { namespace: 'default', name: 'data-unobin-it-stateful-set-1' }
+            hostPath: { path: '/var/lib/unobin-stateful-set-it/1', type: 'DirectoryOrCreate' }
+          }
+        },
+      )
+    }
+    workload: apps.stateful-set {
+      @depends-on: [resource.storage-zero, resource.storage-one]
+      metadata: {
+        name:      input.name
+        namespace: 'default'
+        labels:    { app: input.name }
+      }
+      spec: {
+        service-name:                             resource.service.name
+        replicas:                                 input.replicas
+        persistent-volume-claim-retention-policy: { when-deleted: 'Delete', when-scaled: 'Delete' }
+        volume-claim-template: [
+          {
+            metadata: { name: 'data' }
+            spec: {
+              access-modes:       ['ReadWriteOnce']
+              storage-class-name: 'unobin-it-stateful-set'
+              resources:          { requests: { storage: '1Mi' } }
+            }
+          },
+        ]
+        selector: { match-labels: { app: input.name } }
+        template: {
+          metadata: { labels: { app: input.name } }
+          spec: {
+            container: [
+              {
+                name:         'app'
+                image:        input.image
+                volume-mount: [{ name: 'data', mount-path: '/data' }]
+              },
+            ]
+          }
+        }
+      }
+      wait-for-rollout: input.wait-for-rollout
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
+    }
+    no-wait: apps.stateful-set {
+      metadata: {
+        name:      'unobin-it-stateful-set-nowait'
+        namespace: 'default'
+        labels:    { app: 'unobin-it-stateful-set-nowait' }
+      }
+      spec: {
+        service-name: resource.service.name
+        replicas:     input.replicas
+        selector:     { match-labels: { app: 'unobin-it-stateful-set-nowait' } }
+        template: {
+          metadata: { labels: { app: 'unobin-it-stateful-set-nowait' } }
+          spec:     { container: [{ name: 'app', image: input.image }] }
+        }
+      }
+      wait-for-rollout: false
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
+    }
+  }
+  outputs: {
+    name:     { value: resource.workload.name }
+    uid:      { value: resource.workload.uid }
+    replicas: { value: resource.workload.spec.replicas }
+  }
+}

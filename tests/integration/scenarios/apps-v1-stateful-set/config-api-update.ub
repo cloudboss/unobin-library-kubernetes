@@ -1,0 +1,14 @@
+stack: {
+  factory: {
+    inputs: {
+      name:             'unobin-it-stateful-set'
+      image:            'registry.k8s.io/pause:3.10'
+      replicas:         '1'
+      wait-for-rollout: false
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

@@ -8,6 +8,9 @@ import (
 )
 
 func Library() *runtime.Library {
+	statefulSet := runtime.MakeResource[
+		svc.StatefulSetResource, *svc.StatefulSetResourceOutput, *config.Configuration,
+	]((&svc.StatefulSetResource{}).ResourceDefinition())
 	return &runtime.Library{
 		Name:        "kubernetes-apps-v1",
 		Description: "Kubernetes apps/v1 objects for Unobin.",
@@ -17,6 +20,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{
+			"stateful-set": svc.StatefulSetRegistration[
+				svc.StatefulSetResource, *svc.StatefulSetResourceOutput,
+			](statefulSet, statefulSet.Read, statefulSet.KnownReplacementReasons),
 			"deployment": runtime.MakeResource[
 				svc.DeploymentResource, *svc.DeploymentResourceOutput, *config.Configuration,
 			]((&svc.DeploymentResource{}).ResourceDefinition()),

@@ -1,0 +1,17 @@
+factory: {
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  inputs:          { server: { type: string } }
+  library-configs: { apps: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    seed: apps.stateful-set {
+      metadata:         { name: 'seed' }
+      spec:             { selector: {}, service-name: 'seed', template: { metadata: {} } }
+      wait-for-rollout: false
+    }
+    workload: apps.stateful-set {
+      metadata: { name: 'BAD' }
+      spec: { selector: {}, service-name: resource.seed.name, template: { metadata: {}, spec: {} } }
+      wait-for-rollout: false
+    }
+  }
+}
