@@ -1,0 +1,11 @@
+factory: {
+  resources: {
+    reader: rbac.cluster-role {
+      metadata:           input.metadata
+      rule:               input.rule
+      aggregation-rule:   input.aggregation
+      ignore-annotations: input.ignore-annotations
+      ignore-labels:      input.ignore-labels
+    }
+  }
+}

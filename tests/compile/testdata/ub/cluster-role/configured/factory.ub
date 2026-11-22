@@ -1,0 +1,11 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: {} }
+  inputs:          { name: { type: string }, groups: { type: list(string) } }
+  resources: {
+    reader: rbac.cluster-role {
+      metadata: { name: input.name }
+      rule:     [{ verbs: [], api-groups: input.groups }]
+    }
+  }
+}

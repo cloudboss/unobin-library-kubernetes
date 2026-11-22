@@ -1,0 +1,13 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs:          { server: { type: string } }
+  resources: {
+    seed: rbac.cluster-role {
+      metadata: { generate-name: 'seed-' }
+    }
+    reader: rbac.cluster-role {
+      metadata: { generate-name: resource.seed.rule[0].verbs[0] }
+    }
+  }
+}

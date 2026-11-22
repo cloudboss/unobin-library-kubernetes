@@ -1,0 +1,49 @@
+factory: {
+  description: '''>-
+    Creates generated ClusterRoles and updates ordered permissions with aggregation.
+    '''
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: { namespace: 'unused' } }
+  inputs: {
+    verb:          { type: string }
+    resource-name: { type: string }
+  }
+  resources: {
+    reader: rbac.cluster-role {
+      metadata: {
+        generate-name: 'unobin-it-cluster-reader-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario':  'rbac-v1-cluster-role'
+          'test.unobin.cloudboss.io/aggregate': 'reader'
+        }
+      }
+      rule: [
+        {
+          verbs:          ['get', input.verb, 'get']
+          api-groups:     ['']
+          resources:      ['pods']
+          resource-names: [input.resource-name]
+        },
+      ]
+    }
+    aggregate: rbac.cluster-role {
+      metadata: {
+        generate-name: 'unobin-it-cluster-aggregate-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'rbac-v1-cluster-role' }
+      }
+      aggregation-rule: {
+        cluster-role-selectors: [
+          {
+            match-labels: { 'test.unobin.cloudboss.io/aggregate': 'reader' }
+          },
+        ]
+      }
+    }
+  }
+  outputs: {
+    name:           { value: resource.reader.name }
+    uid:            { value: resource.reader.uid }
+    rule:           { value: resource.reader.rule }
+    aggregate-name: { value: resource.aggregate.name }
+  }
+}

@@ -1,0 +1,24 @@
+factory: {
+  imports: { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: {
+    rbac: {
+      server:                   input.server
+      token:                    input.token
+      insecure-skip-tls-verify: true
+      namespace:                input.namespace
+    }
+  }
+  inputs: {
+    server:    { type: string }
+    token:     { type: string, default: 'first' }
+    namespace: { type: string, default: 'irrelevant' }
+    identity:  { type: string, default: 'system:reader' }
+    verb:      { type: string, default: 'get' }
+    label:     { type: string, default: 'initial' }
+  }
+  resources: {
+    reader: rbac.cluster-role {
+      metadata: { name: input.identity, labels: { app: input.label } }
+    }
+  }
+}

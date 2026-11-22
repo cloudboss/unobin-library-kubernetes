@@ -1,0 +1,19 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: { namespace: 'irrelevant' } }
+  resources: {
+    reader: rbac.cluster-role {
+      metadata: { name: 'system:reader', annotations: { 'EXAMPLE.COM/KEY': 'any value' } }
+      rule:     []
+      aggregation-rule: {
+        cluster-role-selectors: [
+          {},
+          {
+            match-expressions: [{ values: ['b', 'a', 'b'] }]
+          },
+        ]
+      }
+    }
+  }
+  outputs: { name: { value: resource.reader.name }, uid: { value: resource.reader.uid } }
+}

@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { verb: 'watch', resource-name: 'two' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

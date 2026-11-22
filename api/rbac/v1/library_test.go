@@ -23,7 +23,7 @@ func TestRoleRegistration(t *testing.T) {
 	lib := Library()
 	require.Equal(t, "kubernetes-rbac-v1", lib.Name)
 	require.Equal(t, reflect.TypeFor[*config.Configuration](), lib.Configuration.ValueType())
-	require.ElementsMatch(t, []string{"role", "role-binding"}, mapKeys(lib.Resources))
+	require.ElementsMatch(t, []string{"role", "role-binding", "cluster-role"}, mapKeys(lib.Resources))
 	require.Empty(t, lib.Actions)
 	require.Empty(t, lib.DataSources)
 	reg := lib.Resources["role"]

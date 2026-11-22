@@ -14,6 +14,9 @@ func Library() *runtime.Library {
 	roleBinding := runtime.MakeResource[
 		svc.RoleBindingResource, *svc.RoleBindingResourceOutput, *config.Configuration,
 	]((&svc.RoleBindingResource{}).ResourceDefinition())
+	clusterRole := runtime.MakeResource[
+		svc.ClusterRoleResource, *svc.ClusterRoleResourceOutput, *config.Configuration,
+	]((&svc.ClusterRoleResource{}).ResourceDefinition())
 	return &runtime.Library{
 		Name:        "kubernetes-rbac-v1",
 		Description: "Kubernetes rbac/v1 objects for Unobin.",
@@ -23,6 +26,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{
+			"cluster-role": svc.ClusterRoleRegistration[
+				svc.ClusterRoleResource, *svc.ClusterRoleResourceOutput,
+			](clusterRole, clusterRole.Read, clusterRole.KnownReplacementReasons),
 			"role-binding": svc.RoleBindingRegistration[
 				svc.RoleBindingResource, *svc.RoleBindingResourceOutput,
 			](roleBinding, roleBinding.Read, roleBinding.KnownReplacementReasons),
