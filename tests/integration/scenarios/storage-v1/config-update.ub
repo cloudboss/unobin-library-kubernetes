@@ -1,0 +1,15 @@
+stack: {
+  factory: {
+    inputs: {
+      csi-driver-revision:           'updated'
+      csi-driver-spec:               { attach-required: true, pod-info-on-mount: true }
+      storage-class-revision:        'updated'
+      storage-class-expansion:       false
+      storage-class-lookup-fallback: 'updated'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

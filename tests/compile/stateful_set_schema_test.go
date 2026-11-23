@@ -78,7 +78,7 @@ func TestStatefulSetScenarioFactoriesCompile(t *testing.T) {
 	directory, err := os.MkdirTemp(outputRoot, "scenario-")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(directory)) })
-	source := filepath.Join(root, "tests/integration/scenarios/apps-v1-stateful-set")
+	source := filepath.Join(root, "tests/compile/testdata/ub/compiled/stateful-set")
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		ReplaceUnobin: strings.TrimSpace(string(out)), FactoryPath: source,

@@ -53,7 +53,7 @@ func TestHPACompiledFixtures(t *testing.T) {
 
 func TestHPACompiledScenario(t *testing.T) {
 	compileHPAFixture(t,
-		"../../tests/integration/scenarios/autoscaling-v2-horizontal-pod-autoscaler", "")
+		"../../tests/integration/scenarios/autoscaling-v2", "")
 }
 
 func compileHPAFixture(t *testing.T, fixture, want string) {

@@ -90,7 +90,7 @@ func TestCompiledDaemonSetScenario(t *testing.T) {
 	require.NoError(t, err)
 	root, err := filepath.Abs("../..")
 	require.NoError(t, err)
-	scenario := filepath.Join(root, "tests", "integration", "scenarios", "apps-v1-daemon-set")
+	scenario := filepath.Join(root, "tests/compile/testdata/ub/compiled/daemon-set")
 	outputRoot := filepath.Join(root, "_output", "daemon-set-schema")
 	require.NoError(t, os.MkdirAll(outputRoot, 0o700))
 	directory, err := os.MkdirTemp(outputRoot, "integration-")

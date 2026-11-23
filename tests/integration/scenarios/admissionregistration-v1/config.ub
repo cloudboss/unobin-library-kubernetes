@@ -1,0 +1,14 @@
+stack: {
+  factory: {
+    inputs: {
+      mutating-webhook-configuration-revision:   'one'
+      validating-admission-policy-initial:       true
+      validating-webhook-configuration-revision: 'one'
+      validating-webhook-configuration-path:     '/first'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

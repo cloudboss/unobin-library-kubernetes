@@ -1,0 +1,114 @@
+factory: {
+  imports: {
+    batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1'
+  }
+  library-configs: {
+    batch: {}
+  }
+  inputs: {
+    cron-job-stage:          { type: string }
+    cron-job-ttl:            { type: string }
+    cron-job-suspend:        { type: boolean }
+    cron-job-image:          { type: string }
+    job-api-name:            { type: string }
+    job-completion-name:     { type: string }
+    job-labels:              { type: map(string) }
+    job-annotations:         { type: map(string) }
+    job-parallelism:         { type: integer }
+    job-backoff-limit:       { type: integer }
+    job-wait-for-completion: { type: boolean, default: true }
+  }
+  resources: {
+    cron-job-mutable: batch.cron-job {
+      metadata: { name: 'unobin-it-cron-job-mutable', labels: { stage: input.cron-job-stage } }
+      spec: {
+        schedule:                      '* * * * *'
+        timezone:                      'Etc/UTC'
+        concurrency-policy:            'Forbid'
+        successful-jobs-history-limit: 2
+        failed-jobs-history-limit:     0
+        suspend:                       input.cron-job-suspend
+        job-template: {
+          metadata: { labels: { stage: input.cron-job-stage } }
+          spec: {
+            ttl-seconds-after-finished: input.cron-job-ttl
+            template: {
+              metadata: {}
+              spec:     { container: [{ name: 'app', image: 'busybox:1.37', command: ['true'] }] }
+            }
+          }
+        }
+      }
+      delete-timeout: '30s'
+    }
+    cron-job-replaced: batch.cron-job {
+      metadata: { name: 'unobin-it-cron-job-replaced' }
+      spec: {
+        schedule: '@hourly'
+        suspend:  true
+        job-template: {
+          metadata: {}
+          spec: {
+            template: {
+              metadata: {}
+              spec: { container: [{ name: 'app', image: input.cron-job-image, command: ['true'] }] }
+            }
+          }
+        }
+      }
+      delete-timeout: '30s'
+    }
+    job-api-job: batch.job {
+      metadata: {
+        name:        input.job-api-name
+        labels:      input.job-labels
+        annotations: input.job-annotations
+      }
+      spec: {
+        parallelism:   input.job-parallelism
+        backoff-limit: input.job-backoff-limit
+        template: {
+          metadata: { labels: { app: input.job-api-name } }
+          spec:     { container: [{ name: 'app', image: 'busybox:1.37', command: ['true'] }] }
+        }
+      }
+      wait-for-completion: false
+      create-timeout:      '3m'
+      update-timeout:      '3m'
+      delete-timeout:      '30s'
+    }
+    job-completion-job: batch.job {
+      metadata: {
+        name:        input.job-completion-name
+        labels:      input.job-labels
+        annotations: input.job-annotations
+      }
+      spec: {
+        parallelism:   input.job-parallelism
+        backoff-limit: input.job-backoff-limit
+        template: {
+          metadata: { labels: { app: input.job-completion-name } }
+          spec:     { container: [{ name: 'app', image: 'busybox:1.37', command: ['true'] }] }
+        }
+      }
+      wait-for-completion: input.job-wait-for-completion
+      create-timeout:      '3m'
+      update-timeout:      '3m'
+      delete-timeout:      '30s'
+    }
+  }
+  outputs: {
+    cron-job: {
+      value: {
+        mutable-uid:  resource.cron-job-mutable.uid
+        replaced-uid: resource.cron-job-replaced.uid
+      }
+    }
+    job: {
+      value: {
+        api-uid:        resource.job-api-job.uid
+        completion-uid: resource.job-completion-job.uid
+      }
+    }
+  }
+}

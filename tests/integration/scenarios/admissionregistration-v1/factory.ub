@@ -1,0 +1,145 @@
+factory: {
+  imports: {
+    admissionregistration: '''\-
+      github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1
+      '''
+  }
+  library-configs: {
+    admissionregistration: {}
+  }
+  inputs: {
+    mutating-webhook-configuration-revision:   { type: string }
+    mutating-webhook-configuration-policy:     { type: optional(string), default: null }
+    validating-admission-policy-initial:       { type: boolean }
+    validating-webhook-configuration-revision: { type: string }
+    validating-webhook-configuration-path:     { type: string }
+  }
+  resources: {
+    mutating-webhook-configuration-example: admissionregistration.mutating-webhook-configuration {
+      metadata: {
+        generate-name: 'unobin-it-mutating-webhook-a11-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'mutating-webhook-configuration' }
+        annotations: {
+          'test.unobin.cloudboss.io/revision': input.mutating-webhook-configuration-revision
+        }
+      }
+      webhook: [
+        {
+          name: 'mutation.test.unobin.cloudboss.io'
+          client-config: {
+            service: {
+              name:      'inert-mutating-webhook'
+              namespace: 'unobin-it-mutating-webhook'
+            }
+          }
+          admission-review-versions: ['v1']
+          side-effects:              'None'
+          failure-policy:            'Ignore'
+          reinvocation-policy:       input.mutating-webhook-configuration-policy
+          namespace-selector: {
+            match-labels: {
+              'test.unobin.cloudboss.io/scenario': 'mutating-webhook-configuration'
+            }
+          }
+          object-selector: {
+            match-labels: {
+              'test.unobin.cloudboss.io/scenario': 'mutating-webhook-configuration'
+            }
+          }
+        },
+      ]
+    }
+    validating-admission-policy-policy: admissionregistration.validating-admission-policy {
+      metadata: {
+        generate-name: 'unobin-it-vap-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'validating-admission-policy' }
+        annotations: if input.validating-admission-policy-initial
+          then { 'test.unobin.cloudboss.io/initial': 'true' }
+          else null
+      }
+      spec: {
+        audit-annotations: []
+        failure-policy:    'Fail'
+        match-constraints: {
+          match-policy: if input.validating-admission-policy-initial then 'Exact' else null
+          object-selector: if input.validating-admission-policy-initial
+            then { match-labels: { unobin-test: 'isolated' } }
+            else null
+          resource-rules: [
+            {
+              api-groups:     ['']
+              api-versions:   ['v1']
+              operations:     ['CREATE']
+              resources:      ['configmaps']
+              resource-names: ['unobin-it-vap-fixture']
+            },
+          ]
+        }
+        validations: [{ expression: 'true', message: 'Test fixture' }]
+        variables: if input.validating-admission-policy-initial
+          then [
+            { name: 'first', expression: 'true' },
+            { name: 'second', expression: 'variables.first' },
+          ]
+          else []
+      }
+    }
+    validating-webhook-configuration-example: admissionregistration.validating-webhook-configuration {
+      metadata: {
+        generate-name: 'unobin-it-validating-webhook-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'validating-webhook-configuration' }
+        annotations: {
+          'test.unobin.cloudboss.io/revision': input.validating-webhook-configuration-revision
+        }
+      }
+      webhook: [
+        {
+          name: 'validation.test.unobin.cloudboss.io'
+          client-config: {
+            service: {
+              name:      'inert-validating-webhook'
+              namespace: 'unobin-it-validating-webhook'
+              path:      input.validating-webhook-configuration-path
+            }
+          }
+          admission-review-versions: ['v1']
+          side-effects:              'None'
+          failure-policy:            'Ignore'
+          namespace-selector: {
+            match-labels: {
+              'test.unobin.cloudboss.io/scenario': 'validating-webhook-configuration'
+            }
+          }
+          object-selector: {
+            match-labels: {
+              'test.unobin.cloudboss.io/scenario': 'validating-webhook-configuration'
+            }
+          }
+        },
+      ]
+    }
+  }
+  outputs: {
+    mutating-webhook-configuration: {
+      value: {
+        name:    resource.mutating-webhook-configuration-example.name
+        uid:     resource.mutating-webhook-configuration-example.uid
+        webhook: resource.mutating-webhook-configuration-example.webhook
+      }
+    }
+    validating-admission-policy: {
+      value: {
+        name:   resource.validating-admission-policy-policy.metadata.name
+        uid:    resource.validating-admission-policy-policy.uid
+        policy: resource.validating-admission-policy-policy.spec
+      }
+    }
+    validating-webhook-configuration: {
+      value: {
+        name:    resource.validating-webhook-configuration-example.name
+        uid:     resource.validating-webhook-configuration-example.uid
+        webhook: resource.validating-webhook-configuration-example.webhook
+      }
+    }
+  }
+}

@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { pods: '3', priority-class: 'unobin-test-first', scope: 'NotTerminating' } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

@@ -146,7 +146,7 @@ func TestCompiledConfigMapInfoScenario(t *testing.T) {
 	work, err := os.MkdirTemp(base, "scenario-")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
-	scenario := filepath.Join(root, "tests/integration/scenarios/core-v1-config-map-info")
+	scenario := filepath.Join(root, "tests/compile/testdata/ub/compiled/config-map-lookup")
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(scenario, "factory.ub"), OutDir: work,

@@ -82,7 +82,7 @@ func TestCompiledStorageClassEvaluatedInputs(t *testing.T) {
 }
 
 func TestCompiledStorageClassScenario(t *testing.T) {
-	fixture := "../integration/scenarios/storage-v1-storage-class"
+	fixture := "testdata/ub/compiled/storage-class"
 	result, work, log, err := compileStorageClass(t, fixture, true)
 	require.NoError(t, err, "%s", log)
 	require.True(t, result.Built)

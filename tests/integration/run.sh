@@ -65,7 +65,7 @@ run_scenario() (
                 "./${name}" apply destroy.ubp); then
                 if [ "${status}" = 0 ]; then
                     VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=destroyed \
-                        go run "./tests/integration/scenarios/${name}/verify" || status=1
+                        "${work}/verify" || status=1
                 fi
             else
                 echo "destroy failed: ${name}" >&2
@@ -85,6 +85,7 @@ run_scenario() (
 
     "${unobin}" compile -p "${source_dir}" -o "${work}" --name "${name}" \
         --replace-go-module "github.com/cloudboss/unobin-library-kubernetes=${root}" --build
+    go build -o "${work}/verify" "./tests/integration/scenarios/${name}/verify"
     cp "${source_dir}/${initial_config}" "${work}/config.ub"
     mkdir "${work}/update"
     cp "${source_dir}/${updated_config}" "${work}/update/config.ub"
@@ -92,13 +93,11 @@ run_scenario() (
     (cd "${work}" && "./${name}" plan -c config.ub -o plan.ubp)
     applied=1
     (cd "${work}" && "./${name}" apply plan.ubp)
-    VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=applied \
-        go run "./tests/integration/scenarios/${name}/verify"
+    VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=applied "${work}/verify"
     (cd "${work}" && "./${name}" plan -c update/config.ub -o plan-update.ubp)
     destroy_config=update/config.ub
     (cd "${work}" && "./${name}" apply plan-update.ubp)
-    VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=updated \
-        go run "./tests/integration/scenarios/${name}/verify"
+    VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=updated "${work}/verify"
 )
 
 for name in "${@}"; do

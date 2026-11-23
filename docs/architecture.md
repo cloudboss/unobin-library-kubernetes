@@ -110,12 +110,11 @@ Put Unobin fixtures in package-local `testdata/ub/` files. Schema and registrati
 checks exercise the public SDK contract. Behavior tests cover lifecycle choices;
 they do not inspect documentation or tooling text.
 
-Construct integration scenarios belong under
-`tests/integration/scenarios/<scenario>/`. Follow the AWS scenario layout:
-`factory.ub`, `config.ub`, `config-update.ub`, and `verify/main.go`. The shared
-driver compiles the factory with the local library, pins both configurations,
-plans and applies them, and destroys the stack. The verifier reads Kubernetes
-objects after each apply and after destroy. It can save object identities in
+Integration scenarios group constructs by API group and version under
+`tests/integration/scenarios/`. Each scenario can include a factory, initial and
+updated configurations, and a Kubernetes verifier. The shared driver compiles
+the factory with the local library, pins both configurations, plans and applies
+them, and destroys the stack. The verifier can save object identities in
 `VERIFY_BUILD_DIR` to check whether an update preserved or replaced an object.
 
 Go API tests use the `integration` build tag. Unobin fixtures used by Go tests
@@ -129,13 +128,13 @@ make build
 make test
 make vet
 make lint
-SCENARIO=core-v1-config-map make test-integration-kind
+SCENARIO=core-v1 make test-integration-kind
 ```
 
-Use `SCENARIO=apps-v1-deployment` for the Deployment port. A local API server can
-verify API behavior, but Deployment rollout waits require workload controllers
-and running pods. A native API-server check does not substitute for that kind
-scenario. Run existing-cluster scenarios only with explicit authorization.
+Use `SCENARIO=apps-v1` to check Deployment, StatefulSet, and DaemonSet in kind.
+A local API server can verify API behavior. Rollout waits require workload
+controllers and running Pods. Run existing-cluster scenarios only with explicit
+authorization.
 
 ## References
 

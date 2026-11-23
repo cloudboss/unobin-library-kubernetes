@@ -1,0 +1,18 @@
+stack: {
+  factory: {
+    inputs: {
+      cluster-role-verb:            'watch'
+      cluster-role-resource-name:   'two'
+      cluster-role-binding-user:    'bob'
+      cluster-role-binding-account: 'reader-updated'
+      role-verbs:                   ['watch', 'get', 'list']
+      role-resource-names:          []
+      role-binding-user:            'bob'
+      role-binding-account:         'reader-updated'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

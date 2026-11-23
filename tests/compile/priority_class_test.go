@@ -135,7 +135,7 @@ func runPriorityClassCommand(t *testing.T, work, binary, command, config string)
 }
 
 func TestCompiledPriorityClassScenario(t *testing.T) {
-	const fixture = "../integration/scenarios/scheduling-v1-priority-class"
+	const fixture = "../integration/scenarios/scheduling-v1"
 	result, work, log, err := compilePriorityClass(t, fixture, true, nil)
 	require.NoError(t, err, "%s", log)
 	for _, name := range []string{

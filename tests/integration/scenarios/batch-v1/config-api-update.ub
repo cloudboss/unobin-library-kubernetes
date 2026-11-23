@@ -1,0 +1,21 @@
+stack: {
+  factory: {
+    inputs: {
+      cron-job-stage:          'updated'
+      cron-job-ttl:            '600'
+      cron-job-suspend:        true
+      cron-job-image:          'busybox:1.36'
+      job-api-name:            'unobin-it-job-api'
+      job-completion-name:     'unobin-it-job-completion'
+      job-labels:              { app: 'job-api', stage: 'updated' }
+      job-annotations:         { stage: 'updated' }
+      job-parallelism:         2
+      job-backoff-limit:       4
+      job-wait-for-completion: false
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

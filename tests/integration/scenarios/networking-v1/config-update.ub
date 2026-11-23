@@ -1,0 +1,17 @@
+stack: {
+  factory: {
+    inputs: {
+      ingress-replacement-name: 'unobin-it-ingress-updated'
+      ingress-spec: { default-backend: { service: { name: 'updated', port: { number: 8080 } } } }
+      ingress-class-parameters-name:   'updated'
+      ingress-class-revision:          'second'
+      ingress-lookup-lookup-label:     'second'
+      network-policy-replacement-name: 'unobin-it-policy-updated'
+      network-policy-spec: { pod-selector: {}, policy-types: ['Ingress'], ingress: [], egress: [] }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

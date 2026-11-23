@@ -99,7 +99,7 @@ func compileStorageClassInfo(
 }
 
 func TestCompiledStorageClassInfoScenario(t *testing.T) {
-	fixture := "../integration/scenarios/storage-v1-storage-class-info"
+	fixture := "testdata/ub/compiled/storage-class-lookup"
 	result, work, log, err := compileStorageClassInfo(t, storageClassInfoUnobinVersion(t),
 		fixture, true)
 	require.NoError(t, err, "%s", log)

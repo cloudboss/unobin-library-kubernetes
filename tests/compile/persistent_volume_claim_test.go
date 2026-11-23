@@ -61,7 +61,7 @@ func TestCompiledPersistentVolumeClaimScenario(t *testing.T) {
 	dir, err := os.MkdirTemp(base, "scenario-")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
-	scenario := filepath.Join(root, "tests/integration/scenarios/core-v1-persistent-volume-claim")
+	scenario := filepath.Join(root, "tests/compile/testdata/ub/compiled/persistent-volume-claim")
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(scenario, "factory.ub"),

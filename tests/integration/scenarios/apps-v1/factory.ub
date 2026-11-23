@@ -1,0 +1,286 @@
+factory: {
+  imports: {
+    apps:    'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1'
+    objects: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+  }
+  library-configs: {
+    apps:    {}
+    objects: {}
+  }
+  inputs: {
+    daemon-set-image:              { type: string }
+    daemon-set-epoch:              { type: string }
+    daemon-set-memory:             { type: string }
+    daemon-set-wait-for-rollout:   { type: boolean, default: true }
+    deployment-name:               { type: string }
+    deployment-no-wait-name:       { type: string, default: 'unobin-it-deployment-no-wait' }
+    deployment-image:              { type: string }
+    deployment-replicas:           { type: string }
+    deployment-wait-for-rollout:   { type: boolean, default: true }
+    stateful-set-name:             { type: string }
+    stateful-set-image:            { type: string }
+    stateful-set-replicas:         { type: string }
+    stateful-set-wait-for-rollout: { type: boolean, default: true }
+  }
+  resources: {
+    daemon-set-workload: apps.daemon-set {
+      metadata: {
+        name:      'unobin-it-daemon-set'
+        namespace: 'default'
+        labels:    { app: 'unobin-it-daemon-set' }
+      }
+      spec: {
+        revision-history-limit: 0
+        selector:               { match-labels: { app: 'unobin-it-daemon-set' } }
+        template: {
+          metadata: { labels: { app: 'unobin-it-daemon-set' } }
+          spec: {
+            container: [
+              {
+                name:      'app'
+                image:     input.daemon-set-image
+                resources: { requests: { memory: input.daemon-set-memory } }
+              },
+            ]
+            volume: [{ name: 'scratch', empty-dir: { size-limit: '1024Ki' } }]
+          }
+        }
+      }
+      wait-for-rollout: input.daemon-set-wait-for-rollout
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
+    }
+    daemon-set-replacement: apps.daemon-set {
+      metadata: {
+        name:      'unobin-it-daemon-set-replace'
+        namespace: 'default'
+        labels:    { app: 'unobin-it-daemon-set-replace' }
+      }
+      spec: {
+        revision-history-limit: 0
+        selector: {
+          match-labels: { app: 'unobin-it-daemon-set-replace', epoch: input.daemon-set-epoch }
+        }
+        template: {
+          metadata: {
+            labels: { app: 'unobin-it-daemon-set-replace', epoch: input.daemon-set-epoch }
+          }
+          spec: {
+            container: [
+              {
+                name:      'app'
+                image:     input.daemon-set-image
+                resources: { requests: { memory: input.daemon-set-memory } }
+              },
+            ]
+            volume: [{ name: 'scratch', empty-dir: { size-limit: '1024Ki' } }]
+          }
+        }
+      }
+      wait-for-rollout: input.daemon-set-wait-for-rollout
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
+    }
+    daemon-set-without-wait: apps.daemon-set {
+      metadata: {
+        name:      'unobin-it-daemon-set-no-wait'
+        namespace: 'default'
+        labels:    { app: 'unobin-it-daemon-set-no-wait' }
+      }
+      spec: {
+        revision-history-limit: 0
+        selector:               { match-labels: { app: 'unobin-it-daemon-set-no-wait' } }
+        template: {
+          metadata: { labels: { app: 'unobin-it-daemon-set-no-wait' } }
+          spec: {
+            container: [
+              {
+                name:      'app'
+                image:     input.daemon-set-image
+                resources: { requests: { memory: input.daemon-set-memory } }
+              },
+            ]
+            volume: [{ name: 'scratch', empty-dir: { size-limit: '1024Ki' } }]
+          }
+        }
+      }
+      wait-for-rollout: false
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
+    }
+    deployment-workload: apps.deployment {
+      metadata: {
+        name:      input.deployment-name
+        namespace: 'default'
+        labels:    { app: input.deployment-name }
+      }
+      spec: {
+        replicas: input.deployment-replicas
+        selector: { match-labels: { app: input.deployment-name } }
+        template: {
+          metadata: { labels: { app: input.deployment-name } }
+          spec:     { container: [{ name: 'app', image: input.deployment-image }] }
+        }
+      }
+      wait-for-rollout: input.deployment-wait-for-rollout
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
+    }
+    deployment-without-wait: apps.deployment {
+      metadata: {
+        name:      input.deployment-no-wait-name
+        namespace: 'default'
+        labels:    { app: input.deployment-no-wait-name }
+      }
+      spec: {
+        replicas: input.deployment-replicas
+        selector: { match-labels: { app: input.deployment-no-wait-name } }
+        template: {
+          metadata: { labels: { app: input.deployment-no-wait-name } }
+          spec:     { container: [{ name: 'app', image: input.deployment-image }] }
+        }
+      }
+      wait-for-rollout: false
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
+    }
+    stateful-set-service: objects.object {
+      manifest: @core.to-json(
+        {
+          apiVersion: 'v1'
+          kind:       'Service'
+          metadata:   { name: input.stateful-set-name, namespace: 'default' }
+          spec: {
+            clusterIP: 'None'
+            selector:  { app: input.stateful-set-name }
+            ports:     [{ port: 80 }]
+          }
+        },
+      )
+    }
+    stateful-set-storage-zero: objects.object {
+      manifest: @core.to-json(
+        {
+          apiVersion: 'v1'
+          kind:       'PersistentVolume'
+          metadata:   { name: 'unobin-it-stateful-set-pv-0' }
+          spec: {
+            capacity:                      { storage: '1Mi' }
+            accessModes:                   ['ReadWriteOnce']
+            persistentVolumeReclaimPolicy: 'Retain'
+            storageClassName:              'unobin-it-stateful-set'
+            claimRef: { namespace: 'default', name: 'data-unobin-it-stateful-set-0' }
+            hostPath: { path: '/var/lib/unobin-stateful-set-it/0', type: 'DirectoryOrCreate' }
+          }
+        },
+      )
+    }
+    stateful-set-storage-one: objects.object {
+      manifest: @core.to-json(
+        {
+          apiVersion: 'v1'
+          kind:       'PersistentVolume'
+          metadata:   { name: 'unobin-it-stateful-set-pv-1' }
+          spec: {
+            capacity:                      { storage: '1Mi' }
+            accessModes:                   ['ReadWriteOnce']
+            persistentVolumeReclaimPolicy: 'Retain'
+            storageClassName:              'unobin-it-stateful-set'
+            claimRef: { namespace: 'default', name: 'data-unobin-it-stateful-set-1' }
+            hostPath: { path: '/var/lib/unobin-stateful-set-it/1', type: 'DirectoryOrCreate' }
+          }
+        },
+      )
+    }
+    stateful-set-workload: apps.stateful-set {
+      @depends-on: [resource.stateful-set-storage-zero, resource.stateful-set-storage-one]
+      metadata: {
+        name:      input.stateful-set-name
+        namespace: 'default'
+        labels:    { app: input.stateful-set-name }
+      }
+      spec: {
+        service-name:                             resource.stateful-set-service.name
+        replicas:                                 input.stateful-set-replicas
+        persistent-volume-claim-retention-policy: { when-deleted: 'Delete', when-scaled: 'Delete' }
+        volume-claim-template: [
+          {
+            metadata: { name: 'data' }
+            spec: {
+              access-modes:       ['ReadWriteOnce']
+              storage-class-name: 'unobin-it-stateful-set'
+              resources:          { requests: { storage: '1Mi' } }
+            }
+          },
+        ]
+        selector: { match-labels: { app: input.stateful-set-name } }
+        template: {
+          metadata: { labels: { app: input.stateful-set-name } }
+          spec: {
+            container: [
+              {
+                name:         'app'
+                image:        input.stateful-set-image
+                volume-mount: [{ name: 'data', mount-path: '/data' }]
+              },
+            ]
+          }
+        }
+      }
+      wait-for-rollout: input.stateful-set-wait-for-rollout
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
+    }
+    stateful-set-no-wait: apps.stateful-set {
+      metadata: {
+        name:      'unobin-it-stateful-set-nowait'
+        namespace: 'default'
+        labels:    { app: 'unobin-it-stateful-set-nowait' }
+      }
+      spec: {
+        service-name: resource.stateful-set-service.name
+        replicas:     input.stateful-set-replicas
+        selector:     { match-labels: { app: 'unobin-it-stateful-set-nowait' } }
+        template: {
+          metadata: { labels: { app: 'unobin-it-stateful-set-nowait' } }
+          spec:     { container: [{ name: 'app', image: input.stateful-set-image }] }
+        }
+      }
+      wait-for-rollout: false
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+      delete-timeout:   '30s'
+    }
+  }
+  outputs: {
+    daemon-set: {
+      value: {
+        name:            resource.daemon-set-workload.name
+        uid:             resource.daemon-set-workload.uid
+        replacement-uid: resource.daemon-set-replacement.uid
+        no-wait-uid:     resource.daemon-set-without-wait.uid
+      }
+    }
+    deployment: {
+      value: {
+        name:        resource.deployment-workload.name
+        uid:         resource.deployment-workload.uid
+        replicas:    resource.deployment-workload.spec.replicas
+        no-wait-uid: resource.deployment-without-wait.uid
+      }
+    }
+    stateful-set: {
+      value: {
+        name:     resource.stateful-set-workload.name
+        uid:      resource.stateful-set-workload.uid
+        replicas: resource.stateful-set-workload.spec.replicas
+      }
+    }
+  }
+}

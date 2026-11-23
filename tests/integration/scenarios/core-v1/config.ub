@@ -1,0 +1,33 @@
+stack: {
+  factory: {
+    inputs: {
+      config-map-value:               'first'
+      config-map-binary-value:        'AAE='
+      config-map-immutable:           true
+      config-map-lookup-value:        'first'
+      config-map-lookup-binary-value: 'AAE='
+      namespace-value:                'first'
+      namespace-lookup-value:         'first'
+      nodes-selector:                 'first'
+      persistent-volume-backing-path: '/unobin/first'
+      persistent-volume-capacity:     '1Gi'
+      persistent-volume-claim-value:  'first'
+      pod-deadline:                   3600
+      pod-epoch:                      'first'
+      pod-image:                      'registry.k8s.io/pause:3.9'
+      secret-value:                   'first'
+      secret-binary-value:            'AP8='
+      secret-immutable:               false
+      service-value:                  'first'
+      service-target-port:            '8080'
+      service-replacement-prefix:     'unobin-it-service-first-'
+      service-account-value:          'first'
+      service-account-automount:      false
+      service-lookup-value:           'first'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

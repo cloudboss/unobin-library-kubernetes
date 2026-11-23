@@ -148,7 +148,7 @@ func TestServiceScenarioFactory(t *testing.T) {
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
 	var log bytes.Buffer
 	_, err = compile.RunResult(compile.Options{
-		FactoryPath: filepath.Join(root, "tests/integration/scenarios/core-v1-service/factory.ub"),
+		FactoryPath: filepath.Join(root, "api/core/v1/testdata/ub/service-scenario/factory.ub"),
 		OutDir:      work, StackName: "service-scenario", Version: "v0.0.0",
 		CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{

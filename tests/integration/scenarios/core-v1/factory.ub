@@ -1,0 +1,358 @@
+factory: {
+  imports: {
+    core:                  'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    core-namespace-lookup: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+  }
+  library-configs: {
+    core:                  {}
+    core-namespace-lookup: { namespace: 'ignored' }
+  }
+  inputs: {
+    config-map-value:               { type: string }
+    config-map-binary-value:        { type: string }
+    config-map-immutable:           { type: boolean }
+    config-map-lookup-value:        { type: string }
+    config-map-lookup-binary-value: { type: string }
+    namespace-value:                { type: string }
+    namespace-lookup-value:         { type: string }
+    nodes-selector:                 { type: string }
+    persistent-volume-backing-path: { type: string }
+    persistent-volume-capacity:     { type: string }
+    persistent-volume-claim-value:  { type: string }
+    pod-deadline:                   { type: integer }
+    pod-epoch:                      { type: string }
+    pod-image:                      { type: string }
+    pod-phase:                      { type: optional(list(string)), default: null }
+    secret-value:                   { type: string }
+    secret-binary-value:            { type: string }
+    secret-immutable:               { type: boolean }
+    service-value:                  { type: string }
+    service-target-port:            { type: string }
+    service-replacement-prefix:     { type: string }
+    service-account-value:          { type: string }
+    service-account-automount:      { type: boolean }
+    service-lookup-value:           { type: string }
+  }
+  resources: {
+    config-map-settings: core.config-map {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-config-map-'
+          labels:        { 'test.unobin.cloudboss.io/scenario': 'core-v1-config-map' }
+        }
+        data:        { value: input.config-map-value }
+        binary-data: { bytes: input.config-map-binary-value, empty: '' }
+        immutable:   input.config-map-immutable
+      }
+    }
+    config-map-lookup-settings: core.config-map {
+      object: {
+        metadata:    { name: 'unobin-it-config-map-info', namespace: 'default' }
+        data:        { value: input.config-map-lookup-value, unicode: '雪', empty-text: '' }
+        binary-data: { bytes: input.config-map-lookup-binary-value, empty-bytes: '' }
+      }
+    }
+    namespace-project: core.namespace {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-namespace-'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-namespace'
+            value:                               input.namespace-value
+          }
+          annotations: { 'example.com/value': input.namespace-value }
+        }
+      }
+      wait-for-default-service-account: true
+      delete-timeout:                   '30s'
+    }
+    persistent-volume-update: core.persistent-volume {
+      object: {
+        metadata: { name: 'unobin-it-pv-update' }
+        spec: {
+          access-modes:             ['ReadWriteOnce']
+          storage-class-name:       'unobin-it-static-volume'
+          capacity:                 { storage: input.persistent-volume-capacity }
+          persistent-volume-source: { host-path: { path: '/unobin/update' } }
+        }
+      }
+    }
+    persistent-volume-replacement: core.persistent-volume {
+      object: {
+        metadata: { name: 'unobin-it-pv-replacement' }
+        spec: {
+          access-modes:             ['ReadWriteOnce']
+          storage-class-name:       'unobin-it-static-volume'
+          capacity:                 { storage: '1Gi' }
+          persistent-volume-source: { host-path: { path: input.persistent-volume-backing-path } }
+        }
+      }
+    }
+    persistent-volume-claim-claim: core.persistent-volume-claim {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-claim-'
+          namespace:     'default'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-persistent-volume-claim'
+            value:                               input.persistent-volume-claim-value
+          }
+          annotations: { 'example.com/value': input.persistent-volume-claim-value }
+        }
+        spec: { access-modes: ['ReadWriteOnce'], resources: { requests: { storage: '1Gi' } } }
+      }
+      wait-until-bound: false
+    }
+    pod-stable: core.pod {
+      metadata: {
+        generate-name: 'unobin-it-pod-stable-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'core-v1-pod'
+          role:                                'stable'
+          epoch:                               input.pod-epoch
+        }
+      }
+      spec: {
+        active-deadline-seconds:          input.pod-deadline
+        termination-grace-period-seconds: 0
+        container:                        [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }]
+      }
+      target-state:   input.pod-phase
+      create-timeout: '2m'
+      delete-timeout: '30s'
+    }
+    pod-replaced: core.pod {
+      metadata: {
+        generate-name: 'unobin-it-pod-replace-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'core-v1-pod', role: 'replacement' }
+      }
+      spec: {
+        node-selector:                    { 'test.unobin.cloudboss.io/unscheduled': 'true' }
+        termination-grace-period-seconds: 0
+        container:                        [{ name: 'app', image: input.pod-image }]
+      }
+      target-state:   ['Pending']
+      create-timeout: '2m'
+      delete-timeout: '30s'
+    }
+    secret-mutable: core.secret {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-secret-mutable-'
+          labels:        { 'test.unobin.cloudboss.io/scenario': 'core-v1-secret', role: 'mutable' }
+        }
+        data:        { value: input.secret-value }
+        binary-data: { bytes: input.secret-binary-value, empty: '' }
+        immutable:   input.secret-immutable
+      }
+    }
+    secret-locked: core.secret {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-secret-locked-'
+          labels:        { 'test.unobin.cloudboss.io/scenario': 'core-v1-secret', role: 'locked' }
+        }
+        data:        { value: input.secret-value }
+        binary-data: { bytes: input.secret-binary-value, empty: '' }
+        immutable:   true
+      }
+    }
+    service-stable: core.service {
+      metadata: {
+        generate-name: 'unobin-it-service-stable-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'core-v1-service', role: 'stable' }
+      }
+      spec: {
+        selector: { app: input.service-value }
+        port:     [{ name: 'http', port: 80, target-port: input.service-target-port }]
+      }
+    }
+    service-replaced: core.service {
+      metadata: {
+        generate-name: input.service-replacement-prefix
+        labels: { 'test.unobin.cloudboss.io/scenario': 'core-v1-service', role: 'replacement' }
+      }
+      spec: { port: [{ port: 81 }] }
+    }
+    service-account-explicit: core.service-account {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-service-account-'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-service-account'
+            role:                                'explicit'
+            value:                               input.service-account-value
+          }
+          annotations: { 'example.com/value': input.service-account-value }
+        }
+        image-pull-secrets:              [{ name: input.service-account-value }]
+        secrets:                         [{ name: input.service-account-value }]
+        automount-service-account-token: input.service-account-automount
+      }
+    }
+    service-account-defaulted: core.service-account {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-service-account-'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-service-account'
+            role:                                'defaulted'
+            value:                               input.service-account-value
+          }
+          annotations: { 'example.com/value': input.service-account-value }
+        }
+        image-pull-secrets: [{ name: input.service-account-value }]
+        secrets:            [{ name: input.service-account-value }]
+      }
+    }
+  }
+  data-sources: {
+    config-map-lookup-existing: core.config-map {
+      metadata: {
+        name:        resource.config-map-lookup-settings.object.metadata.name
+        namespace:   resource.config-map-lookup-settings.object.metadata.namespace
+        annotations: { 'EXAMPLE.COM/Lookup': 'not-a-selector' }
+        labels:      { lookup: 'not-a-selector' }
+      }
+      immutable: true
+    }
+    config-map-lookup-missing: core.config-map {
+      metadata:  { name: 'unobin-it-config-map-info-absent', namespace: 'default' }
+      immutable: true
+    }
+    namespace-lookup-existing: core-namespace-lookup.namespace {
+      metadata: {
+        name:        'default'
+        annotations: { 'EXAMPLE.COM/Lookup': input.namespace-lookup-value }
+        labels:      { lookup: input.namespace-lookup-value }
+      }
+    }
+    namespace-lookup-empty: core-namespace-lookup.namespace {
+      metadata: { name: 'kube-public' }
+    }
+    namespace-lookup-missing: core-namespace-lookup.namespace {
+      metadata: {
+        name:        'unobin-it-namespace-info-absent'
+        annotations: { lookup: input.namespace-lookup-value, omitted: null }
+        labels:      { omitted: null }
+      }
+    }
+    nodes-selected: core.nodes {
+      metadata: {
+        labels: { 'unobin.cloudboss.com/nodes-integration-absent': input.nodes-selector }
+      }
+    }
+    service-lookup-existing: core.service {
+      metadata: {
+        name:        'kubernetes'
+        namespace:   'default'
+        annotations: { 'EXAMPLE.COM/Lookup': input.service-lookup-value }
+        labels:      { unobin-lookup: input.service-lookup-value }
+      }
+    }
+    service-lookup-missing: core.service {
+      metadata: { name: 'unobin-it-service-info-absent', namespace: 'default' }
+    }
+  }
+  outputs: {
+    config-map: {
+      value: {
+        name:        resource.config-map-settings.object.metadata.name
+        namespace:   resource.config-map-settings.object.metadata.namespace
+        uid:         resource.config-map-settings.object.metadata.uid
+        data:        resource.config-map-settings.object.data
+        binary-data: resource.config-map-settings.object.binary-data
+        immutable:   resource.config-map-settings.object.immutable
+      }
+    }
+    config-map-lookup: {
+      value: {
+        metadata:            data-source.config-map-lookup-existing.metadata
+        data:                data-source.config-map-lookup-existing.data
+        binary-data:         data-source.config-map-lookup-existing.binary-data
+        immutable:           data-source.config-map-lookup-existing.immutable
+        missing-metadata:    data-source.config-map-lookup-missing.metadata
+        missing-data:        data-source.config-map-lookup-missing.data
+        missing-binary-data: data-source.config-map-lookup-missing.binary-data
+        missing-immutable:   data-source.config-map-lookup-missing.immutable
+      }
+    }
+    namespace: {
+      value: {
+        name: resource.namespace-project.object.metadata.name
+        uid:  resource.namespace-project.object.metadata.uid
+      }
+    }
+    namespace-lookup: {
+      value: {
+        metadata:         data-source.namespace-lookup-existing.metadata
+        spec:             data-source.namespace-lookup-existing.spec
+        empty-spec:       data-source.namespace-lookup-empty.spec
+        missing-metadata: data-source.namespace-lookup-missing.metadata
+        missing-spec:     data-source.namespace-lookup-missing.spec
+      }
+    }
+    nodes: {
+      value: {
+        nodes: data-source.nodes-selected.nodes
+      }
+    }
+    persistent-volume: {
+      value: {
+        updated-uid:     resource.persistent-volume-update.object.metadata.uid
+        replacement-uid: resource.persistent-volume-replacement.object.metadata.uid
+      }
+    }
+    persistent-volume-claim: {
+      value: {
+        name: resource.persistent-volume-claim-claim.object.metadata.name
+        uid:  resource.persistent-volume-claim-claim.object.metadata.uid
+      }
+    }
+    pod: {
+      value: {
+        stable-name:      resource.pod-stable.metadata.name
+        stable-uid:       resource.pod-stable.uid
+        replacement-name: resource.pod-replaced.name
+        replacement-uid:  resource.pod-replaced.uid
+      }
+    }
+    secret: {
+      value: {
+        mutable-name: resource.secret-mutable.object.metadata.name
+        locked-name:  resource.secret-locked.object.metadata.name
+      }
+    }
+    service: {
+      value: {
+        name:             resource.service-stable.name
+        uid:              resource.service-stable.uid
+        cluster-ip:       resource.service-stable.spec.cluster-ip
+        cluster-ips:      resource.service-stable.spec.cluster-ips
+        ip-families:      resource.service-stable.spec.ip-families
+        ports:            resource.service-stable.spec.port
+        replacement-name: resource.service-replaced.name
+        replacement-uid:  resource.service-replaced.uid
+      }
+    }
+    service-account: {
+      value: {
+        explicit-name:       resource.service-account-explicit.object.metadata.name
+        explicit-uid:        resource.service-account-explicit.object.metadata.uid
+        defaulted-name:      resource.service-account-defaulted.object.metadata.name
+        defaulted-uid:       resource.service-account-defaulted.object.metadata.uid
+        default-secret-name: resource.service-account-defaulted.default-secret-name
+      }
+    }
+    service-lookup: {
+      value: {
+        metadata:         data-source.service-lookup-existing.metadata
+        spec:             data-source.service-lookup-existing.spec
+        status:           data-source.service-lookup-existing.status
+        missing-metadata: data-source.service-lookup-missing.metadata
+        missing-spec:     data-source.service-lookup-missing.spec
+        missing-status:   data-source.service-lookup-missing.status
+      }
+    }
+  }
+}

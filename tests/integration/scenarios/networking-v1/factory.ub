@@ -1,0 +1,271 @@
+factory: {
+  imports: {
+    networking:               'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1'
+    networking-ingress-class: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1'
+  }
+  library-configs: {
+    networking:               {}
+    networking-ingress-class: { namespace: 'unused-namespace' }
+  }
+  inputs: {
+    ingress-spec: {
+      type: object(
+        {
+          default-backend: object(
+            {
+              service: object(
+                {
+                  name: string
+                  port: object({ number: optional(integer), name: optional(string) })
+                },
+              )
+            },
+          )
+          rule: optional(
+            list(
+              object(
+                {
+                  host: string
+                  http: object(
+                    {
+                      path: list(
+                        object(
+                          {
+                            path:      string
+                            path-type: optional(string)
+                            backend: object(
+                              {
+                                service: object(
+                                  {
+                                    name: string
+                                    port: object(
+                                      { number: optional(integer), name: optional(string) },
+                                    )
+                                  },
+                                )
+                              },
+                            )
+                          },
+                        ),
+                      )
+                    },
+                  )
+                },
+              ),
+            ),
+          )
+          tls: optional(list(object({ hosts: list(string), secret-name: string })))
+        },
+      )
+    }
+    ingress-replacement-name:      { type: string }
+    ingress-class-parameters-name: { type: string }
+    ingress-class-revision:        { type: string }
+    ingress-lookup-lookup-label:   { type: string }
+    network-policy-spec: {
+      type: object(
+        {
+          pod-selector: object({ match-labels: optional(map(string)) })
+          policy-types: list(string)
+          ingress: optional(
+            list(
+              object(
+                {
+                  ports: optional(
+                    list(
+                      object(
+                        {
+                          port:     optional(string)
+                          protocol: optional(string)
+                          end-port: optional(integer)
+                        },
+                      ),
+                    ),
+                  )
+                  from: optional(
+                    list(
+                      object(
+                        {
+                          namespace-selector: optional(
+                            object({ match-labels: optional(map(string)) }),
+                          )
+                          pod-selector: optional(object({ match-labels: optional(map(string)) }))
+                        },
+                      ),
+                    ),
+                  )
+                },
+              ),
+            ),
+          )
+          egress: optional(
+            list(
+              object(
+                {
+                  ports: optional(
+                    list(
+                      object(
+                        {
+                          port:     optional(string)
+                          protocol: optional(string)
+                          end-port: optional(integer)
+                        },
+                      ),
+                    ),
+                  )
+                  to: optional(
+                    list(
+                      object(
+                        {
+                          ip-block: optional(
+                            object({ cidr: optional(string), except: optional(list(string)) }),
+                          )
+                        },
+                      ),
+                    ),
+                  )
+                },
+              ),
+            ),
+          )
+        },
+      )
+    }
+    network-policy-replacement-name: { type: string }
+  }
+  resources: {
+    ingress-routing: networking.ingress {
+      metadata: {
+        generate-name: 'unobin-it-ingress-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'networking-v1-ingress'
+          'test.unobin.cloudboss.io/role':     'stable'
+        }
+      }
+      spec: input.ingress-spec
+    }
+    ingress-replaced: networking.ingress {
+      metadata: {
+        name: input.ingress-replacement-name
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'networking-v1-ingress'
+          'test.unobin.cloudboss.io/role':     'replaced'
+        }
+      }
+      spec: { default-backend: { service: { name: 'app', port: { number: 80 } } } }
+      wait-for-load-balancer: false
+    }
+    ingress-class-class: networking-ingress-class.ingress-class {
+      metadata: {
+        generate-name: 'unobin-it-class-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'networking-v1-ingress-class'
+          revision:                            input.ingress-class-revision
+        }
+        annotations: { 'example.com/revision': input.ingress-class-revision }
+      }
+      spec: {
+        controller: 'example.com/ingress-controller'
+        parameters: {
+          api-group: 'example.com'
+          kind:      'IngressParameters'
+          name:      input.ingress-class-parameters-name
+        }
+      }
+    }
+    ingress-lookup-route: networking.ingress {
+      metadata: {
+        generate-name: 'unobin-it-ingress-info-'
+        labels:        { 'unobin.example/scenario': 'ingress-info' }
+        annotations:   { 'unobin.example/Note': 'observed' }
+      }
+      spec: {
+        default-backend: { service: { name: 'app', port: { number: 80 } } }
+        rule: [
+          {
+            host: 'app.example.com'
+            http: {
+              path: [
+                {
+                  path:      '/app'
+                  path-type: 'Prefix'
+                  backend:   { service: { name: 'app', port: { name: 'web' } } }
+                },
+              ]
+            }
+          },
+        ]
+        tls: [{ hosts: ['app.example.com'], secret-name: 'app-tls' }]
+      }
+    }
+    network-policy-policy: networking.network-policy {
+      metadata: {
+        generate-name: 'unobin-it-policy-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'networking-v1-network-policy'
+          'test.unobin.cloudboss.io/role':     'stable'
+        }
+      }
+      spec: input.network-policy-spec
+    }
+    network-policy-replaced: networking.network-policy {
+      metadata: {
+        name: input.network-policy-replacement-name
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'networking-v1-network-policy'
+          'test.unobin.cloudboss.io/role':     'replaced'
+        }
+      }
+      spec: { pod-selector: {}, policy-types: ['Ingress'] }
+    }
+  }
+  data-sources: {
+    ingress-lookup-route: networking.ingress {
+      metadata: {
+        name:   resource.ingress-lookup-route.name
+        labels: { 'unobin.example/lookup': input.ingress-lookup-lookup-label }
+      }
+    }
+    ingress-lookup-missing: networking.ingress {
+      metadata: {
+        name:   'unobin-it-ingress-info-missing'
+        labels: { 'unobin.example/lookup': input.ingress-lookup-lookup-label, 'skip this': null }
+      }
+    }
+  }
+  outputs: {
+    ingress: {
+      value: {
+        name:   resource.ingress-routing.name
+        uid:    resource.ingress-routing.uid
+        spec:   resource.ingress-routing.spec
+        status: resource.ingress-routing.status
+      }
+    }
+    ingress-class: {
+      value: {
+        name: resource.ingress-class-class.name
+        uid:  resource.ingress-class-class.uid
+        spec: resource.ingress-class-class.spec
+      }
+    }
+    ingress-lookup: {
+      value: {
+        name:             resource.ingress-lookup-route.name
+        metadata:         data-source.ingress-lookup-route.metadata
+        spec:             data-source.ingress-lookup-route.spec
+        status:           data-source.ingress-lookup-route.status
+        missing-metadata: data-source.ingress-lookup-missing.metadata
+        missing-spec:     data-source.ingress-lookup-missing.spec
+        missing-status:   data-source.ingress-lookup-missing.status
+      }
+    }
+    network-policy: {
+      value: {
+        name: resource.network-policy-policy.name
+        uid:  resource.network-policy-policy.uid
+        spec: resource.network-policy-policy.spec
+      }
+    }
+  }
+}

@@ -1,0 +1,100 @@
+factory: {
+  imports: {
+    core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+  }
+  library-configs: {
+    core: {}
+  }
+  inputs: {
+    limit-range-limit-type:        { type: string }
+    limit-range-clear:             { type: boolean }
+    resource-quota-pods:           { type: string }
+    resource-quota-priority-class: { type: string }
+    resource-quota-scope:          { type: string }
+  }
+  resources: {
+    limit-range-generated: core.limit-range {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-limit-'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-limit-range'
+            identity:                            'generated'
+          }
+          annotations: { 'example.com/policy': input.limit-range-limit-type }
+        }
+        spec: {
+          limit: [
+            {
+              type:    input.limit-range-limit-type
+              default: if input.limit-range-limit-type == 'Container' then { cpu: '0.5' } else null
+              max:     { cpu: if input.limit-range-limit-type == 'Container' then '1' else '2' }
+            },
+          ]
+        }
+      }
+    }
+    limit-range-explicit: core.limit-range {
+      object: {
+        metadata: {
+          name: 'unobin-it-limit-explicit'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-limit-range'
+            identity:                            'explicit'
+          }
+        }
+        spec: if input.limit-range-clear
+          then null
+          else { limit: [{ type: 'Pod', max: { memory: '1Gi' } }] }
+      }
+    }
+    resource-quota-explicit: core.resource-quota {
+      metadata: {
+        name: 'unobin-it-quota-explicit'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'core-v1-resource-quota'
+          identity:                            'explicit'
+        }
+      }
+      spec: {
+        hard: { pods: input.resource-quota-pods }
+        scope-selector: {
+          match-expressions: [
+            {
+              scope-name: 'PriorityClass'
+              operator:   'In'
+              values:     [input.resource-quota-priority-class]
+            },
+          ]
+        }
+      }
+    }
+    resource-quota-generated: core.resource-quota {
+      metadata: {
+        generate-name: 'unobin-it-quota-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'core-v1-resource-quota'
+          identity:                            'generated'
+        }
+      }
+      spec: {
+        hard:   { pods: '7' }
+        scopes: [input.resource-quota-scope]
+      }
+    }
+  }
+  outputs: {
+    limit-range: {
+      value: {
+        generated:      resource.limit-range-generated.object.metadata.name
+        generated-spec: resource.limit-range-generated.object.spec
+      }
+    }
+    resource-quota: {
+      value: {
+        explicit:  resource.resource-quota-explicit.name
+        generated: resource.resource-quota-generated.name
+      }
+    }
+  }
+}

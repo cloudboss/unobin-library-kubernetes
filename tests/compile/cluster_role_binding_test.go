@@ -81,7 +81,7 @@ func TestCompiledClusterRoleBindingEvaluatedConstraints(t *testing.T) {
 }
 
 func TestCompiledClusterRoleBindingScenario(t *testing.T) {
-	fixture := "../integration/scenarios/rbac-v1-cluster-role-binding"
+	fixture := "testdata/ub/compiled/cluster-role-binding"
 	result, work, log, err := compileClusterBinding(t, fixture, true)
 	require.NoError(t, err, "%s", log)
 	for _, file := range []string{"config.ub", "config-update.ub"} {

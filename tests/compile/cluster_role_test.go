@@ -65,7 +65,7 @@ func TestCompiledClusterRoleScenario(t *testing.T) {
 	work, err := os.MkdirTemp(base, "scenario-")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
-	scenario := filepath.Join(root, "tests/integration/scenarios/rbac-v1-cluster-role")
+	scenario := filepath.Join(root, "tests/compile/testdata/ub/compiled/cluster-role")
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{FactoryPath: filepath.Join(scenario,
 		"factory.ub"),

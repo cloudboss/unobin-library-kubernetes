@@ -88,9 +88,6 @@ func TestCompiledServiceAccountFixtures(t *testing.T) {
 			require.NoError(t, err)
 			t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
 			fixture := filepath.Join(root, "api/core/v1/testdata/ub/service-account", name)
-			if name == "scenario" {
-				fixture = filepath.Join(root, "tests/integration/scenarios/core-v1-service-account")
-			}
 			build := name == "valid" || name == "scenario"
 			var log bytes.Buffer
 			result, err := compile.RunResult(compile.Options{

@@ -4,27 +4,27 @@ The `kind` and `live` tiers run the same scenarios. The configuration scenario
 uses the shared client loader to discover the server version, then create, read,
 update, and delete a temporary ConfigMap in the kubeconfig's namespace.
 
-Typed construct scenarios use the shared compile, pin, plan, apply, update,
-and destroy lifecycle. Each scenario owns one factory, its initial/update
-configurations, and a read-only Kubernetes verifier. Related supporting objects
-stay in that scenario.
+Typed scenarios group constructs by Kubernetes API group and version, such as
+`apps-v1` and `rbac-v1`. Each group shares a factory, initial and updated
+configurations, and a Kubernetes verifier. The `core-v1-admission` scenario
+keeps LimitRange and ResourceQuota policies out of the other Core v1 lifecycle
+checks.
 
-ConfigMap checks immutable-content replacement. Deployment, StatefulSet,
-DaemonSet, and Job scenarios include their controller-dependent behavior;
-CronJob additionally checks scheduled child ownership. Their API-only
-configurations exercise CRUD and identity without requiring running workloads.
-The data-source scenarios exercise existing and missing objects, changed inputs,
-outputs, and removal without owning or deleting the looked-up objects.
+The Core v1 scenario checks ConfigMap replacement when immutable content
+changes. Apps and Batch check workload rollout, Job completion, and scheduled
+CronJob child ownership. The API-only configurations check CRUD and identity.
+Data source checks cover existing and missing objects, changed inputs, outputs,
+and preservation of the looked-up objects.
 
 For an isolated API server without nodes, set `UNOBIN_KUBERNETES_API_ONLY=1`.
 The driver selects `config-api.ub` and `config-api-update.ub` when the scenario
 provides them. These inputs disable rollout waits; API, UID, update and deletion
 checks still run. Tests that require running Pods are skipped.
 
-The `object` scenario tests server-side apply, field conflicts, field removal,
-UID protection, and deletion with finalizers. It also compiles a factory and
-checks create, unchanged plans, update, drift correction, replacement, outputs,
-and destroy. Unobin fixtures are in the scenario's `testdata/ub/` directory.
+The `dynamic` scenario covers both singular and plural lookups and tests
+server-side apply, field conflicts, field removal, UID protection, and deletion
+with finalizers. Its compiled factories also check create, unchanged plans,
+update, drift correction, replacement, outputs, and destroy.
 
 The custom-object test creates a temporary cluster-scoped CRD, waits for it to be
 established, then manages a namespaced custom object. It checks server defaults,
@@ -35,7 +35,7 @@ are deleted during cleanup.
 
 ```sh
 make test-integration-kind
-SCENARIO=configuration make test-integration-kind
+SCENARIO=apps-v1 make test-integration-kind
 ```
 
 This target uses the local Linux Docker socket to create a uniquely named kind
@@ -58,18 +58,16 @@ UNOBIN_KUBERNETES_LIVE=1 KUBECONFIG="${HOME}/.kube/test" make test-integration-l
 
 `KUBECONFIG` must be explicit and can contain a colon-separated list of files.
 Its current context selects the cluster and namespace. The configuration scenario
-needs permission to create, get, update, and delete ConfigMaps there. The `object`
+needs permission to create, get, update, and delete ConfigMaps there. The `dynamic`
 scenario also needs patch access to ConfigMaps, create/get/patch/delete access to
 CustomResourceDefinitions, and create/get/patch/update/delete access to the test
 custom API group and its status subresource. Set `SCENARIO=configuration` to run
 only the client configuration check.
 
-Typed namespaced scenarios use the `default` namespace. The selected scenarios
-need permission for their resource kinds and supporting objects. Resource tests
-use create, get, list, update, patch, and delete as required by that resource's
-lifecycle. Workload verifiers also read Pods, ReplicaSets and Jobs. RBAC and
-Namespace scenarios require their cluster-scoped permissions. Data-source
-lookups require get access to ConfigMaps, Services or Namespaces.
+Typed scenarios primarily use the `default` namespace. Each selected group needs
+permissions for all its resource kinds and supporting objects, including
+cluster-scoped objects. Workload verifiers also read Pods, ReplicaSets, and Jobs.
+Data source checks require read access to their corresponding kinds.
 
 The container receives the caller's environment except for PATH and Go tool and
 cache paths. The home directory and additional kubeconfig directories are mounted
@@ -86,24 +84,27 @@ UNOBIN_KUBERNETES_LIVE=1 KUBECONFIG="${HOME}/.kube/test" ./tests/integration/run
 
 ## Add a scenario
 
-Put each scenario in `tests/integration/scenarios/<name>/`. A scenario can manage
-multiple related resources and include both Go tests and a factory lifecycle.
-Go tests use the `integration` build tag. The driver runs them with a five-minute
-timeout and disables test-result caching, then runs the factory when present.
+Put new coverage in the existing group/version directory under
+`tests/integration/scenarios/`. Use a separate scenario when its setup,
+admission policy, or lifecycle needs isolation. Put fixtures for Go tests in
+`testdata/ub/` within their package. API tests use the `integration` build tag.
+The driver runs Go tests with a five-minute timeout and disables test-result
+caching, then runs the factory when present.
 
-A factory scenario follows the AWS integration layout:
+A factory scenario uses these files.
 
 - `factory.ub`: the Unobin factory.
 - `config.ub` and `config-update.ub`: initial and updated inputs.
 - `verify/main.go`: API checks selected by `VERIFY_PHASE=applied`, `updated`, or
   `destroyed`, with the compiled directory in `VERIFY_BUILD_DIR`.
 
-The driver compiles the factory with the local library, pins both configurations,
-plans and applies the initial inputs, verifies them, then repeats with the updated
-inputs. Both configurations use the basename `config.ub` so they use the same
-stack state. After an apply attempt, destroy uses the last attempted inputs even
-if a later operation fails. Successful runs are removed; failed factory runs keep
-their state under `_output/integration/<name>-*/` for diagnosis and manual cleanup.
+The driver compiles the factory and builds the verifier once per scenario.
+It pins both configurations, plans and applies the initial inputs, verifies them,
+then repeats with the updated inputs. Both configurations use the basename
+`config.ub` so they use the same stack state. After an apply attempt, destroy
+uses the last attempted inputs even if a later operation fails. Failed factory
+runs keep their state under `_output/integration/<name>-*/` for diagnosis and
+manual cleanup.
 
 Set `SCENARIO=<name>` to run one scenario. Unknown names and invalid environments
 fail before any scenario runs.

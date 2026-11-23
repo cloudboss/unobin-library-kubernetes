@@ -87,7 +87,7 @@ func TestDeploymentIntegrationFactory(t *testing.T) {
 	require.NoError(t, err)
 	root, err := filepath.Abs("../../..")
 	require.NoError(t, err)
-	scenario := filepath.Join(root, "tests", "integration", "scenarios", "apps-v1-deployment")
+	scenario := filepath.Join(root, "api/apps/v1/testdata/ub/deployment-scenario")
 	outputRoot := filepath.Join(root, "_output", "deployment-schema")
 	require.NoError(t, os.MkdirAll(outputRoot, 0o700))
 	directory, err := os.MkdirTemp(outputRoot, "integration-")

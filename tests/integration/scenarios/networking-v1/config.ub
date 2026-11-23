@@ -1,0 +1,63 @@
+stack: {
+  factory: {
+    inputs: {
+      ingress-replacement-name: 'unobin-it-ingress-first'
+      ingress-spec: {
+        default-backend: { service: { name: 'app', port: { number: 80 } } }
+        rule: [
+          {
+            host: 'b.example.com'
+            http: {
+              path: [
+                { path: '/second', backend: { service: { name: 'app', port: { name: 'http' } } } },
+                {
+                  path:      '/first'
+                  path-type: 'Prefix'
+                  backend:   { service: { name: 'app', port: { number: 80 } } }
+                },
+                { path: '/second', backend: { service: { name: 'app', port: { name: 'http' } } } },
+              ]
+            }
+          },
+          {
+            host: 'a.example.com'
+            http: {
+              path: [
+                { path: '/', backend: { service: { name: 'app', port: { number: 80 } } } },
+              ]
+            }
+          },
+        ]
+        tls: [
+          { hosts: ['b.example.com', 'a.example.com', 'b.example.com'], secret-name: 'first' },
+          { hosts: ['a.example.com'], secret-name: 'second' },
+        ]
+      }
+      ingress-class-parameters-name:   'initial'
+      ingress-class-revision:          'first'
+      ingress-lookup-lookup-label:     'first'
+      network-policy-replacement-name: 'unobin-it-policy-first'
+      network-policy-spec: {
+        pod-selector: { match-labels: { app: 'selected' } }
+        policy-types: ['Ingress', 'Egress']
+        ingress: [
+          {
+            ports: [{ port: '0080' }, { port: 'http', protocol: 'TCP' }]
+            from:  [{ namespace-selector: {}, pod-selector: { match-labels: { role: 'client' } } }]
+          },
+          {},
+        ]
+        egress: [
+          {
+            ports: [{ port: '53', protocol: 'UDP' }]
+            to:    [{ ip-block: { cidr: '192.0.2.0/24', except: ['192.0.2.1/32'] } }]
+          },
+        ]
+      }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

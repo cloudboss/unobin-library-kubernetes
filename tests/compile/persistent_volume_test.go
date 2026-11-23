@@ -106,7 +106,7 @@ func compilePersistentVolumeFixture(t *testing.T, path string, build bool,
 }
 
 func TestCompiledPersistentVolumeScenario(t *testing.T) {
-	scenario := "../integration/scenarios/core-v1-persistent-volume"
+	scenario := "testdata/ub/compiled/persistent-volume"
 	result, dir, logs, err := compilePersistentVolumeFixture(t,
 		filepath.Join(scenario, "factory.ub"), true)
 	require.NoError(t, err, "%s", logs)

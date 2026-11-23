@@ -1,0 +1,127 @@
+factory: {
+  imports: {
+    rbac-cluster-role: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1'
+    rbac:              'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1'
+  }
+  library-configs: {
+    rbac-cluster-role: { namespace: 'unused' }
+    rbac:              {}
+  }
+  inputs: {
+    cluster-role-verb:            { type: string }
+    cluster-role-resource-name:   { type: string }
+    cluster-role-binding-user:    { type: string }
+    cluster-role-binding-account: { type: string }
+    role-verbs:                   { type: list(string) }
+    role-resource-names:          { type: list(string) }
+    role-binding-user:            { type: string }
+    role-binding-account:         { type: string }
+  }
+  resources: {
+    cluster-role-reader: rbac-cluster-role.cluster-role {
+      metadata: {
+        generate-name: 'unobin-it-cluster-reader-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario':  'rbac-v1-cluster-role'
+          'test.unobin.cloudboss.io/aggregate': 'reader'
+        }
+      }
+      rule: [
+        {
+          verbs:          ['get', input.cluster-role-verb, 'get']
+          api-groups:     ['']
+          resources:      ['pods']
+          resource-names: [input.cluster-role-resource-name]
+        },
+      ]
+    }
+    cluster-role-aggregate: rbac-cluster-role.cluster-role {
+      metadata: {
+        generate-name: 'unobin-it-cluster-aggregate-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'rbac-v1-cluster-role' }
+      }
+      aggregation-rule: {
+        cluster-role-selectors: [
+          {
+            match-labels: { 'test.unobin.cloudboss.io/aggregate': 'reader' }
+          },
+        ]
+      }
+    }
+    cluster-role-binding-binding: rbac.cluster-role-binding {
+      metadata: {
+        generate-name: 'unobin-it-binding-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'rbac-v1-cluster-role-binding' }
+      }
+      role-ref: { api-group: 'rbac.authorization.k8s.io', kind: 'ClusterRole', name: 'view' }
+      subject: [
+        { kind: 'User', name: input.cluster-role-binding-user, namespace: '' },
+        { kind: 'Group', name: 'readers', api-group: '', namespace: '' },
+        { kind: 'ServiceAccount', name: input.cluster-role-binding-account },
+        { kind: 'ServiceAccount', name: input.cluster-role-binding-account },
+      ]
+    }
+    role-reader: rbac.role {
+      metadata: {
+        generate-name: 'unobin-it-role-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'rbac-v1-role' }
+      }
+      rule: [
+        {
+          api-groups:     ['']
+          resources:      ['pods']
+          verbs:          input.role-verbs
+          resource-names: input.role-resource-names
+        },
+      ]
+    }
+    role-binding-binding: rbac.role-binding {
+      metadata: {
+        generate-name: 'unobin-it-binding-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'rbac-v1-role-binding' }
+      }
+      role-ref: { api-group: 'rbac.authorization.k8s.io', kind: 'ClusterRole', name: 'view' }
+      subject: [
+        { kind: 'User', name: input.role-binding-user, namespace: '' },
+        { kind: 'Group', name: 'readers', api-group: '', namespace: '' },
+        { kind: 'ServiceAccount', name: input.role-binding-account },
+        { kind: 'ServiceAccount', name: input.role-binding-account },
+      ]
+    }
+  }
+  outputs: {
+    cluster-role: {
+      value: {
+        name:           resource.cluster-role-reader.name
+        uid:            resource.cluster-role-reader.uid
+        rule:           resource.cluster-role-reader.rule
+        aggregate-name: resource.cluster-role-aggregate.name
+      }
+    }
+    cluster-role-binding: {
+      value: {
+        name:     resource.cluster-role-binding-binding.name
+        uid:      resource.cluster-role-binding-binding.uid
+        role-ref: resource.cluster-role-binding-binding.role-ref
+        subject:  resource.cluster-role-binding-binding.subject
+      }
+    }
+    role: {
+      value: {
+        name:      resource.role-reader.name
+        namespace: resource.role-reader.namespace
+        uid:       resource.role-reader.uid
+        rule:      resource.role-reader.rule
+      }
+    }
+    role-binding: {
+      value: {
+        name:      resource.role-binding-binding.name
+        namespace: resource.role-binding-binding.namespace
+        uid:       resource.role-binding-binding.uid
+        role-ref:  resource.role-binding-binding.role-ref
+        subject:   resource.role-binding-binding.subject
+      }
+    }
+  }
+}

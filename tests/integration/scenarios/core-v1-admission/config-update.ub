@@ -1,0 +1,15 @@
+stack: {
+  factory: {
+    inputs: {
+      limit-range-limit-type:        'Pod'
+      limit-range-clear:             true
+      resource-quota-pods:           '5'
+      resource-quota-priority-class: 'unobin-test-updated'
+      resource-quota-scope:          'Terminating'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

@@ -109,7 +109,7 @@ func TestCompiledCSIDriverEvaluatedInputs(t *testing.T) {
 }
 
 func TestCompiledCSIDriverScenario(t *testing.T) {
-	fixture := "../integration/scenarios/storage-v1-csi-driver"
+	fixture := "testdata/ub/compiled/csi-driver"
 	result, work, log, err := compileCSIDriver(t, fixture, true, nil)
 	require.NoError(t, err, "%s", log)
 	require.True(t, result.Built)

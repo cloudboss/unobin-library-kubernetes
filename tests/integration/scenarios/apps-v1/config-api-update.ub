@@ -1,0 +1,22 @@
+stack: {
+  factory: {
+    inputs: {
+      daemon-set-image:              'registry.k8s.io/pause:3.10'
+      daemon-set-epoch:              'second'
+      daemon-set-memory:             '1Mi'
+      daemon-set-wait-for-rollout:   false
+      deployment-name:               'unobin-it-deployment'
+      deployment-image:              'registry.k8s.io/pause:3.10'
+      deployment-replicas:           '2'
+      deployment-wait-for-rollout:   false
+      stateful-set-name:             'unobin-it-stateful-set'
+      stateful-set-image:            'registry.k8s.io/pause:3.10'
+      stateful-set-replicas:         '1'
+      stateful-set-wait-for-rollout: false
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

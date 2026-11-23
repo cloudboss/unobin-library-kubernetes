@@ -54,7 +54,7 @@ func TestJobSchemaAndFixtures(t *testing.T) {
 	directory, err := os.MkdirTemp(outputRoot, "compiled-")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(directory)) })
-	scenario := filepath.Join(root, "tests/integration/scenarios/batch-v1-job")
+	scenario := filepath.Join(root, "tests/compile/testdata/ub/compiled/job")
 	for _, fixture := range []string{"testdata/ub/job-schema/full", scenario} {
 		var log bytes.Buffer
 		output := filepath.Join(directory, filepath.Base(fixture))

@@ -1,0 +1,34 @@
+stack: {
+  factory: {
+    inputs: {
+      config-map-value:               'updated'
+      config-map-binary-value:        'AgM='
+      config-map-immutable:           true
+      config-map-lookup-value:        'updated'
+      config-map-lookup-binary-value: '/wA='
+      namespace-value:                'updated'
+      namespace-lookup-value:         'updated'
+      nodes-selector:                 'second'
+      persistent-volume-backing-path: '/unobin/second'
+      persistent-volume-capacity:     '2Gi'
+      persistent-volume-claim-value:  'updated'
+      pod-deadline:                   1800
+      pod-epoch:                      'updated'
+      pod-image:                      'registry.k8s.io/pause:3.10'
+      pod-phase:                      ['Pending']
+      secret-value:                   'updated'
+      secret-binary-value:            'AgM='
+      secret-immutable:               true
+      service-value:                  'updated'
+      service-target-port:            '8081'
+      service-replacement-prefix:     'unobin-it-service-updated-'
+      service-account-value:          'updated'
+      service-account-automount:      true
+      service-lookup-value:           'updated'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

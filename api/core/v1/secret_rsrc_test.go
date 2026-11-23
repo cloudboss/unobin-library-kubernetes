@@ -230,7 +230,7 @@ func TestCompiledSecretInvalidFields(t *testing.T) {
 }
 
 func TestSecretScenarioFactory(t *testing.T) {
-	factory, err := filepath.Abs("../../../tests/integration/scenarios/core-v1-secret/factory.ub")
+	factory, err := filepath.Abs("testdata/ub/secret-scenario/factory.ub")
 	require.NoError(t, err)
 	compileSecretFixture(t, factory, true)
 }

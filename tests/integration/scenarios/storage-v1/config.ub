@@ -1,0 +1,14 @@
+stack: {
+  factory: {
+    inputs: {
+      csi-driver-revision:           'initial'
+      storage-class-revision:        'initial'
+      storage-class-expansion:       true
+      storage-class-lookup-fallback: 'first'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

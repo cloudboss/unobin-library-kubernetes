@@ -54,7 +54,7 @@ func TestCronJobSchemaAndFixtures(t *testing.T) {
 	directory, err := os.MkdirTemp(outputRoot, "compiled-")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(directory)) })
-	scenario := filepath.Join(root, "tests/integration/scenarios/batch-v1-cron-job")
+	scenario := filepath.Join(root, "tests/compile/testdata/ub/compiled/cron-job")
 	for _, fixture := range []string{
 		"testdata/ub/cron-job-schema/full",
 		"testdata/ub/cron-job-schema/embedded-identities",

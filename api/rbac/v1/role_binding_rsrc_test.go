@@ -42,7 +42,7 @@ func TestRoleBindingCompiledFixtures(t *testing.T) {
 }
 
 func TestRoleBindingCompiledScenario(t *testing.T) {
-	compileBindingFixture(t, "../../../tests/integration/scenarios/rbac-v1-role-binding", "")
+	compileBindingFixture(t, "testdata/ub/role-binding-scenario", "")
 }
 
 func compileBindingFixture(t *testing.T, fixture, wantError string) {
