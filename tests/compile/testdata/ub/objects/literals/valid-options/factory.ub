@@ -1,0 +1,15 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: {} }
+  data-sources: {
+    endpoint: dynamic.objects {
+      api-version:    'example.io/'
+      kind:           'Mouse'
+      namespace:      null
+      field-selector: 'metadata.name=sample'
+      label-selector: 'tier=edge'
+      limit:          1.25
+    }
+  }
+  outputs: { observed: { value: @core.to-json(data-source.endpoint.objects) } }
+}

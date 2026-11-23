@@ -17,6 +17,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		DataSources: map[string]runtime.DataSourceRegistration{
+			"objects": runtime.MakeDataSource[
+				svc.ObjectsDataSource, *svc.ObjectsDataSourceOutput, *config.Configuration,
+			](),
 			"object-info": runtime.MakeDataSource[
 				svc.ObjectDataSource, *svc.ObjectDataSourceOutput, *config.Configuration,
 			](),

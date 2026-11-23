@@ -270,7 +270,10 @@ func objectInfoServer(
 			})
 		case "/apis/example.io/v1", "/apis/example.io/v2":
 			writeLookupJSON(t, w, metav1.APIResourceList{GroupVersion: req.URL.Path[len("/apis/"):],
-				APIResources: []metav1.APIResource{{Name: "widgets", Kind: "Widget", Namespaced: true}},
+				APIResources: []metav1.APIResource{
+					{Name: "widgets", Kind: "Widget", Namespaced: true},
+					{Name: "mice", Kind: "Mouse", Namespaced: true},
+				},
 			})
 		default:
 			object(w, req)

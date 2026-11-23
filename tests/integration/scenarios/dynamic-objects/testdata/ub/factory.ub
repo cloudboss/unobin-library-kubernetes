@@ -1,0 +1,35 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: { namespace: 'unused' } }
+  inputs: {
+    namespace:      { type: string }
+    custom-version: { type: string }
+  }
+  data-sources: {
+    selected: dynamic.objects {
+      api-version:    'v1'
+      kind:           'ConfigMap'
+      namespace:      input.namespace
+      label-selector: 'tier=edge'
+      field-selector: 'metadata.name=edge-second'
+    }
+    limited: dynamic.objects {
+      api-version:    'v1'
+      kind:           'ConfigMap'
+      namespace:      input.namespace
+      label-selector: 'tier=edge'
+      limit:          1
+    }
+    empty: dynamic.objects {
+      api-version:    'v1'
+      kind:           'ConfigMap'
+      namespace:      input.namespace
+      label-selector: 'tier=missing'
+    }
+    custom: dynamic.objects {
+      api-version: input.custom-version
+      kind:        'Mouse'
+      namespace:   input.namespace
+    }
+  }
+}

@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { server: 'KUBE_SERVER', api-version: 'LOOKUP_VERSION', kind: 'LOOKUP_KIND' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

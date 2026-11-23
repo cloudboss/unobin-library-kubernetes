@@ -1,0 +1,12 @@
+stack: {
+  factory: {
+    inputs: {
+      namespace:      'LOOKUP_NAMESPACE'
+      custom-version: 'LOOKUP_GROUP/v2'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
