@@ -1,0 +1,51 @@
+factory: {
+  imports:         { node: 'github.com/cloudboss/unobin-library-kubernetes//api/node/v1' }
+  library-configs: { node: {} }
+  locals:          { annotation: '' }
+  resources: {
+    single: node.runtime-class {
+      metadata:           { name: '0', labels: null, annotations: null }
+      handler:            '0'
+      ignore-labels:      null
+      ignore-annotations: null
+    }
+    generated: node.runtime-class {
+      metadata: {
+        generate-name: 'test-'
+        labels:        { empty: '' }
+        annotations:   { 'EXAMPLE.org/Mixed_case': ' spaces ! ' }
+      }
+      handler:            '9-test'
+      ignore-annotations: ['', '^example[.]org/']
+      ignore-labels:      []
+    }
+    boundaries: node.runtime-class {
+      metadata: {
+        name: '''\-
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbb
+          bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccccccccccccccccccccccccccccc
+          ccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+          '''
+        labels: {
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': '''\-
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            '''
+        }
+        annotations: {
+          'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC.DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': local.annotation
+        }
+      }
+      handler: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    }
+    unicode: node.runtime-class {
+      metadata: { name: 'unicode', annotations: { 'İK.org/İK': 'arbitrary' } }
+      handler:  'r'
+    }
+    dashed-boundary: node.runtime-class {
+      metadata: {
+        generate-name: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-'
+      }
+      handler: 'r'
+    }
+  }
+}

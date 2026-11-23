@@ -1,0 +1,18 @@
+factory: {
+  imports:         { node: 'github.com/cloudboss/unobin-library-kubernetes//api/node/v1' }
+  library-configs: { node: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs: {
+    server:  { type: string }
+    handler: { type: string }
+  }
+  resources: {
+    seed: node.runtime-class {
+      metadata: { name: 'seed' }
+      handler:  'run'
+    }
+    subject: node.runtime-class {
+      metadata: { name: 'example', labels: { 'bad key': resource.seed.metadata.uid } }
+      handler:  input.handler
+    }
+  }
+}

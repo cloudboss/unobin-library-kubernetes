@@ -1,0 +1,34 @@
+factory: {
+  description:     'Creates, updates, and replaces RuntimeClasses.'
+  imports:         { node: 'github.com/cloudboss/unobin-library-kubernetes//api/node/v1' }
+  library-configs: { node: {} }
+  inputs: {
+    revision: { type: string }
+    handler:  { type: string }
+  }
+  resources: {
+    explicit: node.runtime-class {
+      metadata: {
+        name:        'unobin-it-node-v1-runtime-class-explicit'
+        labels:      { 'test.unobin.cloudboss.io/scenario': 'node-v1-runtime-class' }
+        annotations: { 'test.unobin.cloudboss.io/revision': input.revision }
+      }
+      handler: input.handler
+    }
+    generated: node.runtime-class {
+      metadata: {
+        generate-name: 'unobin-it-node-v1-runtime-class-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'node-v1-runtime-class'
+          'test.unobin.cloudboss.io/revision': input.revision
+        }
+        annotations: { 'test.unobin.cloudboss.io/revision': input.revision }
+      }
+      handler: 'generated'
+    }
+  }
+  outputs: {
+    explicit:  { value: resource.explicit.metadata }
+    generated: { value: resource.generated.metadata }
+  }
+}

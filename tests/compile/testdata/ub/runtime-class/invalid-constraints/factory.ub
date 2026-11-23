@@ -1,0 +1,157 @@
+factory: {
+  imports:         { node: 'github.com/cloudboss/unobin-library-kubernetes//api/node/v1' }
+  library-configs: { node: {} }
+  resources: {
+    handler-empty: node.runtime-class {
+      metadata: { name: 'runtime' }
+      handler:  ''
+    }
+    handler-uppercase: node.runtime-class {
+      metadata: { name: 'runtime' }
+      handler:  'Run'
+    }
+    handler-dotted: node.runtime-class {
+      metadata: { name: 'runtime' }
+      handler:  'run.test'
+    }
+    handler-trailing-dash: node.runtime-class {
+      metadata: { name: 'runtime' }
+      handler:  'run-'
+    }
+    handler-suffix: node.runtime-class {
+      metadata: { name: 'runtime' }
+      handler:  'run!'
+    }
+    handler-long: node.runtime-class {
+      metadata: { name: 'runtime' }
+      handler:  'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    }
+    neither: node.runtime-class {
+      metadata: {}
+      handler:  'r'
+    }
+    both: node.runtime-class {
+      metadata: { name: 'runtime', generate-name: 'run-' }
+      handler:  'r'
+    }
+    empty-name: node.runtime-class {
+      metadata: { name: '' }
+      handler:  'r'
+    }
+    empty-prefix: node.runtime-class {
+      metadata: { generate-name: '' }
+      handler:  'r'
+    }
+    bad-name: node.runtime-class {
+      metadata: { name: 'Run.time' }
+      handler:  'r'
+    }
+    long-name: node.runtime-class {
+      metadata: {
+        name: '''\-
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbb
+          bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccccccccccccccccccccccccccccc
+          ccccccccccccccccccccc.dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+          '''
+      }
+      handler: 'r'
+    }
+    bad-prefix: node.runtime-class {
+      metadata: { generate-name: 'run.time-' }
+      handler:  'r'
+    }
+    long-prefix: node.runtime-class {
+      metadata: {
+        generate-name: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-'
+      }
+      handler: 'r'
+    }
+    long-plain-prefix: node.runtime-class {
+      metadata: {
+        generate-name: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+      }
+      handler: 'r'
+    }
+    bad-label-prefix: node.runtime-class {
+      metadata: { name: 'runtime', labels: { 'EXAMPLE.org/key': 'ok' } }
+      handler:  'r'
+    }
+    long-label-prefix: node.runtime-class {
+      metadata: {
+        name: 'runtime'
+        labels: {
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd/k': '''\-
+            ok
+            '''
+        }
+      }
+      handler: 'r'
+    }
+    long-label-key: node.runtime-class {
+      metadata: {
+        name:   'runtime'
+        labels: { xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx: 'ok' }
+      }
+      handler: 'r'
+    }
+    bad-label-key: node.runtime-class {
+      metadata: { name: 'runtime', labels: { 'example.org//key': 'ok' } }
+      handler:  'r'
+    }
+    bad-label-value: node.runtime-class {
+      metadata: { name: 'runtime', labels: { k: 'bad value' } }
+      handler:  'r'
+    }
+    long-label-value: node.runtime-class {
+      metadata: {
+        name:   'runtime'
+        labels: { k: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }
+      }
+      handler: 'r'
+    }
+    bad-annotation-key: node.runtime-class {
+      metadata: { name: 'runtime', annotations: { 'EXAMPLE..ORG/k': 'ok' } }
+      handler:  'r'
+    }
+    long-annotation-key: node.runtime-class {
+      metadata: {
+        name:        'runtime'
+        annotations: { xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx: 'ok' }
+      }
+      handler: 'r'
+    }
+    long-annotation-prefix: node.runtime-class {
+      metadata: {
+        name: 'runtime'
+        annotations: {
+          'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC.DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD/k': '''\-
+            ok
+            '''
+        }
+      }
+      handler: 'r'
+    }
+    label-regex: node.runtime-class {
+      metadata:      { name: 'runtime' }
+      handler:       'r'
+      ignore-labels: ['[']
+    }
+    annotation-regex: node.runtime-class {
+      metadata:           { name: 'runtime' }
+      handler:            'r'
+      ignore-annotations: ['(']
+    }
+    seed: node.runtime-class {
+      metadata: { name: 'seed' }
+      handler:  'r'
+    }
+    pending-handler-sibling: node.runtime-class {
+      metadata: { name: resource.seed.metadata.uid }
+      handler:  'bad!'
+    }
+    pending-key-value: node.runtime-class {
+      metadata: { name: 'runtime', labels: { 'bad key': resource.seed.metadata.uid } }
+      handler:  'r'
+    }
+  }
+}

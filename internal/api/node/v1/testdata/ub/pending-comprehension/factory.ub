@@ -1,0 +1,23 @@
+factory: {
+  imports:         { node: 'github.com/cloudboss/unobin-library-kubernetes//api/node/v1' }
+  library-configs: { node: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs: {
+    server:      { type: string }
+    pending-key: { type: boolean }
+  }
+  resources: {
+    seed: node.runtime-class {
+      metadata: { name: 'seed' }
+      handler:  'run'
+    }
+    subject: node.runtime-class {
+      metadata: {
+        name: 'example'
+        labels: if input.pending-key
+          then { for item in ['bad key'] : $'{{ resource.seed.metadata.uid }}{{ item }}' => '' }
+          else { for key in ['bad key'] : key => resource.seed.metadata.uid }
+      }
+      handler: 'run-1'
+    }
+  }
+}

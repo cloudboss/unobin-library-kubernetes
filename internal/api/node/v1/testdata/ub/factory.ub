@@ -1,0 +1,39 @@
+factory: {
+  imports: { node: 'github.com/cloudboss/unobin-library-kubernetes//api/node/v1' }
+  library-configs: {
+    node: {
+      server:                   input.server
+      token:                    input.token
+      kubeconfig:               input.kubeconfig
+      current-context:          input.context
+      insecure-skip-tls-verify: true
+    }
+  }
+  inputs: {
+    server:     { type: string }
+    token:      { type: string, default: null }
+    kubeconfig: { type: string, default: null }
+    context:    { type: string, default: null }
+    metadata: {
+      type: object(
+        {
+          name:          optional(string)
+          generate-name: optional(string)
+          labels:        optional(map(string))
+          annotations:   optional(map(string))
+        },
+      )
+    }
+    handler:            { type: string }
+    ignore-labels:      { type: list(string), default: null }
+    ignore-annotations: { type: list(string), default: null }
+  }
+  resources: {
+    subject: node.runtime-class {
+      metadata:           input.metadata
+      handler:            input.handler
+      ignore-labels:      input.ignore-labels
+      ignore-annotations: input.ignore-annotations
+    }
+  }
+}
