@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: 'CONFIG_MAP_DATA_INPUTS' }
+  state: local {
+    path: 'state'
+  }
+  encryption: noop {}
+}
