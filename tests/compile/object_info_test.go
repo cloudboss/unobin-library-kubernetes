@@ -466,14 +466,24 @@ func compileObjectInfoForAPI(
 	t *testing.T, fixture string, build bool, descriptor *libraryapi.Descriptor,
 ) (string, error) {
 	t.Helper()
+	return compileDynamicFixtureForAPI(
+		t, filepath.Join(objectInfoFixtures, fixture, "factory.ub"),
+		"dynamic-object-info", build, descriptor,
+	)
+}
+
+func compileDynamicFixtureForAPI(
+	t *testing.T, fixture, stack string, build bool, descriptor *libraryapi.Descriptor,
+) (string, error) {
+	t.Helper()
 	root, err := filepath.Abs("../..")
 	require.NoError(t, err)
-	path, err := filepath.Abs(filepath.Join(objectInfoFixtures, fixture, "factory.ub"))
+	path, err := filepath.Abs(fixture)
 	require.NoError(t, err)
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: path, OutDir: objectInfoWork(t),
-		StackName: "dynamic-object-info", Version: "v0.0.0", CLIVersion: "v0.13.0-a.10",
+		StackName: stack, Version: "v0.0.0", CLIVersion: "v0.13.0-a.10",
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		},
