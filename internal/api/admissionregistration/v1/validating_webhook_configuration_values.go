@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"fmt"
-	"net/url"
 	"slices"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -20,18 +18,8 @@ func prepareValidatingWebhooks(
 	webhooks []ValidatingWebhook,
 ) ([]admissionv1.ValidatingWebhook, error) {
 	for i, webhook := range webhooks {
-		if endpoint := webhook.ClientConfig.URL; endpoint != nil {
-			parsed, err := url.Parse(*endpoint)
-			if err != nil {
-				return nil, fmt.Errorf("webhook[%d].client-config.url: %w", i, err)
-			}
-			if parsed.Scheme != "https" || parsed.Host == "" || parsed.User != nil ||
-				parsed.RawQuery != "" || parsed.Fragment != "" {
-				return nil, fmt.Errorf(
-					"webhook[%d].client-config.url must use HTTPS and a host, "+
-						"without user info, query, or fragment", i,
-				)
-			}
+		if err := checkWebhookURL(i, webhook.ClientConfig.URL); err != nil {
+			return nil, err
 		}
 	}
 	return nativeValidatingWebhooks(webhooks), nil
@@ -40,23 +28,10 @@ func prepareValidatingWebhooks(
 func nativeValidatingWebhooks(webhooks []ValidatingWebhook) []admissionv1.ValidatingWebhook {
 	out := make([]admissionv1.ValidatingWebhook, 0, len(webhooks))
 	for _, webhook := range webhooks {
-		clientConfig := admissionv1.WebhookClientConfig{
-			CABundle: []byte(valueOr(webhook.ClientConfig.CABundle, "")),
-			URL:      webhook.ClientConfig.URL,
-		}
-		if service := webhook.ClientConfig.Service; service != nil {
-			clientConfig.Service = &admissionv1.ServiceReference{
-				Name: service.Name, Namespace: service.Namespace,
-				Port: new(int32(valueOr(service.Port, 443))),
-			}
-			if valueOr(service.Path, "") != "" {
-				clientConfig.Service.Path = service.Path
-			}
-		}
 		failurePolicy := admissionv1.FailurePolicyType(valueOr(webhook.FailurePolicy, "Fail"))
 		matchPolicy := admissionv1.MatchPolicyType(valueOr(webhook.MatchPolicy, "Equivalent"))
 		out = append(out, admissionv1.ValidatingWebhook{
-			Name: webhook.Name, ClientConfig: clientConfig,
+			Name: webhook.Name, ClientConfig: nativeWebhookClientConfig(webhook.ClientConfig),
 			AdmissionReviewVersions: append([]string{}, valueOr(webhook.AdmissionReviewVersions, nil)...),
 			FailurePolicy:           new(failurePolicy),
 			MatchPolicy:             new(matchPolicy),
@@ -106,18 +81,8 @@ func nativeWebhookSelector(selector *WebhookSelector) *metav1.LabelSelector {
 func projectValidatingWebhooks(webhooks []admissionv1.ValidatingWebhook) []ValidatingWebhookOutput {
 	out := make([]ValidatingWebhookOutput, 0, len(webhooks))
 	for _, webhook := range webhooks {
-		clientConfig := WebhookClientConfig{URL: webhook.ClientConfig.URL}
-		if len(webhook.ClientConfig.CABundle) > 0 {
-			clientConfig.CABundle = new(string(webhook.ClientConfig.CABundle))
-		}
-		if service := webhook.ClientConfig.Service; service != nil {
-			clientConfig.Service = &WebhookService{
-				Name: service.Name, Namespace: service.Namespace, Path: service.Path,
-				Port: optionalInteger(service.Port),
-			}
-		}
 		out = append(out, ValidatingWebhookOutput{
-			Name: webhook.Name, ClientConfig: clientConfig,
+			Name: webhook.Name, ClientConfig: projectWebhookClientConfig(webhook.ClientConfig),
 			AdmissionReviewVersions: append([]string{}, webhook.AdmissionReviewVersions...),
 			FailurePolicy:           optionalString(webhook.FailurePolicy),
 			MatchPolicy:             optionalString(webhook.MatchPolicy),
