@@ -1,0 +1,67 @@
+{
+  "apiVersion": "v1",
+  "kind": "NodeList",
+  "metadata": {"resourceVersion": "list-version", "continue": "next-page"},
+  "items": [
+    {
+      "metadata": {
+        "name": "z-node",
+        "generateName": "ignored-",
+        "namespace": "ignored",
+        "resourceVersion": "node-version",
+        "uid": "node-uid",
+        "generation": 7,
+        "annotations": {"kubectl.kubernetes.io/last-applied-configuration": "unchanged"},
+        "labels": {"kubernetes.io/hostname": "z-node", "example.com/region": "north"}
+      },
+      "spec": {
+        "podCIDR": "10.0.0.0/24",
+        "podCIDRs": ["fd00::/64", "10.0.0.0/24", "fd00::/64"],
+        "providerID": "infra://z-node",
+        "unschedulable": true,
+        "taints": [
+          {
+            "key": "zone",
+            "value": "west",
+            "effect": "NoExecute",
+            "timeAdded": "2025-01-02T03:04:05Z"
+          },
+          {"key": "drain", "effect": "NoSchedule"}
+        ]
+      },
+      "status": {
+        "allocatable": {"cpu": "1500m", "memory": "1Gi"},
+        "capacity": {"cpu": "2", "memory": "2Gi", "pods": "32"},
+        "addresses": [
+          {"type": "InternalIP", "address": "10.10.10.2"},
+          {"type": "Hostname", "address": "z-node"}
+        ],
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True",
+            "lastHeartbeatTime": "2025-01-02T03:04:05Z",
+            "lastTransitionTime": "2024-12-01T02:03:04Z",
+            "reason": "Running",
+            "message": "Node is ready"
+          },
+          {"type": "MemoryPressure", "status": "False"}
+        ],
+        "nodeInfo": {
+          "machineID": "machine",
+          "systemUUID": "system",
+          "bootID": "boot",
+          "kernelVersion": "6.6",
+          "osImage": "Linux",
+          "containerRuntimeVersion": "containerd://2",
+          "kubeletVersion": "v1.33.4",
+          "kubeProxyVersion": "v1.33.3",
+          "operatingSystem": "linux",
+          "architecture": "amd64"
+        }
+      }
+    },
+    {"metadata": {"name": "a-node"}},
+    {"metadata": {"name": "a-node"}}
+  ]
+}

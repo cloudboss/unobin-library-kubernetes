@@ -1,0 +1,13 @@
+stack: {
+  factory: {
+    inputs: {
+      server:         'KUBE_SERVER'
+      selector-key:   'SELECTOR_KEY'
+      selector-value: 'SELECTOR_VALUE'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

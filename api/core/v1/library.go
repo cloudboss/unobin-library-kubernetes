@@ -33,6 +33,9 @@ func Library() *runtime.Library {
 			"namespace-info": runtime.MakeDataSource[
 				svc.NamespaceDataSource, *svc.NamespaceDataSourceOutput, *config.Configuration,
 			](),
+			"nodes": runtime.MakeDataSource[
+				svc.NodesDataSource, *svc.NodesDataSourceOutput, *config.Configuration,
+			](),
 			"persistent-volume-claim-info": runtime.MakeDataSource[
 				svc.PersistentVolumeClaimDataSource, *svc.PersistentVolumeClaimDataSourceOutput,
 				*config.Configuration,

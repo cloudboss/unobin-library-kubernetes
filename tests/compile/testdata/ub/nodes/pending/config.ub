@@ -1,0 +1,14 @@
+stack: {
+  factory: {
+    inputs: {
+      server:      'KUBE_SERVER'
+      mode:        'FIXTURE_MODE'
+      known-key:   'SELECTOR_KEY'
+      known-value: 'SELECTOR_VALUE'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

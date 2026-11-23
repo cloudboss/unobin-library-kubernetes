@@ -1,0 +1,30 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    all: core.nodes {}
+    explicit-null: core.nodes {
+      metadata: null
+    }
+    empty: core.nodes {
+      metadata: { labels: {} }
+    }
+    empty-value: core.nodes {
+      metadata: { labels: { 'Valid.Name': '' } }
+    }
+    bounded: core.nodes {
+      metadata: {
+        labels: {
+          'ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa': '''aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'''
+        }
+      }
+    }
+  }
+  outputs: {
+    observed: { value: data-source.all.nodes }
+    cidrs:    { value: [ for n in data-source.bounded.nodes ?? [] : n.spec.pod-cidrs ] }
+    deprecated-version: {
+      value: [ for n in data-source.bounded.nodes ?? [] : n.status.node-info.kube-proxy-version ]
+    }
+  }
+}
