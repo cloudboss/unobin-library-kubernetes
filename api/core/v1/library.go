@@ -35,6 +35,9 @@ func Library() *runtime.Library {
 			](),
 		},
 		Resources: map[string]runtime.ResourceRegistration{
+			"limit-range": runtime.MakeResource[
+				svc.LimitRangeResource, *svc.LimitRangeResourceOutput, *config.Configuration,
+			]((&svc.LimitRangeResource{}).ResourceDefinition()),
 			"resource-quota": runtime.MakeResource[
 				svc.ResourceQuotaResource, *svc.ResourceQuotaResourceOutput, *config.Configuration,
 			]((&svc.ResourceQuotaResource{}).ResourceDefinition()),

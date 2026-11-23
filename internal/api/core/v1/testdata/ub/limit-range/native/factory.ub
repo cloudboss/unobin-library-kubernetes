@@ -1,0 +1,63 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: {
+    core: { server: input.server, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:         { type: string }
+    name:           { type: string }
+    known-type:     { type: string }
+    chosen-type:    { type: string }
+    known-quantity: { type: string }
+    shape:          { type: string }
+    choice:         { type: string }
+  }
+  locals: {
+    shapes: {
+      null-object:      null
+      missing-metadata: { spec: {} }
+      null-metadata:    { metadata: null }
+    }
+  }
+  data-sources: {
+    live: core.config-map-info {
+      @depends-on: [resource.seed]
+      metadata:    { name: 'limit-seed' }
+    }
+  }
+  resources: {
+    seed: core.limit-range {
+      object: {
+        metadata: {
+          name:        'limit-seed'
+          annotations: { choice: input.choice, limit-type: input.chosen-type, quantity: '0.5' }
+        }
+      }
+    }
+    subject: core.limit-range {
+      object: if input.shape == 'policy'
+        then {
+          metadata: { name: input.name }
+          spec: {
+            limit: [
+              for key in ['quantity'] :
+              {
+                type: if input.known-type == ''
+                  then data-source.live.data['limit-type']
+                  else input.known-type
+                default-request: {
+                  cpu: if input.known-quantity == ''
+                    then data-source.live.data[key]
+                    else input.known-quantity
+                }
+              }
+            ]
+          }
+        }
+        else @core.lookup(
+          local.shapes,
+          if input.shape == 'from-seed' then data-source.live.data['choice'] else input.choice,
+        )
+    }
+  }
+}

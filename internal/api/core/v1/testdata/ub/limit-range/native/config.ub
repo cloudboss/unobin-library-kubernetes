@@ -1,0 +1,17 @@
+stack: {
+  factory: {
+    inputs: {
+      server:         'LIMIT_SERVER'
+      name:           'LIMIT_NAME'
+      known-type:     'LIMIT_KNOWN_TYPE'
+      chosen-type:    'LIMIT_CHOSEN_TYPE'
+      known-quantity: 'LIMIT_KNOWN_QUANTITY'
+      shape:          'LIMIT_SHAPE'
+      choice:         'LIMIT_CHOICE'
+    }
+  }
+  state: local {
+    path: 'state'
+  }
+  encryption: noop {}
+}

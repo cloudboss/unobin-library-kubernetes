@@ -1,0 +1,21 @@
+factory: {
+  inputs: {
+    server:     { type: string }
+    object:     { type: opaque }
+    kubeconfig: { type: opaque }
+    context:    { type: opaque }
+  }
+  library-configs: {
+    core: {
+      server:                   input.server
+      kubeconfig:               input.kubeconfig
+      current-context:          input.context
+      insecure-skip-tls-verify: true
+    }
+  }
+  resources: {
+    subject: core.limit-range {
+      object: input.object
+    }
+  }
+}

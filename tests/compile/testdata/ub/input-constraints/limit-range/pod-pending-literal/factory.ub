@@ -1,0 +1,13 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  inputs:          { quantity: { type: string } }
+  resources: {
+    subject: core.limit-range {
+      object: {
+        metadata: { name: 'valid' }
+        spec:     { limit: [{ type: 'Pod', default-request: { cpu: input.quantity } }] }
+      }
+    }
+  }
+}
