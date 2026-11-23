@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { partial: true, name: 'Bad_Name' } }
+  state: local {
+    path: '.unobin/partial-name'
+  }
+  encryption: noop {}
+}

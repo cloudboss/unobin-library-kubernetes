@@ -1,0 +1,69 @@
+factory: {
+  imports: {
+    core:    'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1'
+  }
+  library-configs: { core: {}, storage: { namespace: 'ignored' } }
+  inputs: {
+    name: { type: string, default: 'lookup' }
+    annotations: {
+      type:    map(optional(string))
+      default: { '_omitted': null, 'İ.COM/Key': 'any' }
+    }
+    labels: { type: map(optional(string)), default: { '_omitted': null, 'valid.example/Case': '' } }
+    too-many:          { type: boolean, default: false }
+    partial:           { type: boolean, default: false }
+    defer-name:        { type: boolean, default: false }
+    bad-entry:         { type: optional(string) }
+    comprehension:     { type: boolean, default: false }
+    comprehension-key: { type: string, default: 'Upper.example/label' }
+  }
+  resources: {
+    seed: core.config-map {
+      object: {
+        metadata: { name: 'seed' }
+        data:     { enabled: 'yes' }
+      }
+    }
+  }
+  data-sources: {
+    class: storage.storage-class-info {
+      metadata: {
+        name:        if input.defer-name then resource.seed.object.metadata.uid else input.name
+        annotations: input.annotations
+        labels: if input.comprehension
+          then {
+            for key in [input.comprehension-key, 'good'] :
+            key => if key == 'good' then resource.seed.object.metadata.uid else ''
+          }
+          else if input.partial
+            then {
+              'Upper.example/label': input.bad-entry
+              good:                  resource.seed.object.metadata.uid
+            }
+            else input.labels
+      }
+      allowed-topologies: if input.too-many
+        then [
+          {
+            match-label-expressions: [
+              { values: [if input.partial then resource.seed.object.metadata.uid else 'west'] },
+            ]
+          },
+          { match-label-expressions: [{ values: ['east'] }] },
+        ]
+        else [
+          {
+            match-label-expressions: [
+              { values: [if input.partial then resource.seed.object.metadata.uid else 'west'] },
+            ]
+          },
+        ]
+    }
+  }
+  outputs: {
+    metadata: { value: data-source.class.metadata }
+    driver:   { value: data-source.class.provisioner }
+    topology: { value: data-source.class.allowed-topologies }
+  }
+}

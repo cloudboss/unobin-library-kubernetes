@@ -1,0 +1,87 @@
+factory: {
+  imports: {
+    dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+    storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1'
+  }
+  library-configs: { dynamic: {}, storage: { namespace: 'ignored' } }
+  inputs:          { fallback: { type: string } }
+  resources: {
+    class: dynamic.object {
+      manifest: '''|-
+        apiVersion: storage.k8s.io/v1
+        kind: StorageClass
+        metadata:
+          name: unobin-it-storage-class-info
+          labels:
+            test.unobin.cloudboss.io/scenario: storage-class-info
+          annotations:
+            kubectl.kubernetes.io/last-applied-configuration: full
+        provisioner: kubernetes.io/no-provisioner
+        parameters:
+          tier: fast
+        allowVolumeExpansion: false
+        mountOptions:
+          - nosuid
+          - noexec
+        allowedTopologies:
+          - matchLabelExpressions:
+              - key: topology.kubernetes.io/zone
+                values:
+                  - west
+                  - east
+        '''
+    }
+  }
+  data-sources: {
+    hit: storage.storage-class-info {
+      metadata: {
+        name:        resource.class.name
+        annotations: { wrong: 'configured' }
+        labels:      { wrong: 'configured' }
+      }
+      parameters:             { tier: 'wrong' }
+      reclaim-policy:         'Retain'
+      volume-binding-mode:    'WaitForFirstConsumer'
+      allow-volume-expansion: true
+    }
+    miss: storage.storage-class-info {
+      metadata: {
+        name:        'unobin-it-storage-class-info-absent'
+        annotations: { 'EXAMPLE.COM/Lookup': input.fallback, '_omitted': null }
+        labels:      { 'example.com/Lookup': '', '_omitted': null }
+      }
+      parameters:             { tier: 'fallback', omitted: null }
+      reclaim-policy:         'Fallback'
+      volume-binding-mode:    ''
+      allow-volume-expansion: false
+      mount-options:          ['nosuid', 'noexec', 'nosuid']
+      allowed-topologies:     [{ match-label-expressions: [{ values: ['west', 'east', 'west'] }] }]
+    }
+  }
+  outputs: {
+    hit: {
+      value: {
+        metadata:               data-source.hit.metadata
+        provisioner:            data-source.hit.provisioner
+        parameters:             data-source.hit.parameters
+        reclaim-policy:         data-source.hit.reclaim-policy
+        volume-binding-mode:    data-source.hit.volume-binding-mode
+        allow-volume-expansion: data-source.hit.allow-volume-expansion
+        mount-options:          data-source.hit.mount-options
+        allowed-topologies:     data-source.hit.allowed-topologies
+      }
+    }
+    miss: {
+      value: {
+        metadata:               data-source.miss.metadata
+        provisioner:            data-source.miss.provisioner
+        parameters:             data-source.miss.parameters
+        reclaim-policy:         data-source.miss.reclaim-policy
+        volume-binding-mode:    data-source.miss.volume-binding-mode
+        allow-volume-expansion: data-source.miss.allow-volume-expansion
+        mount-options:          data-source.miss.mount-options
+        allowed-topologies:     data-source.miss.allowed-topologies
+      }
+    }
+  }
+}

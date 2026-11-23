@@ -22,5 +22,11 @@ func Library() *runtime.Library {
 				*config.Configuration,
 			]((&storagev1.StorageClassResource{}).ResourceDefinition()),
 		},
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"storage-class-info": runtime.MakeDataSource[
+				storagev1.StorageClassDataSource, *storagev1.StorageClassDataSourceOutput,
+				*config.Configuration,
+			](),
+		},
 	}
 }

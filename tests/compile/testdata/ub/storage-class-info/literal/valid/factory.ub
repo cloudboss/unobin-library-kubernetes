@@ -1,0 +1,40 @@
+factory: {
+  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: { storage: {} }
+  data-sources: {
+    class: storage.storage-class-info {
+      metadata: {
+        name: '''\-
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.my-name
+          '''
+        labels: {
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': '''\-
+            000000000000000000000000000000000000000000000000000000000000000
+            '''
+        }
+        annotations: {
+          'İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ/KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK': '''>-
+            any text /🧪
+            '''
+        }
+      }
+      parameters:             { empty: '', omitted: null }
+      reclaim-policy:         'Unfamiliar'
+      volume-binding-mode:    ''
+      allow-volume-expansion: false
+      mount-options:          ['z', 'a', 'z', '']
+      allowed-topologies: [{ match-label-expressions: [{ key: '?', values: ['b', 'a', 'b'] }, {}] }]
+    }
+  }
+  outputs: {
+    metadata:   { value: data-source.class.metadata }
+    driver:     { value: data-source.class.provisioner }
+    parameters: { value: data-source.class.parameters }
+    policy:     { value: data-source.class.reclaim-policy }
+    binding:    { value: data-source.class.volume-binding-mode }
+    expansion:  { value: data-source.class.allow-volume-expansion }
+    mounts:     { value: data-source.class.mount-options }
+    topologies: { value: data-source.class.allowed-topologies }
+  }
+}

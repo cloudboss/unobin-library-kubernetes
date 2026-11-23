@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { partial: true, bad-entry: '' } }
+  state: local {
+    path: '.unobin/partial-label'
+  }
+  encryption: noop {}
+}

@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { annotations: { '_omitted': '' } } }
+  state: local {
+    path: '.unobin/steady'
+  }
+  encryption: noop {}
+}

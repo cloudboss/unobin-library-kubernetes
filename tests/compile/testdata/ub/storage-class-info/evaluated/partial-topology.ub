@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { partial: true, too-many: true } }
+  state: local {
+    path: '.unobin/partial-topology'
+  }
+  encryption: noop {}
+}

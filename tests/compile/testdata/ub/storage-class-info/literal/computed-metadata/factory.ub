@@ -1,0 +1,9 @@
+factory: {
+  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: { storage: {} }
+  data-sources: {
+    class: storage.storage-class-info {
+      metadata: { name: 'example', uid: 'unavailable' }
+    }
+  }
+}
