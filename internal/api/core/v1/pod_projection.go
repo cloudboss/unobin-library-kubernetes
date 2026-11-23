@@ -54,6 +54,26 @@ func podFilteredSpec(spec *corev1.PodSpec) *corev1.PodSpec {
 		account = "default"
 	}
 	token := regexp.MustCompile(regexp.QuoteMeta(account) + "-token-([a-z0-9]{5})")
+	podRemoveTokens(pod, token)
+	if pod.Tolerations != nil {
+		pod.Tolerations = pod.Tolerations[:0]
+		for _, toleration := range spec.Tolerations {
+			if !podSystemToleration(toleration.Key) {
+				pod.Tolerations = append(pod.Tolerations, toleration)
+			}
+		}
+		if len(pod.Tolerations) == 0 && len(spec.Tolerations) > 0 {
+			pod.Tolerations = nil
+		}
+	}
+	if dns := pod.DNSConfig; dns != nil &&
+		len(dns.Nameservers) == 0 && len(dns.Searches) == 0 && len(dns.Options) == 0 {
+		pod.DNSConfig = nil
+	}
+	return pod
+}
+
+func podRemoveTokens(pod *corev1.PodSpec, token *regexp.Regexp) {
 	isToken := func(name string) bool {
 		return strings.HasPrefix(name, "kube-api-access") || token.MatchString(name)
 	}
@@ -79,22 +99,6 @@ func podFilteredSpec(spec *corev1.PodSpec) *corev1.PodSpec {
 			}
 		}
 	}
-	if pod.Tolerations != nil {
-		pod.Tolerations = pod.Tolerations[:0]
-		for _, toleration := range spec.Tolerations {
-			if !podSystemToleration(toleration.Key) {
-				pod.Tolerations = append(pod.Tolerations, toleration)
-			}
-		}
-		if len(pod.Tolerations) == 0 && len(spec.Tolerations) > 0 {
-			pod.Tolerations = nil
-		}
-	}
-	if dns := pod.DNSConfig; dns != nil &&
-		len(dns.Nameservers) == 0 && len(dns.Searches) == 0 && len(dns.Options) == 0 {
-		pod.DNSConfig = nil
-	}
-	return pod
 }
 
 func podWithout[T any](items []T, index int) []T {
