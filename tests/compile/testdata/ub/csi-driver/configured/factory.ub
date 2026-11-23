@@ -1,0 +1,26 @@
+factory: {
+  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: { storage: { server: 'https://127.0.0.1:1' } }
+  inputs: {
+    name: { type: string }
+    spec: {
+      type: optional(
+        object(
+          {
+            attach-required:        boolean
+            pod-info-on-mount:      optional(boolean)
+            volume-lifecycle-modes: optional(list(string))
+          },
+        ),
+      )
+    }
+    patterns: { type: optional(list(string)) }
+  }
+  resources: {
+    driver: storage.csi-driver {
+      metadata:      { name: input.name }
+      spec:          input.spec
+      ignore-labels: input.patterns
+    }
+  }
+}

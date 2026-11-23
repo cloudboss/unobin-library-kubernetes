@@ -1,0 +1,12 @@
+stack: {
+  factory: {
+    inputs: {
+      name: 'example.csi'
+      spec: { attach-required: false, volume-lifecycle-modes: ['persistent'] }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

@@ -1,0 +1,27 @@
+factory: {
+  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: { storage: { server: 'https://127.0.0.1:1' } }
+  resources: {
+    driver: storage.csi-driver {
+      metadata: { name: 'example.csi' }
+    }
+    generated: storage.csi-driver {
+      metadata: {
+        generate-name: 'example-'
+        labels:        { 'example.org/Empty': '' }
+        annotations:   { 'UPPER.org/Note': 'unrestricted/% text' }
+      }
+      spec: {
+        attach-required:        false
+        pod-info-on-mount:      false
+        volume-lifecycle-modes: ['Ephemeral', 'Persistent', 'Ephemeral']
+      }
+      ignore-annotations: ['Note$', 'unanchored']
+      ignore-labels:      ['Empty$', 'other']
+    }
+  }
+  outputs: {
+    identity: { value: resource.generated.metadata }
+    observed: { value: resource.generated.spec }
+  }
+}

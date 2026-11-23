@@ -17,6 +17,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{
+			"csi-driver": runtime.MakeResource[
+				storagev1.CSIDriverResource, *storagev1.CSIDriverResourceOutput, *config.Configuration,
+			]((&storagev1.CSIDriverResource{}).ResourceDefinition()),
 			"storage-class": runtime.MakeResource[
 				storagev1.StorageClassResource, *storagev1.StorageClassResourceOutput,
 				*config.Configuration,

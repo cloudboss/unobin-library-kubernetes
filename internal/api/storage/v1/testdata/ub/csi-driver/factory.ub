@@ -1,0 +1,49 @@
+factory: {
+  imports: { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: {
+    storage: {
+      server:                   input.server
+      token:                    input.token
+      kubeconfig:               input.kubeconfig
+      current-context:          input.context
+      insecure-skip-tls-verify: true
+    }
+  }
+  inputs: {
+    server:     { type: string }
+    token:      { type: optional(string) }
+    kubeconfig: { type: optional(string) }
+    context:    { type: optional(string) }
+    metadata: {
+      type: object(
+        {
+          name:          optional(string)
+          generate-name: optional(string)
+          labels:        optional(map(string))
+          annotations:   optional(map(string))
+        },
+      )
+    }
+    spec: {
+      type: optional(
+        object(
+          {
+            attach-required:        boolean
+            pod-info-on-mount:      optional(boolean)
+            volume-lifecycle-modes: optional(list(string))
+          },
+        ),
+      )
+    }
+    ignore-labels:      { type: optional(list(string)) }
+    ignore-annotations: { type: optional(list(string)) }
+  }
+  resources: {
+    driver: storage.csi-driver {
+      metadata:           input.metadata
+      spec:               input.spec
+      ignore-labels:      input.ignore-labels
+      ignore-annotations: input.ignore-annotations
+    }
+  }
+}

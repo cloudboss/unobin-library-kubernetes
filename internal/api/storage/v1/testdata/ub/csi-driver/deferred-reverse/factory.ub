@@ -1,0 +1,20 @@
+factory: {
+  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
+  library-configs: { storage: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs: {
+    server: { type: string }
+    mode:   { type: string }
+  }
+  resources: {
+    seed: storage.csi-driver {
+      metadata: { name: 'seed' }
+    }
+    driver: storage.csi-driver {
+      metadata: { name: 'example.csi' }
+      spec: {
+        attach-required:        true
+        volume-lifecycle-modes: [resource.seed.metadata.annotations['mode'], input.mode]
+      }
+    }
+  }
+}
