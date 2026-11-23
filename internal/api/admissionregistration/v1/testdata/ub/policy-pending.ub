@@ -1,0 +1,27 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: {
+    admission: { server: input.server, token: 'current', insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server: { type: string }
+  }
+  resources: {
+    seed: admission.validating-admission-policy {
+      metadata: { generate-name: 'seed-' }
+      spec:     { audit-annotations: [], failure-policy: 'Fail', match-constraints: {} }
+    }
+    subject: admission.validating-admission-policy {
+      metadata: { generate-name: if resource.seed.name == 'Empty' then '' else 'resolved-' }
+      spec: {
+        audit-annotations: []
+        failure-policy:    'Fail'
+        match-constraints: {
+          match-policy: if resource.seed.name == 'Wrong' then 'Wrong' else 'Exact'
+        }
+      }
+    }
+  }
+}

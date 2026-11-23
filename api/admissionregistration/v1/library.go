@@ -1,0 +1,29 @@
+package v1
+
+import (
+	"github.com/cloudboss/unobin/pkg/runtime"
+
+	"github.com/cloudboss/unobin-library-kubernetes/config"
+	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/admissionregistration/v1"
+)
+
+func Library() *runtime.Library {
+	policy := runtime.MakeResource[
+		svc.ValidatingAdmissionPolicyResource, *svc.ValidatingAdmissionPolicyResourceOutput,
+		*config.Configuration,
+	]((&svc.ValidatingAdmissionPolicyResource{}).ResourceDefinition())
+	return &runtime.Library{
+		Name:        "kubernetes-admissionregistration-v1",
+		Description: "Kubernetes admissionregistration/v1 objects for Unobin.",
+		Compatibility: runtime.LibraryCompatibility{
+			RequiredAPI:            "1.1",
+			SuggestedUnobinVersion: "v0.13.0-a.11",
+		},
+		Configuration: config.LibraryConfiguration(),
+		Resources: map[string]runtime.ResourceRegistration{
+			"validating-admission-policy": svc.ValidatingAdmissionPolicyRegistration[
+				svc.ValidatingAdmissionPolicyResource, *svc.ValidatingAdmissionPolicyResourceOutput,
+			](policy, policy.Read, policy.KnownReplacementReasons),
+		},
+	}
+}

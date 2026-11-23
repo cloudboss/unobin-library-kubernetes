@@ -1,0 +1,18 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs:          { server: { type: string } }
+  resources: {
+    subject: admission.validating-admission-policy {
+      metadata: { name: 'fixture' }
+      spec: {
+        audit-annotations: []
+        failure-policy:    'Fail'
+        match-constraints: {}
+        validations:       [{ expression: 'true', message: 'test', reason: 'Invalid' }]
+      }
+    }
+  }
+}

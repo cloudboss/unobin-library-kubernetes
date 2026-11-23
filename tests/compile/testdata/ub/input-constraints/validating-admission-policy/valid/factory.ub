@@ -1,0 +1,44 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  resources: {
+    subject: admission.validating-admission-policy {
+      metadata: { name: 'fixture' }
+      spec: {
+        audit-annotations: []
+        failure-policy:    'Fail'
+        match-constraints: {
+          match-policy:    'Equivalent'
+          object-selector: { match-expressions: [{ values: [''] }] }
+          resource-rules: [
+            {
+              api-groups:   ['']
+              api-versions: ['v1']
+              operations:   ['CREATE']
+              resources:    ['configmaps']
+              scope:        '*'
+            },
+          ]
+        }
+        param-kind:  { api-version: 'v1', kind: 'ConfigMap' }
+        validations: [{ expression: 'true', message: 'valid' }]
+        variables:   [{}]
+      }
+      create-timeout: '1s'
+      read-timeout:   '1m'
+      update-timeout: '2m'
+      delete-timeout: '3m'
+    }
+  }
+  outputs: {
+    name:           { value: resource.subject.name }
+    uid:            { value: resource.subject.uid }
+    server:         { value: resource.subject.server }
+    api-version:    { value: resource.subject.api-version }
+    metadata:       { value: resource.subject.metadata }
+    matches:        { value: resource.subject.spec.match-constraints }
+    failure-policy: { value: resource.subject.spec.failure-policy }
+  }
+}

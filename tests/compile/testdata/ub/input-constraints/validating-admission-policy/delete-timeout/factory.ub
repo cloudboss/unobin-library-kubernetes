@@ -1,0 +1,13 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  resources: {
+    subject: admission.validating-admission-policy {
+      metadata:       { name: 'fixture' }
+      spec:           { audit-annotations: [], failure-policy: 'Fail', match-constraints: {} }
+      delete-timeout: 'bad'
+    }
+  }
+}
