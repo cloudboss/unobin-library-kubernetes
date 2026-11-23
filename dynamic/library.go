@@ -12,10 +12,15 @@ func Library() *runtime.Library {
 		Name:        "kubernetes-dynamic",
 		Description: "Kubernetes objects for Unobin.",
 		Compatibility: runtime.LibraryCompatibility{
-			RequiredAPI:            "1.0",
-			SuggestedUnobinVersion: "v0.12.0",
+			RequiredAPI:            "1.1",
+			SuggestedUnobinVersion: "v0.13.0-a.10",
 		},
 		Configuration: config.LibraryConfiguration(),
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"object-info": runtime.MakeDataSource[
+				svc.ObjectDataSource, *svc.ObjectDataSourceOutput, *config.Configuration,
+			](),
+		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"object": runtime.MakeResource[
 				svc.ObjectResource, *svc.ObjectResourceOutput, *config.Configuration,

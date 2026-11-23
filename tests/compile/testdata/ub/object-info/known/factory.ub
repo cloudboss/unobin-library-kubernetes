@@ -1,0 +1,18 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: { server: input.server, namespace: 'configured' } }
+  inputs: {
+    server:      { type: string }
+    api-version: { type: string }
+    kind:        { type: string }
+    lookup-name: { type: string }
+  }
+  data-sources: {
+    endpoint: dynamic.object-info {
+      api-version: input.api-version
+      kind:        input.kind
+      metadata:    { name: input.lookup-name, namespace: null }
+    }
+  }
+  outputs: { observed: { value: @core.to-json(data-source.endpoint.object) } }
+}

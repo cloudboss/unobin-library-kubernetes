@@ -1,0 +1,38 @@
+factory: {
+  imports: {
+    core:    'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+  }
+  library-configs: { core: {}, dynamic: { namespace: 'other' } }
+  inputs:          { value: { type: string } }
+  resources: {
+    settings: core.config-map {
+      object: {
+        metadata: { name: 'unobin-it-dynamic-object-info', namespace: 'default' }
+        data:     { value: input.value }
+      }
+    }
+  }
+  data-sources: {
+    config-map: dynamic.object-info {
+      api-version: 'v1'
+      kind:        'ConfigMap'
+      metadata:    { name: resource.settings.object.metadata.name }
+    }
+    namespace: dynamic.object-info {
+      api-version: 'v1'
+      kind:        'Namespace'
+      metadata:    { name: 'default', namespace: 'ignored/value' }
+    }
+    absent: dynamic.object-info {
+      api-version: 'v1'
+      kind:        'ConfigMap'
+      metadata:    { name: 'unobin-it-dynamic-object-info-absent' }
+    }
+  }
+  outputs: {
+    config-map: { value: data-source.config-map.object }
+    namespace:  { value: data-source.namespace.object }
+    absent:     { value: data-source.absent.object }
+  }
+}
