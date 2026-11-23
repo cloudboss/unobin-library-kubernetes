@@ -1,0 +1,57 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  resources: {
+    no-identity: admission.validating-webhook-configuration {
+      metadata: {}
+      webhook:  [{ name: 'a.example.test', client-config: {} }]
+    }
+    conflicting-identity: admission.validating-webhook-configuration {
+      metadata: { name: 'example', generate-name: 'example-' }
+      webhook:  [{ name: 'a.example.test', client-config: {} }]
+    }
+    empty-list: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook:  []
+    }
+    bad-metadata: admission.validating-webhook-configuration {
+      metadata: {
+        generate-name: 'EXAMPLE'
+        labels:        { 'bad key': 'bad value' }
+        annotations:   { 'bad key': 'value' }
+      }
+      ignore-labels:      ['[']
+      ignore-annotations: ['[']
+      webhook:            [{ name: 'a.example.test', client-config: {} }]
+    }
+    bad-webhook-values: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook: [
+        {
+          name:            'a.example.test'
+          client-config:   {}
+          failure-policy:  'fail'
+          match-policy:    'exact'
+          side-effects:    'invalid'
+          timeout-seconds: 0
+        },
+        {
+          name:            'b.example.test'
+          client-config:   {}
+          timeout-seconds: 31
+          rule: [
+            { api-groups: [], api-versions: [], resources: [], operations: [] },
+            {
+              api-groups:   ['']
+              api-versions: ['v1']
+              resources:    ['pods']
+              operations:   ['CREATE', 'Update']
+            },
+          ]
+        },
+      ]
+    }
+  }
+}

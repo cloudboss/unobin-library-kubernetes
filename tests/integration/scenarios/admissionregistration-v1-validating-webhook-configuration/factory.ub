@@ -1,0 +1,49 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  inputs: {
+    revision: { type: string }
+    path:     { type: string }
+  }
+  resources: {
+    example: admission.validating-webhook-configuration {
+      metadata: {
+        generate-name: 'unobin-it-validating-webhook-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'validating-webhook-configuration' }
+        annotations:   { 'test.unobin.cloudboss.io/revision': input.revision }
+      }
+      webhook: [
+        {
+          name: 'validation.test.unobin.cloudboss.io'
+          client-config: {
+            service: {
+              name:      'inert-validating-webhook'
+              namespace: 'unobin-it-validating-webhook'
+              path:      input.path
+            }
+          }
+          admission-review-versions: ['v1']
+          side-effects:              'None'
+          failure-policy:            'Ignore'
+          namespace-selector: {
+            match-labels: {
+              'test.unobin.cloudboss.io/scenario': 'validating-webhook-configuration'
+            }
+          }
+          object-selector: {
+            match-labels: {
+              'test.unobin.cloudboss.io/scenario': 'validating-webhook-configuration'
+            }
+          }
+        },
+      ]
+    }
+  }
+  outputs: {
+    name:    { value: resource.example.name }
+    uid:     { value: resource.example.uid }
+    webhook: { value: resource.example.webhook }
+  }
+}

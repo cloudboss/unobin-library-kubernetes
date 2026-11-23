@@ -1,0 +1,32 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  inputs: {
+    name:      { type: string }
+    timeout:   { type: integer }
+    operation: { type: string }
+  }
+  resources: {
+    example: admission.validating-webhook-configuration {
+      metadata: { name: input.name }
+      webhook: [
+        {
+          name:            'first.example.test'
+          client-config:   { url: 'https://webhook.example.test' }
+          side-effects:    'None'
+          timeout-seconds: input.timeout
+          rule: [
+            {
+              api-groups:   ['']
+              api-versions: ['v1']
+              resources:    ['pods']
+              operations:   ['CREATE', input.operation]
+            },
+          ]
+        },
+      ]
+    }
+  }
+}

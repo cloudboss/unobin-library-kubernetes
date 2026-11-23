@@ -24,6 +24,11 @@ func Library() *runtime.Library {
 			"validating-admission-policy": svc.ValidatingAdmissionPolicyRegistration[
 				svc.ValidatingAdmissionPolicyResource, *svc.ValidatingAdmissionPolicyResourceOutput,
 			](policy, policy.Read, policy.KnownReplacementReasons),
+			"validating-webhook-configuration": runtime.MakeResource[
+				svc.ValidatingWebhookConfigurationResource,
+				*svc.ValidatingWebhookConfigurationResourceOutput,
+				*config.Configuration,
+			]((&svc.ValidatingWebhookConfigurationResource{}).ResourceDefinition()),
 		},
 	}
 }

@@ -1,0 +1,64 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  resources: {
+    no-metadata: admission.validating-webhook-configuration {
+      webhook: [{ name: 'a.example.test', client-config: {} }]
+    }
+    null-metadata: admission.validating-webhook-configuration {
+      metadata: null
+      webhook:  [{ name: 'a.example.test', client-config: {} }]
+    }
+    no-webhook: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+    }
+    null-webhook: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook:  null
+    }
+    no-client: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook:  [{ name: 'a.example.test' }]
+    }
+    null-client: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook:  [{ name: 'a.example.test', client-config: null }]
+    }
+    list-client: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook:  [{ name: 'a.example.test', client-config: [{}] }]
+    }
+    no-service-name: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook:  [{ name: 'a.example.test', client-config: { service: { namespace: 'example' } } }]
+    }
+    null-service-namespace: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook: [
+        { name: 'a.example.test', client-config: { service: { name: 'example', namespace: null } } },
+      ]
+    }
+    no-rule-groups: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook: [
+        {
+          name:          'a.example.test'
+          client-config: {}
+          rule:          [{ api-versions: ['v1'], resources: ['pods'], operations: ['CREATE'] }]
+        },
+      ]
+    }
+    null-rule-operations: admission.validating-webhook-configuration {
+      metadata: { name: 'example' }
+      webhook: [
+        {
+          name:          'a.example.test'
+          client-config: {}
+          rule: [{ api-groups: [''], api-versions: ['v1'], resources: ['pods'], operations: null }]
+        },
+      ]
+    }
+  }
+}
