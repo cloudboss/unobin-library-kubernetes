@@ -91,7 +91,7 @@ lint:
 $(DIR_OUT)/integration/bin/unobin: go.mod Makefile | $(HAS_COMMAND_DOCKER) \
 		$(DIR_OUT)/go/ $(DIR_OUT)/gocache/ $(DIR_OUT)/integration/bin/
 	@rm -f $(@)
-	@$(RUN_GO) env GOBIN=/code/$(DIR_OUT)/integration/bin \
+	@$(RUN_GO) env CGO_ENABLED=0 GOBIN=/code/$(DIR_OUT)/integration/bin \
 		go install github.com/cloudboss/unobin/cmd/unobin@$(UNOBIN_VERSION)
 
 $(HAS_IMAGE_KIND): Containerfile.integration | $(HAS_COMMAND_DOCKER) $(DIR_OUT)/dockerbuild/
