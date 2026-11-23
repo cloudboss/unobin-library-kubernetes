@@ -1,0 +1,14 @@
+stack: {
+  factory: {
+    inputs: {
+      revision:       'updated'
+      global-default: false
+      priority:       -5
+      policy:         'Never'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

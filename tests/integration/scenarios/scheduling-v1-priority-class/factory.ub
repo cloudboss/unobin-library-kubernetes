@@ -1,0 +1,38 @@
+factory: {
+  description: 'Updates mutable PriorityClass fields and replaces a class whose priority changes.'
+  imports:     { scheduling: 'github.com/cloudboss/unobin-library-kubernetes//api/scheduling/v1' }
+  library-configs: { scheduling: {} }
+  inputs: {
+    revision:       { type: string }
+    description:    { type: string, default: '' }
+    global-default: { type: boolean }
+    priority:       { type: integer }
+    policy:         { type: string }
+  }
+  resources: {
+    mutable: scheduling.priority-class {
+      metadata: {
+        name:        'unobin-it-priority-mutable'
+        annotations: { 'test.unobin.cloudboss.io/revision': input.revision }
+        labels:      { 'test.unobin.cloudboss.io/revision': input.revision }
+      }
+      value:          -10
+      description:    input.description
+      global-default: input.global-default
+    }
+    immutable: scheduling.priority-class {
+      metadata:          { name: 'unobin-it-priority-immutable' }
+      value:             input.priority
+      preemption-policy: input.policy
+    }
+  }
+  outputs: {
+    mutable-name:   { value: resource.mutable.metadata.name }
+    mutable-uid:    { value: resource.mutable.metadata.uid }
+    description:    { value: resource.mutable.description }
+    global-default: { value: resource.mutable.global-default }
+    immutable-uid:  { value: resource.immutable.metadata.uid }
+    priority:       { value: resource.immutable.value }
+    policy:         { value: resource.immutable.preemption-policy }
+  }
+}

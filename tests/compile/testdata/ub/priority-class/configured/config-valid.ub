@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { name: 'example.test', policy: 'Never' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

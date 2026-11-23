@@ -1,0 +1,45 @@
+factory: {
+  imports: { scheduling: 'github.com/cloudboss/unobin-library-kubernetes//api/scheduling/v1' }
+  library-configs: {
+    scheduling: {
+      server:                   input.server
+      token:                    input.token
+      kubeconfig:               input.kubeconfig
+      current-context:          input.context
+      insecure-skip-tls-verify: true
+    }
+  }
+  inputs: {
+    server:     { type: string }
+    token:      { type: optional(string) }
+    kubeconfig: { type: optional(string) }
+    context:    { type: optional(string) }
+    metadata: {
+      type: object(
+        {
+          name:          optional(string)
+          generate-name: optional(string)
+          annotations:   optional(map(string))
+          labels:        optional(map(string))
+        },
+      )
+    }
+    value:              { type: integer }
+    description:        { type: optional(string) }
+    global-default:     { type: optional(boolean) }
+    policy:             { type: optional(string) }
+    ignore-annotations: { type: optional(list(string)) }
+    ignore-labels:      { type: optional(list(string)) }
+  }
+  resources: {
+    class: scheduling.priority-class {
+      metadata:           input.metadata
+      value:              input.value
+      description:        input.description
+      global-default:     input.global-default
+      preemption-policy:  input.policy
+      ignore-annotations: input.ignore-annotations
+      ignore-labels:      input.ignore-labels
+    }
+  }
+}

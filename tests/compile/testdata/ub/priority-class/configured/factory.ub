@@ -1,0 +1,14 @@
+factory: {
+  imports: { scheduling: 'github.com/cloudboss/unobin-library-kubernetes//api/scheduling/v1' }
+  library-configs: { scheduling: { server: 'https://127.0.0.1:1' } }
+  inputs:          { name: { type: string }, policy: { type: string } }
+  resources: {
+    class: scheduling.priority-class {
+      metadata:           { name: input.name, annotations: {}, labels: null }
+      value:              -1
+      preemption-policy:  input.policy
+      ignore-labels:      []
+      ignore-annotations: null
+    }
+  }
+}

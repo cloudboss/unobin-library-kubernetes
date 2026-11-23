@@ -1,0 +1,66 @@
+factory: {
+  imports: { scheduling: 'github.com/cloudboss/unobin-library-kubernetes//api/scheduling/v1' }
+  library-configs: { scheduling: { server: 'https://127.0.0.1:1' } }
+  resources: {
+    named: scheduling.priority-class {
+      metadata: {
+        name:          'example.test'
+        generate-name: null
+        labels:        { 'example.com/Label': '' }
+        annotations:   { 'EXAMPLE.K/İtem': ' ![]☃' }
+      }
+      value:              -13
+      description:        ''
+      global-default:     false
+      preemption-policy:  'Never'
+      ignore-labels:      ['']
+      ignore-annotations: ['^controller']
+    }
+    generated: scheduling.priority-class {
+      metadata: {
+        name:          null
+        generate-name: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-'
+        annotations:   null
+        labels:        {}
+      }
+      value:              0
+      ignore-labels:      null
+      ignore-annotations: []
+      preemption-policy:  null
+    }
+    defaults: scheduling.priority-class {
+      metadata: { generate-name: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }
+      value:    2147483648
+    }
+    bounded: scheduling.priority-class {
+      metadata: {
+        name: '''\-
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          '''
+        annotations: {
+          'KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK/key': '''\-
+            x
+            '''
+        }
+      }
+      value:             1
+      preemption-policy: 'PreemptLowerPriority'
+    }
+  }
+  outputs: {
+    declared: {
+      value: {
+        server:            resource.named.server
+        api-version:       resource.named.api-version
+        kind:              resource.named.kind
+        metadata:          resource.named.metadata
+        description:       resource.named.description
+        global-default:    resource.named.global-default
+        value:             resource.named.value
+        preemption-policy: resource.named.preemption-policy
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+factory: {
+  imports: { scheduling: 'github.com/cloudboss/unobin-library-kubernetes//api/scheduling/v1' }
+  library-configs: {
+    scheduling: { server: input.server, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:     { type: string }
+    expression: { type: string }
+    value:      { type: integer }
+    policy:     { type: optional(string) }
+  }
+  resources: {
+    seed: scheduling.priority-class {
+      metadata: { name: 'seed' }
+      value:    -1
+    }
+    class: scheduling.priority-class {
+      metadata:          { name: 'example' }
+      value:             input.value
+      preemption-policy: input.policy
+      ignore-labels:     [$'{{ resource.seed.metadata.uid }}{{ input.expression }}']
+    }
+  }
+}
