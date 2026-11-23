@@ -157,13 +157,17 @@ func (r *IngressResource) output(
 		Name: obj.Name, Namespace: obj.Namespace, UID: string(obj.UID), Spec: readIngressSpec(obj.Spec),
 		Metadata: IngressMetadata{Name: new(obj.Name), Namespace: new(obj.Namespace),
 			GenerateName: nonempty(obj.GenerateName), Annotations: &annotations, Labels: &labels},
-		Status: IngressStatus{LoadBalancer: IngressLoadBalancer{Ingress: []IngressEndpoint{}}},
-	}
-	for _, endpoint := range obj.Status.LoadBalancer.Ingress {
-		out.Status.LoadBalancer.Ingress = append(out.Status.LoadBalancer.Ingress,
-			IngressEndpoint{IP: endpoint.IP, Hostname: endpoint.Hostname})
+		Status: readIngressStatus(obj.Status),
 	}
 	return out, nil
+}
+
+func readIngressStatus(s networkingv1.IngressStatus) IngressStatus {
+	endpoints := make([]IngressEndpoint, 0, len(s.LoadBalancer.Ingress))
+	for _, endpoint := range s.LoadBalancer.Ingress {
+		endpoints = append(endpoints, IngressEndpoint{IP: endpoint.IP, Hostname: endpoint.Hostname})
+	}
+	return IngressStatus{LoadBalancer: IngressLoadBalancer{Ingress: endpoints}}
 }
 
 func projectMetadata(observed, tracked map[string]string, expressions *[]string) (

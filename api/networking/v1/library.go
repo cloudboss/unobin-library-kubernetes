@@ -16,6 +16,11 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.0-a.11",
 		},
 		Configuration: config.LibraryConfiguration(),
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"ingress-info": runtime.MakeDataSource[
+				svc.IngressDataSource, *svc.IngressDataSourceOutput, *config.Configuration,
+			](),
+		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"network-policy": runtime.MakeResource[
 				svc.NetworkPolicyResource, *svc.NetworkPolicyResourceOutput, *config.Configuration,
