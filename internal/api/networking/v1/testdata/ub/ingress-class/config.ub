@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: 'INGRESS_CLASS_INPUTS' }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

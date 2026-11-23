@@ -1,0 +1,56 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: {
+    networking: {
+      server:                   input.server
+      kubeconfig:               input.kubeconfig
+      current-context:          input.current-context
+      token:                    input.token
+      insecure-skip-tls-verify: true
+    }
+  }
+  inputs: {
+    server:          { type: string }
+    kubeconfig:      { type: string, default: '' }
+    current-context: { type: string, default: '' }
+    token:           { type: string, default: 'first' }
+    metadata: {
+      type: object(
+        {
+          name:          optional(string)
+          generate-name: optional(string)
+          annotations:   optional(map(string))
+          labels:        optional(map(string))
+        },
+      )
+    }
+    spec: {
+      type: object(
+        {
+          controller: optional(string)
+          parameters: optional(
+            object(
+              {
+                api-group: optional(string)
+                kind:      string
+                name:      string
+                scope:     optional(string)
+                namespace: optional(string)
+              },
+            ),
+          )
+        },
+      )
+    }
+    ignore-labels:      { type: list(string), default: [] }
+    ignore-annotations: { type: list(string), default: [] }
+  }
+  resources: {
+    class: networking.ingress-class {
+      metadata:           input.metadata
+      spec:               input.spec
+      ignore-labels:      input.ignore-labels
+      ignore-annotations: input.ignore-annotations
+    }
+  }
+}

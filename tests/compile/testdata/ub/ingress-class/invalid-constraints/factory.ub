@@ -1,0 +1,76 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: {} }
+  resources: {
+    identity-neither: networking.ingress-class {
+      metadata: {}
+      spec:     {}
+    }
+    identity-both: networking.ingress-class {
+      metadata: { name: 'class', generate-name: 'class-' }
+      spec:     {}
+    }
+    identity-empty: networking.ingress-class {
+      metadata: { name: '' }
+      spec:     {}
+    }
+    identity-empty-prefix: networking.ingress-class {
+      metadata: { generate-name: '' }
+      spec:     {}
+    }
+    identity-dns: networking.ingress-class {
+      metadata: { name: 'BAD_NAME' }
+      spec:     {}
+    }
+    identity-prefix-too-long: networking.ingress-class {
+      metadata: {
+        generate-name: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      }
+      spec: {}
+    }
+    identity-name-too-long: networking.ingress-class {
+      metadata: {
+        name: '''\-
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          '''
+      }
+      spec: {}
+    }
+    label-key: networking.ingress-class {
+      metadata: { name: 'class', labels: { 'Bad/key': 'valid' } }
+      spec:     {}
+    }
+    label-value: networking.ingress-class {
+      metadata: { name: 'class', labels: { key: 'bad value' } }
+      spec:     {}
+    }
+    annotation-key: networking.ingress-class {
+      metadata: { name: 'class', annotations: { 'bad/key/extra': 'any' } }
+      spec:     {}
+    }
+    ignore-annotations: networking.ingress-class {
+      metadata:           { name: 'class' }
+      spec:               {}
+      ignore-annotations: ['[']
+    }
+    ignore-labels: networking.ingress-class {
+      metadata:      { name: 'class' }
+      spec:          {}
+      ignore-labels: ['[']
+    }
+    scope-empty: networking.ingress-class {
+      metadata: { name: 'class' }
+      spec:     { parameters: { kind: 'ConfigMap', name: 'settings', scope: '' } }
+    }
+    scope-lowercase: networking.ingress-class {
+      metadata: { name: 'class' }
+      spec:     { parameters: { kind: 'ConfigMap', name: 'settings', scope: 'cluster' } }
+    }
+    scope-unknown: networking.ingress-class {
+      metadata: { name: 'class' }
+      spec:     { parameters: { kind: 'ConfigMap', name: 'settings', scope: 'Global' } }
+    }
+  }
+}

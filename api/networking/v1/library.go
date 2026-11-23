@@ -23,6 +23,9 @@ func Library() *runtime.Library {
 			"ingress": runtime.MakeResource[
 				svc.IngressResource, *svc.IngressResourceOutput, *config.Configuration,
 			]((&svc.IngressResource{}).ResourceDefinition()),
+			"ingress-class": runtime.MakeResource[
+				svc.IngressClassResource, *svc.IngressClassResourceOutput, *config.Configuration,
+			]((&svc.IngressClassResource{}).ResourceDefinition()),
 		},
 	}
 }

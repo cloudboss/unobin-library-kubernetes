@@ -1,0 +1,34 @@
+factory: {
+  description: 'Creates and updates a cluster-scoped IngressClass with a parameter reference.'
+  imports:     { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: { namespace: 'unused-namespace' } }
+  inputs: {
+    parameters-name: { type: string }
+    revision:        { type: string }
+  }
+  resources: {
+    class: networking.ingress-class {
+      metadata: {
+        generate-name: 'unobin-it-class-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'networking-v1-ingress-class'
+          revision:                            input.revision
+        }
+        annotations: { 'example.com/revision': input.revision }
+      }
+      spec: {
+        controller: 'example.com/ingress-controller'
+        parameters: {
+          api-group: 'example.com'
+          kind:      'IngressParameters'
+          name:      input.parameters-name
+        }
+      }
+    }
+  }
+  outputs: {
+    name: { value: resource.class.name }
+    uid:  { value: resource.class.uid }
+    spec: { value: resource.class.spec }
+  }
+}
