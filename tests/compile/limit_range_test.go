@@ -25,7 +25,7 @@ func TestLimitRangeLiteralInputs(t *testing.T) {
 		{"invalid-annotation-bound", "constraints[5]"},
 		{"invalid-ignore-annotations", "constraints[6]"},
 		{"invalid-ignore-labels", "constraints[7]"},
-		{"numeric-quantity", "max: object({ cpu: integer })"},
+		{"numeric-quantity", "type mismatch: expected string, got integer"},
 		{"list-spec", "got list(object({ limit: list(unknown) }))"},
 		{"long-name", "constraints[1]"},
 		{"long-prefix", "constraints[2]"},

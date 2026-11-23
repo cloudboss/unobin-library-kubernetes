@@ -32,7 +32,7 @@ func TestRoleBindingCompiledFixtures(t *testing.T) {
 		{"valid", ""}, {"missing-metadata", "metadata"}, {"missing-ref", "role-ref"},
 		{"missing-ref-member", "api-group"}, {"missing-subject", "subject"},
 		{"missing-subject-kind", "kind"}, {"missing-subject-name", "name"},
-		{"null-map", "expected optional(map(string))"},
+		{"null-map", "expected string, got null"},
 		{"null-subject-name", "expected string, got null"}, {"unsupported", "finalizers"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

@@ -59,7 +59,7 @@ func TestCompiledRoleFixtures(t *testing.T) {
 					"missing-api-groups": "api-groups", "missing-resources": "resources",
 					"missing-verbs":    "verbs",
 					"null-member":      "expected string, got null",
-					"null-map":         "expected optional(map(string))",
+					"null-map":         "expected string, got null",
 					"unsupported-rule": "non-resource-urls", "server-metadata": "uid",
 				}[name]
 				require.Contains(t, err.Error(), field)

@@ -25,7 +25,7 @@ func TestIngressClassCompiledFixtures(t *testing.T) {
 			var log bytes.Buffer
 			result, err := compile.RunResult(compile.Options{
 				FactoryPath: path, OutDir: work, ReplaceUnobin: sdk,
-				StackName: "ingress-class-test", Version: "v0.0.0", CLIVersion: "v0.13.0-a.8",
+				StackName: "ingress-class-test", Version: "v0.0.0", CLIVersion: "v0.13.0-a.10",
 				GoVersion: "1.26.2",
 				ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,
@@ -41,12 +41,12 @@ func TestIngressClassCompiledFixtures(t *testing.T) {
 				for _, diagnostic := range []string{
 					`missing required input "metadata" on networking.ingress-class`,
 					`missing required input "spec" on networking.ingress-class`,
-					`got object({ name: string })`,
-					`got object({ kind: string })`,
+					`missing required field "kind"`,
+					`missing required field "name"`,
 					`got list(object({  }))`,
 					`got list(object({ kind: string  name: string }))`,
-					`expected optional(map(string)), got object({ key: integer })`,
-					`expected optional(map(string)), got object({ key: boolean })`,
+					`expected string, got integer`,
+					`expected string, got boolean`,
 					`unknown field "generateName"`,
 					`unknown field "uid"`,
 					`unknown field "namespace"`,

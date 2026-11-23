@@ -113,7 +113,7 @@ func compileStorageClass(
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-		StackName: "storage-class-test", Version: "v0", CLIVersion: "v0.13.0-a.8",
+		StackName: "storage-class-test", Version: "v0", CLIVersion: "v0.13.0-a.10",
 		GoVersion: "1.26.2", Build: build,
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
