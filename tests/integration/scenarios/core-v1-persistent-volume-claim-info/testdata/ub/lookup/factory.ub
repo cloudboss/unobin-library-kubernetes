@@ -1,0 +1,26 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { namespace: 'elsewhere' } }
+  inputs:          { name: { type: string }, absent: { type: string } }
+  data-sources: {
+    existing: core.persistent-volume-claim-info {
+      metadata: { name: input.name, labels: { lookup: 'no-match' } }
+    }
+    missing: core.persistent-volume-claim-info {
+      metadata: { name: input.absent }
+    }
+  }
+  outputs: {
+    actual-name:   { value: data-source.existing.metadata.name }
+    namespace:     { value: data-source.existing.metadata.namespace }
+    uid:           { value: data-source.existing.metadata.uid }
+    generate-name: { value: data-source.existing.metadata.generate-name }
+    access-modes:  { value: data-source.existing.spec?.access-modes }
+    requests:      { value: data-source.existing.spec?.resources.requests }
+    volume-name:   { value: data-source.existing.spec?.volume-name }
+    class:         { value: data-source.existing.spec?.storage-class-name }
+    selector:      { value: data-source.existing.spec?.selector?.match-labels }
+    missing-name:  { value: data-source.missing.metadata.name }
+    missing-spec:  { value: data-source.missing.spec }
+  }
+}

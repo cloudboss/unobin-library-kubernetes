@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { name: 'PVC_INFO_NAME', absent: 'PVC_INFO_NAME-absent' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

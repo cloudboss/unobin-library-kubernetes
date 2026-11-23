@@ -1,0 +1,12 @@
+stack: {
+  factory: {
+    inputs: {
+      server:   'PVC_INFO_SERVER'
+      metadata: { name: 'lookup', annotations: {}, labels: { app: 'bad value' } }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
