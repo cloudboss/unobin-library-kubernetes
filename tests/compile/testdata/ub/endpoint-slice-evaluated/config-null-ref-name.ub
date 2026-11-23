@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { endpoint-kind: 'null-name' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

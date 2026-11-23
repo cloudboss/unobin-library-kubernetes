@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { seed: 'IPv6', defer-type: true } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

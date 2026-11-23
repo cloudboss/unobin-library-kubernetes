@@ -1,0 +1,15 @@
+stack: {
+  factory: {
+    inputs: {
+      address-type: 'IPv6'
+      address:      '2001:db8::10'
+      port:         '8080'
+      node:         'second-node'
+      version:      'updated'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { address-type: 'ipv4' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

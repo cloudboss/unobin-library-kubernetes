@@ -1,0 +1,12 @@
+factory: {
+  imports:         { discovery: 'github.com/cloudboss/unobin-library-kubernetes//api/discovery/v1' }
+  library-configs: { discovery: {} }
+  resources: {
+    slice: discovery.endpoint-slice {
+      metadata:     { name: 'demo' }
+      address-type: 'IPv4'
+      endpoints:    [{ addresses: [] }]
+      ports:        [{ app-protocol: '' }]
+    }
+  }
+}

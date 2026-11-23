@@ -96,3 +96,27 @@ func TestJobInputConstraints(t *testing.T) {
 		})
 	}
 }
+
+func TestEndpointSliceLiteralConstraints(t *testing.T) {
+	require.NoError(t, compileFixture(t, "endpoint-slice/valid"))
+	err := compileFixture(t, "endpoint-slice/invalid")
+	require.ErrorContains(t, err, "resource.slice")
+	require.ErrorContains(t, err, "constraints[")
+	require.ErrorContains(t, err, "hostname")
+}
+
+func TestEndpointSliceRequiredLiterals(t *testing.T) {
+	for _, tc := range []struct{ fixture, field string }{
+		{"missing-app", "app-protocol"}, {"null-app", "type mismatch: expected string, got null"},
+		{"missing-port", "port"}, {"null-ref-name", "name"}, {"missing-ref-name", "name"},
+		{"missing-addresses", "addresses"}, {"missing-metadata", "metadata"},
+		{"missing-address-type", "address-type"}, {"missing-ports", "ports"},
+		{"missing-endpoints", "endpoints"},
+	} {
+		t.Run(tc.fixture, func(t *testing.T) {
+			err := compileFixture(t, "endpoint-slice/"+tc.fixture)
+			require.ErrorContains(t, err, "factory.ub")
+			require.ErrorContains(t, err, tc.field)
+		})
+	}
+}

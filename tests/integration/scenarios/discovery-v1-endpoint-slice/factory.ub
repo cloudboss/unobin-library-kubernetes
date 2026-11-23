@@ -1,0 +1,33 @@
+factory: {
+  imports:         { discovery: 'github.com/cloudboss/unobin-library-kubernetes//api/discovery/v1' }
+  library-configs: { discovery: {} }
+  inputs: {
+    address-type: { type: string }
+    address:      { type: string }
+    port:         { type: string }
+    node:         { type: string }
+    version:      { type: string }
+  }
+  resources: {
+    stable: discovery.endpoint-slice {
+      metadata: {
+        name:        'unobin-it-endpoint-slice-stable'
+        labels:      { 'test.unobin.cloudboss.io/version': input.version }
+        annotations: { 'test.unobin.cloudboss.io/version': input.version }
+      }
+      address-type: 'IPv4'
+      endpoints:    [{ addresses: ['192.0.2.1', '192.0.2.2'], node-name: input.node }]
+      ports:        [{ name: 'web', port: input.port, app-protocol: 'http', protocol: 'UDP' }]
+    }
+    replaced: discovery.endpoint-slice {
+      metadata:     { name: 'unobin-it-endpoint-slice-replaced' }
+      address-type: input.address-type
+      endpoints:    [{ addresses: [input.address], conditions: { ready: true } }]
+      ports:        [{ port: '81', app-protocol: 'http', protocol: 'SCTP' }]
+    }
+  }
+  outputs: {
+    stable-uid:   { value: resource.stable.uid }
+    replaced-uid: { value: resource.replaced.uid }
+  }
+}
