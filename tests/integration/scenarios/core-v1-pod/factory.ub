@@ -1,0 +1,50 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  inputs: {
+    deadline: { type: integer }
+    epoch:    { type: string }
+    image:    { type: string }
+    phase:    { type: optional(list(string)), default: null }
+  }
+  resources: {
+    stable: core.pod {
+      metadata: {
+        generate-name: 'unobin-it-pod-stable-'
+        labels: {
+          'test.unobin.cloudboss.io/scenario': 'core-v1-pod'
+          role:                                'stable'
+          epoch:                               input.epoch
+        }
+      }
+      spec: {
+        active-deadline-seconds:          input.deadline
+        termination-grace-period-seconds: 0
+        container:                        [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }]
+      }
+      target-state:   input.phase
+      create-timeout: '2m'
+      delete-timeout: '30s'
+    }
+    replaced: core.pod {
+      metadata: {
+        generate-name: 'unobin-it-pod-replace-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'core-v1-pod', role: 'replacement' }
+      }
+      spec: {
+        node-selector:                    { 'test.unobin.cloudboss.io/unscheduled': 'true' }
+        termination-grace-period-seconds: 0
+        container:                        [{ name: 'app', image: input.image }]
+      }
+      target-state:   ['Pending']
+      create-timeout: '2m'
+      delete-timeout: '30s'
+    }
+  }
+  outputs: {
+    stable-name:      { value: resource.stable.metadata.name }
+    stable-uid:       { value: resource.stable.uid }
+    replacement-name: { value: resource.replaced.name }
+    replacement-uid:  { value: resource.replaced.uid }
+  }
+}

@@ -1,0 +1,39 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server:     { type: string }
+    members:    { type: list(string) }
+    expiration: { type: integer }
+  }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    seed: core.pod {
+      metadata:     { name: 'seed' }
+      spec:         {}
+      target-state: ['Pending']
+    }
+    subject: core.pod {
+      metadata: { name: 'subject' }
+      spec: {
+        volume: [
+          {
+            name: 'projected'
+            projected: {
+              sources: [
+                for item in input.members :
+                {
+                  service-account-token: {
+                    path:               item
+                    audience:           resource.seed.metadata.annotations['value']
+                    expiration-seconds: input.expiration
+                  }
+                }
+              ]
+            }
+          },
+        ]
+      }
+      target-state: ['Pending']
+    }
+  }
+}

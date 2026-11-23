@@ -1,0 +1,14 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  inputs:          { value: { type: string } }
+  resources: {
+    subject: core.pod {
+      metadata: {
+        name:   'subject'
+        labels: { for label in ['bad key'] : label => input.value }
+      }
+      spec: {}
+    }
+  }
+}

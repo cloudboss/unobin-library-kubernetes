@@ -1,0 +1,14 @@
+stack: {
+  factory: {
+    inputs: {
+      deadline: 1800
+      epoch:    'updated'
+      image:    'registry.k8s.io/pause:3.10'
+      phase:    ['Pending']
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

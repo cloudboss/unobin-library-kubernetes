@@ -1,0 +1,30 @@
+factory: {
+  imports: {
+    core:     'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    seedcore: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+  }
+  inputs: {
+    server:   { type: string }
+    metadata: { type: opaque }
+    spec:     { type: opaque }
+  }
+  library-configs: {
+    seedcore: { server: input.server, insecure-skip-tls-verify: true }
+    core: {
+      server:                   resource.seed.metadata.annotations['value']
+      insecure-skip-tls-verify: true
+    }
+  }
+  resources: {
+    seed: seedcore.pod {
+      metadata:     { name: 'seed' }
+      spec:         { container: [{ name: 'seed', image: 'image' }] }
+      target-state: ['Pending']
+    }
+    subject: core.pod {
+      metadata:     input.metadata
+      spec:         input.spec
+      target-state: ['Pending']
+    }
+  }
+}

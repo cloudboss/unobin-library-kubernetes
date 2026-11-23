@@ -1,0 +1,12 @@
+stack: {
+  factory: {
+    inputs: {
+      metadata: { name: 'test' }
+      spec:     { container: [{ name: 'main', restart-polciy: 'Always' }] }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

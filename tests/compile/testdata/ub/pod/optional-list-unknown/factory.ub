@@ -1,0 +1,13 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  inputs:          { image: { type: string } }
+  resources: {
+    subject: core.pod {
+      metadata: { name: 'test' }
+      spec: {
+        container: [{ name: 'main', image: input.image, restart-polciy: 'Always' }]
+      }
+    }
+  }
+}

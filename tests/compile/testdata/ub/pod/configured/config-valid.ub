@@ -1,0 +1,12 @@
+stack: {
+  factory: {
+    inputs: {
+      metadata: { name: 'test' }
+      spec:     { security-context: { fs-group: '+0', seccomp-profile: {} } }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

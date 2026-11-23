@@ -1,0 +1,599 @@
+{
+  "kind": "Pod",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "example",
+    "namespace": "example",
+    "creationTimestamp": null,
+    "labels": {"example.com/value": "example"},
+    "annotations": {"example.com/value": "example"}
+  },
+  "spec": {
+    "volumes": [
+      {
+        "name": "example",
+        "hostPath": {"path": "example", "type": "DirectoryOrCreate"},
+        "emptyDir": {"medium": "Memory", "sizeLimit": "100m"},
+        "gcePersistentDisk": {"pdName": "example", "fsType": "example", "partition":2, "readOnly":true},
+        "awsElasticBlockStore": {"volumeID": "example", "fsType": "example", "partition":2, "readOnly":true},
+        "gitRepo": {"repository": "example", "revision": "example", "directory": "example"},
+        "secret": {
+          "secretName": "example",
+          "items": [{"key": "example", "path": "example", "mode":420}],
+          "defaultMode": 420,
+          "optional": true
+        },
+        "nfs": {"server": "example", "path": "example", "readOnly":true},
+        "iscsi": {
+          "targetPortal": "example",
+          "iqn": "example",
+          "lun": 2,
+          "iscsiInterface": "example",
+          "fsType": "example",
+          "readOnly": true
+        },
+        "glusterfs": {"endpoints": "example", "path": "example", "readOnly":true},
+        "persistentVolumeClaim": {"claimName": "example", "readOnly":true},
+        "rbd": {
+          "monitors": ["example"],
+          "image": "example",
+          "fsType": "example",
+          "pool": "example",
+          "user": "example",
+          "keyring": "example",
+          "secretRef": {"name": "example"},
+          "readOnly": true
+        },
+        "flexVolume": {
+          "driver": "example",
+          "fsType": "example",
+          "secretRef": {"name": "example"},
+          "readOnly": true,
+          "options": {"example.com/value": "example"}
+        },
+        "cinder": {"volumeID": "example", "fsType": "example", "readOnly":true},
+        "flocker": {"datasetName": "example", "datasetUUID": "example"},
+        "downwardAPI": {
+          "items": [
+            {
+              "path": "example",
+              "fieldRef": {"apiVersion": "example", "fieldPath": "example"},
+              "resourceFieldRef": {"containerName": "example", "resource": "example", "divisor": "100m"},
+              "mode": 420
+            }
+          ],
+          "defaultMode": 420
+        },
+        "fc": {"targetWWNs":["example"], "lun":2, "fsType": "example", "readOnly":true},
+        "azureFile": {"secretName": "example", "shareName": "example", "readOnly":true},
+        "configMap": {
+          "name": "example",
+          "items": [{"key": "example", "path": "example", "mode":420}],
+          "defaultMode": 420,
+          "optional": true
+        },
+        "vsphereVolume": {"volumePath": "example", "fsType": "example"},
+        "quobyte": {
+          "registry": "example",
+          "volume": "example",
+          "readOnly": true,
+          "user": "example",
+          "group": "example"
+        },
+        "azureDisk": {
+          "diskName": "example",
+          "diskURI": "example",
+          "cachingMode": "example",
+          "fsType": "example",
+          "readOnly": true,
+          "kind": "example"
+        },
+        "photonPersistentDisk": {"pdID": "example", "fsType": "example"},
+        "projected": {
+          "sources": [
+            {
+              "secret": {
+                "name": "example",
+                "items": [{"key": "example", "path": "example", "mode":420}],
+                "optional": true
+              }
+            },
+            {
+              "configMap": {
+                "name": "example",
+                "items": [{"key": "example", "path": "example", "mode":420}],
+                "optional": true
+              }
+            },
+            {
+              "downwardAPI": {
+                "items": [
+                  {
+                    "path": "example",
+                    "fieldRef": {"apiVersion": "example", "fieldPath": "example"},
+                    "resourceFieldRef": {"containerName": "example", "resource": "example", "divisor": "100m"},
+                    "mode": 420
+                  }
+                ]
+              }
+            },
+            {
+              "serviceAccountToken": {"audience": "example", "expirationSeconds":600, "path": "example"}
+            }
+          ],
+          "defaultMode": 420
+        },
+        "csi": {
+          "driver": "example",
+          "readOnly": true,
+          "fsType": "example",
+          "volumeAttributes": {"example.com/value": "example"},
+          "nodePublishSecretRef": {"name": "example"}
+        },
+        "ephemeral": {
+          "volumeClaimTemplate": {
+            "metadata": {
+              "creationTimestamp": null,
+              "labels": {"example.com/value": "example"},
+              "annotations": {"example.com/value": "example"}
+            },
+            "spec": {
+              "accessModes": ["ReadWriteOnce"],
+              "selector": {
+                "matchLabels": {"example.com/value": "example"},
+                "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+              },
+              "resources": {
+                "limits": {"example.com/value": "100m"},
+                "requests": {"example.com/value": "100m"}
+              },
+              "volumeName": "example",
+              "storageClassName": "example",
+              "volumeMode": "Block"
+            }
+          }
+        }
+      }
+    ],
+    "initContainers": [
+      {
+        "name": "example",
+        "image": "example",
+        "command": ["example"],
+        "args": ["example"],
+        "workingDir": "example",
+        "ports": [
+          {
+            "name": "http",
+            "hostPort": 2,
+            "containerPort": 2,
+            "protocol": "TCP",
+            "hostIP": "example"
+          }
+        ],
+        "envFrom": [
+          {
+            "prefix": "example",
+            "configMapRef": {"name": "example", "optional":true},
+            "secretRef": {"name": "example", "optional":true}
+          }
+        ],
+        "env": [
+          {
+            "name": "example",
+            "value": "example",
+            "valueFrom": {
+              "fieldRef": {"apiVersion": "example", "fieldPath": "example"},
+              "resourceFieldRef": {"containerName": "example", "resource": "example", "divisor": "100m"},
+              "configMapKeyRef": {"name": "example", "key": "example", "optional":true},
+              "secretKeyRef": {"name": "example", "key": "example", "optional":true}
+            }
+          }
+        ],
+        "resources": {"limits":{"example.com/value": "100m"}, "requests":{"example.com/value": "100m"}},
+        "restartPolicy": "Always",
+        "volumeMounts": [
+          {
+            "name": "example",
+            "readOnly": true,
+            "mountPath": "example",
+            "subPath": "example",
+            "mountPropagation": "None",
+            "subPathExpr": "example"
+          }
+        ],
+        "volumeDevices": [{"name": "example", "devicePath": "example"}],
+        "livenessProbe": {
+          "exec": {"command":["example"]},
+          "httpGet": {
+            "path": "example",
+            "port": "http",
+            "host": "example",
+            "scheme": "HTTP",
+            "httpHeaders": [{"name": "example", "value": "example"}]
+          },
+          "tcpSocket": {"port": "http"},
+          "grpc": {"port":2, "service": "example"},
+          "initialDelaySeconds": 2,
+          "timeoutSeconds": 2,
+          "periodSeconds": 2,
+          "successThreshold": 2,
+          "failureThreshold": 2
+        },
+        "readinessProbe": {
+          "exec": {"command":["example"]},
+          "httpGet": {
+            "path": "example",
+            "port": "http",
+            "host": "example",
+            "scheme": "HTTP",
+            "httpHeaders": [{"name": "example", "value": "example"}]
+          },
+          "tcpSocket": {"port": "http"},
+          "grpc": {"port":2, "service": "example"},
+          "initialDelaySeconds": 2,
+          "timeoutSeconds": 2,
+          "periodSeconds": 2,
+          "successThreshold": 2,
+          "failureThreshold": 2
+        },
+        "startupProbe": {
+          "exec": {"command":["example"]},
+          "httpGet": {
+            "path": "example",
+            "port": "http",
+            "host": "example",
+            "scheme": "HTTP",
+            "httpHeaders": [{"name": "example", "value": "example"}]
+          },
+          "tcpSocket": {"port": "http"},
+          "grpc": {"port":2, "service": "example"},
+          "initialDelaySeconds": 2,
+          "timeoutSeconds": 2,
+          "periodSeconds": 2,
+          "successThreshold": 2,
+          "failureThreshold": 2
+        },
+        "lifecycle": {
+          "postStart": {
+            "exec": {"command":["example"]},
+            "httpGet": {
+              "path": "example",
+              "port": "http",
+              "host": "example",
+              "scheme": "HTTP",
+              "httpHeaders": [{"name": "example", "value": "example"}]
+            },
+            "tcpSocket": {"port": "http"}
+          },
+          "preStop": {
+            "exec": {"command":["example"]},
+            "httpGet": {
+              "path": "example",
+              "port": "http",
+              "host": "example",
+              "scheme": "HTTP",
+              "httpHeaders": [{"name": "example", "value": "example"}]
+            },
+            "tcpSocket": {"port": "http"}
+          }
+        },
+        "terminationMessagePath": "example",
+        "terminationMessagePolicy": "File",
+        "imagePullPolicy": "example",
+        "securityContext": {
+          "capabilities": {"add":["example"], "drop":["example"]},
+          "privileged": true,
+          "seLinuxOptions": {"user": "example", "role": "example", "type": "example", "level": "example"},
+          "runAsUser": 2,
+          "runAsGroup": 2,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true,
+          "allowPrivilegeEscalation": true,
+          "seccompProfile": {"type": "Localhost", "localhostProfile": "example"}
+        },
+        "stdin": true,
+        "stdinOnce": true,
+        "tty": true
+      }
+    ],
+    "containers": [
+      {
+        "name": "example",
+        "image": "example",
+        "command": ["example"],
+        "args": ["example"],
+        "workingDir": "example",
+        "ports": [
+          {
+            "name": "http",
+            "hostPort": 2,
+            "containerPort": 2,
+            "protocol": "TCP",
+            "hostIP": "example"
+          }
+        ],
+        "envFrom": [
+          {
+            "prefix": "example",
+            "configMapRef": {"name": "example", "optional":true},
+            "secretRef": {"name": "example", "optional":true}
+          }
+        ],
+        "env": [
+          {
+            "name": "example",
+            "value": "example",
+            "valueFrom": {
+              "fieldRef": {"apiVersion": "example", "fieldPath": "example"},
+              "resourceFieldRef": {"containerName": "example", "resource": "example", "divisor": "100m"},
+              "configMapKeyRef": {"name": "example", "key": "example", "optional":true},
+              "secretKeyRef": {"name": "example", "key": "example", "optional":true}
+            }
+          }
+        ],
+        "resources": {"limits":{"example.com/value": "100m"}, "requests":{"example.com/value": "100m"}},
+        "restartPolicy": "Always",
+        "volumeMounts": [
+          {
+            "name": "example",
+            "readOnly": true,
+            "mountPath": "example",
+            "subPath": "example",
+            "mountPropagation": "None",
+            "subPathExpr": "example"
+          }
+        ],
+        "volumeDevices": [{"name": "example", "devicePath": "example"}],
+        "livenessProbe": {
+          "exec": {"command":["example"]},
+          "httpGet": {
+            "path": "example",
+            "port": "http",
+            "host": "example",
+            "scheme": "HTTP",
+            "httpHeaders": [{"name": "example", "value": "example"}]
+          },
+          "tcpSocket": {"port": "http"},
+          "grpc": {"port":2, "service": "example"},
+          "initialDelaySeconds": 2,
+          "timeoutSeconds": 2,
+          "periodSeconds": 2,
+          "successThreshold": 2,
+          "failureThreshold": 2
+        },
+        "readinessProbe": {
+          "exec": {"command":["example"]},
+          "httpGet": {
+            "path": "example",
+            "port": "http",
+            "host": "example",
+            "scheme": "HTTP",
+            "httpHeaders": [{"name": "example", "value": "example"}]
+          },
+          "tcpSocket": {"port": "http"},
+          "grpc": {"port":2, "service": "example"},
+          "initialDelaySeconds": 2,
+          "timeoutSeconds": 2,
+          "periodSeconds": 2,
+          "successThreshold": 2,
+          "failureThreshold": 2
+        },
+        "startupProbe": {
+          "exec": {"command":["example"]},
+          "httpGet": {
+            "path": "example",
+            "port": "http",
+            "host": "example",
+            "scheme": "HTTP",
+            "httpHeaders": [{"name": "example", "value": "example"}]
+          },
+          "tcpSocket": {"port": "http"},
+          "grpc": {"port":2, "service": "example"},
+          "initialDelaySeconds": 2,
+          "timeoutSeconds": 2,
+          "periodSeconds": 2,
+          "successThreshold": 2,
+          "failureThreshold": 2
+        },
+        "lifecycle": {
+          "postStart": {
+            "exec": {"command":["example"]},
+            "httpGet": {
+              "path": "example",
+              "port": "http",
+              "host": "example",
+              "scheme": "HTTP",
+              "httpHeaders": [{"name": "example", "value": "example"}]
+            },
+            "tcpSocket": {"port": "http"}
+          },
+          "preStop": {
+            "exec": {"command":["example"]},
+            "httpGet": {
+              "path": "example",
+              "port": "http",
+              "host": "example",
+              "scheme": "HTTP",
+              "httpHeaders": [{"name": "example", "value": "example"}]
+            },
+            "tcpSocket": {"port": "http"}
+          }
+        },
+        "terminationMessagePath": "example",
+        "terminationMessagePolicy": "File",
+        "imagePullPolicy": "example",
+        "securityContext": {
+          "capabilities": {"add":["example"], "drop":["example"]},
+          "privileged": true,
+          "seLinuxOptions": {"user": "example", "role": "example", "type": "example", "level": "example"},
+          "runAsUser": 2,
+          "runAsGroup": 2,
+          "runAsNonRoot": true,
+          "readOnlyRootFilesystem": true,
+          "allowPrivilegeEscalation": true,
+          "seccompProfile": {"type": "Localhost", "localhostProfile": "example"}
+        },
+        "stdin": true,
+        "stdinOnce": true,
+        "tty": true
+      }
+    ],
+    "restartPolicy": "Always",
+    "terminationGracePeriodSeconds": 2,
+    "activeDeadlineSeconds": 2,
+    "dnsPolicy": "ClusterFirst",
+    "nodeSelector": {"example.com/value": "example"},
+    "serviceAccountName": "example",
+    "automountServiceAccountToken": true,
+    "nodeName": "example",
+    "hostNetwork": true,
+    "hostPID": true,
+    "hostIPC": true,
+    "shareProcessNamespace": true,
+    "securityContext": {
+      "seLinuxOptions": {"user": "example", "role": "example", "type": "example", "level": "example"},
+      "windowsOptions": {
+        "gmsaCredentialSpecName": "example",
+        "gmsaCredentialSpec": "example",
+        "runAsUserName": "example",
+        "hostProcess": true
+      },
+      "runAsUser": 2,
+      "runAsGroup": 2,
+      "runAsNonRoot": true,
+      "supplementalGroups": [2],
+      "fsGroup": 2,
+      "sysctls": [{"name": "example", "value": "example"}],
+      "fsGroupChangePolicy": "Always",
+      "seccompProfile": {"type": "Localhost", "localhostProfile": "example"}
+    },
+    "imagePullSecrets": [{"name": "example"}],
+    "hostname": "example",
+    "subdomain": "example",
+    "affinity": {
+      "nodeAffinity": {
+        "requiredDuringSchedulingIgnoredDuringExecution": {
+          "nodeSelectorTerms": [
+            {
+              "matchExpressions": [{"key": "example", "operator": "In", "values":["example"]}],
+              "matchFields": [{"key": "example", "operator": "example", "values":["example"]}]
+            }
+          ]
+        },
+        "preferredDuringSchedulingIgnoredDuringExecution": [
+          {
+            "weight": 2,
+            "preference": {
+              "matchExpressions": [{"key": "example", "operator": "In", "values":["example"]}],
+              "matchFields": [{"key": "example", "operator": "example", "values":["example"]}]
+            }
+          }
+        ]
+      },
+      "podAffinity": {
+        "requiredDuringSchedulingIgnoredDuringExecution": [
+          {
+            "labelSelector": {
+              "matchLabels": {"example.com/value": "example"},
+              "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+            },
+            "namespaces": ["example"],
+            "topologyKey": "example",
+            "namespaceSelector": {
+              "matchLabels": {"example.com/value": "example"},
+              "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+            }
+          }
+        ],
+        "preferredDuringSchedulingIgnoredDuringExecution": [
+          {
+            "weight": 2,
+            "podAffinityTerm": {
+              "labelSelector": {
+                "matchLabels": {"example.com/value": "example"},
+                "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+              },
+              "namespaces": ["example"],
+              "topologyKey": "example",
+              "namespaceSelector": {
+                "matchLabels": {"example.com/value": "example"},
+                "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+              }
+            }
+          }
+        ]
+      },
+      "podAntiAffinity": {
+        "requiredDuringSchedulingIgnoredDuringExecution": [
+          {
+            "labelSelector": {
+              "matchLabels": {"example.com/value": "example"},
+              "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+            },
+            "namespaces": ["example"],
+            "topologyKey": "example",
+            "namespaceSelector": {
+              "matchLabels": {"example.com/value": "example"},
+              "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+            }
+          }
+        ],
+        "preferredDuringSchedulingIgnoredDuringExecution": [
+          {
+            "weight": 2,
+            "podAffinityTerm": {
+              "labelSelector": {
+                "matchLabels": {"example.com/value": "example"},
+                "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+              },
+              "namespaces": ["example"],
+              "topologyKey": "example",
+              "namespaceSelector": {
+                "matchLabels": {"example.com/value": "example"},
+                "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "schedulerName": "example",
+    "tolerations": [
+      {
+        "key": "example",
+        "operator": "Exists",
+        "value": "example",
+        "effect": "NoSchedule",
+        "tolerationSeconds": 2
+      }
+    ],
+    "hostAliases": [{"ip": "127.0.0.1", "hostnames":["example"]}],
+    "priorityClassName": "example",
+    "dnsConfig": {
+      "nameservers": ["127.0.0.1"],
+      "searches": ["example"],
+      "options": [{"name": "example", "value": "example"}]
+    },
+    "readinessGates": [{"conditionType": "example"}],
+    "runtimeClassName": "example",
+    "enableServiceLinks": true,
+    "topologySpreadConstraints": [
+      {
+        "maxSkew": 2,
+        "topologyKey": "example",
+        "whenUnsatisfiable": "DoNotSchedule",
+        "labelSelector": {
+          "matchLabels": {"example.com/value": "example"},
+          "matchExpressions": [{"key": "example", "operator": "example", "values":["example"]}]
+        },
+        "minDomains": 2,
+        "nodeAffinityPolicy": "Honor",
+        "nodeTaintsPolicy": "Honor",
+        "matchLabelKeys": ["example"]
+      }
+    ],
+    "os": {"name": "linux"}
+  },
+  "status": {}
+}

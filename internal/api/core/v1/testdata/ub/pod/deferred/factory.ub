@@ -1,0 +1,22 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server: { type: string }
+  }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    seed: core.pod {
+      metadata:     { name: 'seed' }
+      spec:         {}
+      target-state: ['Pending']
+    }
+    subject: core.pod {
+      metadata: { name: 'subject' }
+      spec: {
+        container:        [{ name: 'app', image: 'image2' }]
+        security-context: { fs-group: resource.seed.metadata.annotations['value'] }
+      }
+      target-state: ['Pending']
+    }
+  }
+}

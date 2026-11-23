@@ -1,0 +1,16 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server:   { type: string }
+    metadata: { type: opaque }
+    spec:     { type: opaque }
+  }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    subject: core.pod {
+      metadata:     input.metadata
+      spec:         input.spec
+      target-state: ['Pending']
+    }
+  }
+}

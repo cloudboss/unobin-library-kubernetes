@@ -1,0 +1,72 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+
+  resources: {
+    subject: core.pod {
+      metadata: {
+        name:        'pod.ok'
+        labels:      { 'example.com/Role': 'web' }
+        annotations: { 'EXAMPLE.COM/Mixed': 'any / style' }
+      }
+      spec: {
+        restart-policy: 'Never'
+        dns-config:     { nameservers: ['127.0.0.1', '2001:db8::1'], searches: ['default.svc'] }
+        security-context: {
+          fs-group:        '+0'
+          run-as-group:    '-9223372036854775808'
+          run-as-user:     '9223372036854775807'
+          seccomp-profile: { type: 'RuntimeDefault' }
+        }
+        container: [
+          {
+            name:  'main'
+            image: 'registry.k8s.io/pause:3.9'
+            port:  [{ container-port: 65535, host-port: 1, name: 'a-01', protocol: 'UDP' }]
+            readiness-probe:  { http-get: { port: '+00065535', scheme: 'HTTPS' } }
+            security-context: { run-as-user: '' }
+          },
+        ]
+        volume: [
+          {
+            name: 'config'
+            config-map: {
+              default-mode: '0000777'
+              items:        [{ key: 'first', path: 'in/file', mode: '0' }]
+            }
+          },
+          {
+            name: 'projection'
+            projected: {
+              sources: [
+                {
+                  secret:                [{ name: 'secret' }]
+                  config-map:            [{ name: 'config' }]
+                  service-account-token: { path: 'token', expiration-seconds: 600 }
+                },
+              ]
+            }
+          },
+          {
+            name: 'ephemeral'
+            ephemeral: {
+              volume-claim-template: {
+                metadata: { annotations: { 'example.com/key': 'x' } }
+                spec: {
+                  access-modes: ['ReadWriteOncePod']
+                  resources:    { requests: { storage: '1Gi' } }
+                }
+              }
+            }
+          },
+          { name: 'inherited', local: { path: '/var/lib' }, ceph-fs: { monitors: ['monitor'] } },
+        ]
+      }
+      target-state:   ['Running', 'Pending']
+      ignore-labels:  ['^internal/']
+      create-timeout: '1s'
+      delete-timeout: '1h'
+    }
+  }
+  outputs: { actual: { value: resource.subject.spec.volume } }
+}

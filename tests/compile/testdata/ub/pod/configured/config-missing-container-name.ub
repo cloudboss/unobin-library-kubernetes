@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { metadata: { name: 'test' }, spec: { container: [{ image: 'app' }] } } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

@@ -1,0 +1,23 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server:   { type: string }
+    deadline: { type: integer }
+  }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    seed: core.pod {
+      metadata:     { name: 'seed' }
+      spec:         {}
+      target-state: ['Pending']
+    }
+    subject: core.pod {
+      metadata: { name: 'subject' }
+      spec: {
+        active-deadline-seconds: input.deadline
+        container: [{ name: 'app', image: resource.seed.metadata.annotations['value'] }]
+      }
+      target-state: ['Pending']
+    }
+  }
+}
