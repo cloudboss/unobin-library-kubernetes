@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { name: 'POD_INFO_NAME', absent: 'POD_INFO_NAME-absent' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

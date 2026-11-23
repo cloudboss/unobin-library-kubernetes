@@ -1,0 +1,9 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    endpoint: core.pod-info {
+      metadata: { generate-name: 'pending-' }
+    }
+  }
+}

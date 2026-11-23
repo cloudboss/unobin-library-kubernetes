@@ -37,6 +37,9 @@ func Library() *runtime.Library {
 				svc.PersistentVolumeClaimDataSource, *svc.PersistentVolumeClaimDataSourceOutput,
 				*config.Configuration,
 			](),
+			"pod-info": runtime.MakeDataSource[
+				svc.PodDataSource, *svc.PodDataSourceOutput, *config.Configuration,
+			](),
 			"service-info": runtime.MakeDataSource[
 				svc.ServiceDataSource, *svc.ServiceDataSourceOutput, *config.Configuration,
 			](),

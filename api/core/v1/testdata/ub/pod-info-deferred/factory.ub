@@ -1,0 +1,19 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server, namespace: 'configured' } }
+  inputs:          { server: { type: string } }
+  actions: {
+    seed: core.seed {
+      metadata-input: input.metadata
+    }
+  }
+  data-sources: {
+    endpoint: core.pod-info {
+      metadata: action.seed.metadata
+    }
+  }
+  outputs: {
+    metadata: { value: data-source.endpoint.metadata }
+    phase:    { value: data-source.endpoint.status }
+  }
+}

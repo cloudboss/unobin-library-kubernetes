@@ -1,0 +1,40 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { namespace: 'unrelated-namespace' } }
+  inputs:          { name: { type: string }, absent: { type: string } }
+  data-sources: {
+    pod: core.pod-info {
+      metadata: {
+        name:          input.name
+        generate-name: 'lookup-only-'
+        labels:        { label: 'unused' }
+      }
+    }
+    missing: core.pod-info {
+      metadata: {
+        name:          input.absent
+        namespace:     null
+        generate-name: 'missing-'
+        annotations:   { 'EXAMPLE.COM/Lookup': 'missing', 'bad key': null }
+        labels:        { app: 'missing', 'bad key': null }
+      }
+    }
+  }
+  outputs: {
+    name:        { value: data-source.pod.metadata.name }
+    namespace:   { value: data-source.pod.metadata.namespace }
+    prefix:      { value: data-source.pod.metadata.generate-name }
+    uid:         { value: data-source.pod.metadata.uid }
+    annotations: { value: data-source.pod.metadata.annotations }
+    labels:      { value: data-source.pod.metadata.labels }
+    phase:       { value: data-source.pod.status }
+    node:        { value: data-source.pod.spec?.node-name }
+    scheduler:   { value: data-source.pod.spec?.scheduler-name }
+    images:  { value: [ for container in data-source.pod.spec?.container ?? [] : container.image ] }
+    grace:   { value: data-source.pod.spec?.termination-grace-period-seconds }
+    volumes: { value: data-source.pod.spec?.volume }
+    missing-metadata: { value: data-source.missing.metadata }
+    missing-phase:    { value: data-source.missing.status }
+    missing-spec:     { value: data-source.missing.spec }
+  }
+}
