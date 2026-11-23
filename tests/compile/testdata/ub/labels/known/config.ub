@@ -1,0 +1,17 @@
+stack: {
+  factory: {
+    inputs: {
+      server:               'KUBE_SERVER'
+      configured-namespace: 'CONFIGURED_NAMESPACE'
+      api-version:          'LOOKUP_VERSION'
+      kind:                 'LOOKUP_KIND'
+      name:                 'LOOKUP_NAME'
+      field-manager:        'FIELD_MANAGER'
+      force-conflicts:      'FORCE'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

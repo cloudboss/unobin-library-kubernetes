@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { server: 'KUBE_SERVER', defer-name: 'DEFER_NAME' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

@@ -1,0 +1,24 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: { server: input.server, namespace: input.configured-namespace } }
+  inputs: {
+    server:               { type: string }
+    configured-namespace: { type: string, default: 'other' }
+    api-version:          { type: string, default: 'v1' }
+    kind:                 { type: string, default: 'ConfigMap' }
+    name:                 { type: string, default: 'example' }
+    field-manager:        { type: string, default: 'team manager' }
+    force-conflicts:      { type: boolean, default: false }
+  }
+  resources: {
+    selection: dynamic.labels {
+      api-version:     input.api-version
+      kind:            input.kind
+      metadata:        { name: input.name }
+      labels:          { managed: 'desired' }
+      field-manager:   input.field-manager
+      force-conflicts: input.force-conflicts
+    }
+  }
+  outputs: { observed: { value: resource.selection.labels } }
+}

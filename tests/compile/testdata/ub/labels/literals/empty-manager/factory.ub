@@ -1,0 +1,14 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: {} }
+  resources: {
+    selection: dynamic.labels {
+      api-version:   'v1'
+      kind:          'ConfigMap'
+      metadata:      { name: 'example' }
+      labels:        { empty: '' }
+      field-manager: ''
+    }
+  }
+  outputs: { observed: { value: resource.selection.labels } }
+}
