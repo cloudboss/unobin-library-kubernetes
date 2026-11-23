@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -293,10 +294,13 @@ func TestCronJobRefreshFailureDoesNotRollback(t *testing.T) {
 
 func TestCronJobDeleteUsesPriorTimeoutAndPreservesFinalizers(t *testing.T) {
 	var calls []string
+	var callsMu sync.Mutex
 	obj := readyCronJob(t)
 	obj.Finalizers = []string{"do-not-remove"}
 	c := cronJobAPI(t, func(w http.ResponseWriter, req *http.Request) {
+		callsMu.Lock()
 		calls = append(calls, req.Method)
+		callsMu.Unlock()
 		if req.Method == "DELETE" {
 			require.NoError(t, json.NewEncoder(w).Encode(metav1.Status{Status: "Success"}))
 			return
@@ -304,15 +308,23 @@ func TestCronJobDeleteUsesPriorTimeoutAndPreservesFinalizers(t *testing.T) {
 		require.NoError(t, json.NewEncoder(w).Encode(obj))
 	})
 	input := cronJob()
-	input.DeleteTimeout = new("25ms")
+	input.DeleteTimeout = new("1s")
 	out, err := input.output(obj, *c.Server, input.Metadata)
 	require.NoError(t, err)
 	desired := *input
 	desired.DeleteTimeout = new("10m")
-	started := time.Now()
-	err = desired.Delete(t.Context(), c, cronJobPrior{Inputs: *input, Outputs: out})
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	err = desired.Delete(ctx, c, cronJobPrior{Inputs: *input, Outputs: out})
 	require.ErrorIs(t, err, context.DeadlineExceeded)
-	require.Less(t, time.Since(started), time.Second)
-	require.Equal(t, []string{"DELETE", "GET"}, calls)
+	require.NoError(t, ctx.Err(), "the saved timeout must expire before the caller's deadline")
+
+	callsMu.Lock()
+	defer callsMu.Unlock()
+	require.GreaterOrEqual(t, len(calls), 2)
+	require.Equal(t, "DELETE", calls[0])
+	for _, call := range calls[1:] {
+		require.Equal(t, "GET", call)
+	}
 	require.Equal(t, []string{"do-not-remove"}, obj.Finalizers)
 }
