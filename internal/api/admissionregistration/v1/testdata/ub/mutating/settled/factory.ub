@@ -1,0 +1,29 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: {
+    admission: {
+      server:          input.server
+      kubeconfig:      input.kubeconfig
+      current-context: input.current-context
+    }
+  }
+  inputs: {
+    server:             { type: string }
+    kubeconfig:         { type: optional(string), default: null }
+    current-context:    { type: optional(string), default: null }
+    metadata:           { type: opaque }
+    webhook:            { type: opaque }
+    ignore-annotations: { type: list(string) }
+    ignore-labels:      { type: list(string) }
+  }
+  resources: {
+    example: admission.mutating-webhook-configuration {
+      metadata:           input.metadata
+      webhook:            input.webhook
+      ignore-annotations: input.ignore-annotations
+      ignore-labels:      input.ignore-labels
+    }
+  }
+}

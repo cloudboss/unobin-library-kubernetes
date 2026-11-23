@@ -1,0 +1,73 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  resources: {
+    example: admission.mutating-webhook-configuration {
+      metadata: {
+        generate-name: 'mutating-'
+        labels:        { key: '' }
+        annotations:   { 'EXAMPLE.TEST/key': 'value' }
+      }
+      ignore-annotations: ['^ignored/']
+      ignore-labels:      ['^ignore']
+      webhook: [
+        {
+          name: 'first.example.test'
+          client-config: {
+            service:   { name: 'webhook', namespace: 'admission', path: '', port: 0 }
+            ca-bundle: 'raw bytes'
+          }
+          timeout-seconds: 1
+          side-effects:    'Unknown'
+          rule: [
+            {
+              api-groups:   ['']
+              api-versions: ['v1']
+              resources:    ['pods']
+              operations:   ['CREATE', 'UPDATE']
+            },
+          ]
+          namespace-selector: {}
+          object-selector: {
+            match-expressions: [{ key: 'selected', operator: 'In', values: ['b', 'a', 'a'] }]
+          }
+        },
+        {
+          name:                      'second.example.test'
+          client-config:             { url: 'https://webhook.example.test' }
+          admission-review-versions: ['v1', 'v1beta1']
+          failure-policy:            'Ignore'
+          match-policy:              'Exact'
+          reinvocation-policy:       'IfNeeded'
+          side-effects:              'Some'
+          timeout-seconds:           30
+          rule: [
+            {
+              api-groups:   ['apps']
+              api-versions: ['v1']
+              resources:    ['deployments']
+              operations:   ['DELETE', 'CONNECT']
+              scope:        'Namespaced'
+            },
+          ]
+        },
+      ]
+    }
+  }
+  outputs: {
+    identity: {
+      value: [
+        resource.example.server,
+        resource.example.api-version,
+        resource.example.kind,
+        resource.example.name,
+        resource.example.uid,
+      ]
+    }
+    metadata: { value: resource.example.metadata }
+    webhook:  { value: resource.example.webhook }
+    policies: { value: resource.example.webhook[0].reinvocation-policy }
+  }
+}

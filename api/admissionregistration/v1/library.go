@@ -29,6 +29,11 @@ func Library() *runtime.Library {
 				*svc.ValidatingWebhookConfigurationResourceOutput,
 				*config.Configuration,
 			]((&svc.ValidatingWebhookConfigurationResource{}).ResourceDefinition()),
+			"mutating-webhook-configuration": runtime.MakeResource[
+				svc.MutatingWebhookConfigurationResource,
+				*svc.MutatingWebhookConfigurationResourceOutput,
+				*config.Configuration,
+			]((&svc.MutatingWebhookConfigurationResource{}).ResourceDefinition()),
 		},
 	}
 }

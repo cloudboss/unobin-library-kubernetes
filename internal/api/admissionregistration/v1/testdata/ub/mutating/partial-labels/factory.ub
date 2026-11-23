@@ -1,0 +1,36 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: { server: input.server } }
+  inputs: {
+    server:        { type: string }
+    webhook:       { type: opaque }
+    label:         { type: string }
+    label-value:   { type: string }
+    comprehension: { type: boolean }
+  }
+  actions: {
+    seed: admission.seed {
+      echo: input.label-value
+    }
+  }
+  resources: {
+    example: admission.mutating-webhook-configuration {
+      metadata: {
+        name: 'example'
+        labels: if input.comprehension
+          then {
+            for key in [input.label, 'pending', 'ignored'] :
+            key => if key == 'pending' then action.seed.value else ''
+            when key != 'ignored'
+          }
+          else {
+            'Upper.example/label': ''
+            pending:               action.seed.value
+          }
+      }
+      webhook: input.webhook
+    }
+  }
+}
