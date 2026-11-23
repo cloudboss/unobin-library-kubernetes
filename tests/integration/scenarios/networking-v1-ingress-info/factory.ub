@@ -31,13 +31,13 @@ factory: {
     }
   }
   data-sources: {
-    route: networking.ingress-info {
+    route: networking.ingress {
       metadata: {
         name:   resource.route.name
         labels: { 'unobin.example/lookup': input.lookup-label }
       }
     }
-    missing: networking.ingress-info {
+    missing: networking.ingress {
       metadata: {
         name:   'unobin-it-ingress-info-missing'
         labels: { 'unobin.example/lookup': input.lookup-label, 'skip this': null }

@@ -1,0 +1,89 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: {} }
+  data-sources: {
+    empty-name: networking.ingress {
+      metadata: { name: '' }
+    }
+    upper-name: networking.ingress {
+      metadata: { name: 'Upper' }
+    }
+    underscore-name: networking.ingress {
+      metadata: { name: 'my_name' }
+    }
+    bad-endpoint: networking.ingress {
+      metadata: { name: 'ok.-endpoint' }
+    }
+    long-name: networking.ingress {
+      metadata: {
+        name: '''\-
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          '''
+      }
+    }
+    label-prefix: networking.ingress {
+      metadata: { labels: { 'EXAMPLE.COM/Key': '' } }
+    }
+    label-endpoint: networking.ingress {
+      metadata: { labels: { 'example.com/Key-': '' } }
+    }
+    label-slash: networking.ingress {
+      metadata: { labels: { 'example.com/more/Key': '' } }
+    }
+    label-prefix-length: networking.ingress {
+      metadata: {
+        labels: {
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/Key': '''\-
+            x
+            '''
+        }
+      }
+    }
+    label-suffix-length: networking.ingress {
+      metadata: { labels: { AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: '' } }
+    }
+    label-value-leading: networking.ingress {
+      metadata: { labels: { key: '-value' } }
+    }
+    label-value-trailing: networking.ingress {
+      metadata: { labels: { key: 'value.' } }
+    }
+    label-value-syntax: networking.ingress {
+      metadata: { labels: { key: 'bad value' } }
+    }
+    label-value-length: networking.ingress {
+      metadata: {
+        labels: { key: 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv' }
+      }
+    }
+    annotation-slash: networking.ingress {
+      metadata: { annotations: { 'example.com/more/Key': '' } }
+    }
+    annotation-endpoint: networking.ingress {
+      metadata: { annotations: { 'Example.com/Key_': '' } }
+    }
+    annotation-prefix-length: networking.ingress {
+      metadata: {
+        annotations: {
+          'KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK/Key': '''\-
+            x
+            '''
+        }
+      }
+    }
+    annotation-suffix-length: networking.ingress {
+      metadata: {
+        annotations: {
+          'İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ': '''\-
+            x
+            '''
+        }
+      }
+    }
+    annotation-long-s: networking.ingress {
+      metadata: { annotations: { 'ſ.example/key': '' } }
+    }
+  }
+}

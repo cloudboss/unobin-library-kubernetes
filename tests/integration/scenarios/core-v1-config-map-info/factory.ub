@@ -15,7 +15,7 @@ factory: {
     }
   }
   data-sources: {
-    existing: core.config-map-info {
+    existing: core.config-map {
       metadata: {
         name:        resource.settings.object.metadata.name
         namespace:   resource.settings.object.metadata.namespace
@@ -24,7 +24,7 @@ factory: {
       }
       immutable: true
     }
-    missing: core.config-map-info {
+    missing: core.config-map {
       metadata:  { name: 'unobin-it-config-map-info-absent', namespace: 'default' }
       immutable: true
     }

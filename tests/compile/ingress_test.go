@@ -20,6 +20,9 @@ func TestIngressCompiledFixtures(t *testing.T) {
 	fixtures, err := os.ReadDir("testdata/ub/ingress")
 	require.NoError(t, err)
 	for _, fixture := range fixtures {
+		if fixture.Name() == "data-source" {
+			continue
+		}
 		t.Run(fixture.Name(), func(t *testing.T) {
 			work, err := os.MkdirTemp(base, fixture.Name()+"-")
 			require.NoError(t, err)

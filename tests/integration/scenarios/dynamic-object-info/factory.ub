@@ -14,17 +14,17 @@ factory: {
     }
   }
   data-sources: {
-    config-map: dynamic.object-info {
+    config-map: dynamic.object {
       api-version: 'v1'
       kind:        'ConfigMap'
       metadata:    { name: resource.settings.object.metadata.name }
     }
-    namespace: dynamic.object-info {
+    namespace: dynamic.object {
       api-version: 'v1'
       kind:        'Namespace'
       metadata:    { name: 'default', namespace: 'ignored/value' }
     }
-    absent: dynamic.object-info {
+    absent: dynamic.object {
       api-version: 'v1'
       kind:        'ConfigMap'
       metadata:    { name: 'unobin-it-dynamic-object-info-absent' }

@@ -19,7 +19,7 @@ func TestCompiledPersistentVolumeClaimFixtures(t *testing.T) {
 	cases, err := os.ReadDir("testdata/ub/persistent-volume-claim")
 	require.NoError(t, err)
 	for _, entry := range cases {
-		if entry.Name() == "configured" {
+		if entry.Name() == "configured" || entry.Name() == "data-source" {
 			continue
 		}
 		t.Run(entry.Name(), func(t *testing.T) {

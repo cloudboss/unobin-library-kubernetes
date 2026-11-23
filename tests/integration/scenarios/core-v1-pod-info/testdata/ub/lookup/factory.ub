@@ -3,14 +3,14 @@ factory: {
   library-configs: { core: { namespace: 'unrelated-namespace' } }
   inputs:          { name: { type: string }, absent: { type: string } }
   data-sources: {
-    pod: core.pod-info {
+    pod: core.pod {
       metadata: {
         name:          input.name
         generate-name: 'lookup-only-'
         labels:        { label: 'unused' }
       }
     }
-    missing: core.pod-info {
+    missing: core.pod {
       metadata: {
         name:          input.absent
         namespace:     null

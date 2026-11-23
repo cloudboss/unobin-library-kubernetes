@@ -27,23 +27,23 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		DataSources: map[string]runtime.DataSourceRegistration{
-			"config-map-info": runtime.MakeDataSource[
+			"config-map": runtime.MakeDataSource[
 				svc.ConfigMapDataSource, *svc.ConfigMapDataSourceOutput, *config.Configuration,
 			](),
-			"namespace-info": runtime.MakeDataSource[
+			"namespace": runtime.MakeDataSource[
 				svc.NamespaceDataSource, *svc.NamespaceDataSourceOutput, *config.Configuration,
 			](),
 			"nodes": runtime.MakeDataSource[
 				svc.NodesDataSource, *svc.NodesDataSourceOutput, *config.Configuration,
 			](),
-			"persistent-volume-claim-info": runtime.MakeDataSource[
+			"persistent-volume-claim": runtime.MakeDataSource[
 				svc.PersistentVolumeClaimDataSource, *svc.PersistentVolumeClaimDataSourceOutput,
 				*config.Configuration,
 			](),
-			"pod-info": runtime.MakeDataSource[
+			"pod": runtime.MakeDataSource[
 				svc.PodDataSource, *svc.PodDataSourceOutput, *config.Configuration,
 			](),
-			"service-info": runtime.MakeDataSource[
+			"service": runtime.MakeDataSource[
 				svc.ServiceDataSource, *svc.ServiceDataSourceOutput, *config.Configuration,
 			](),
 		},

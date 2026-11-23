@@ -20,7 +20,7 @@ func Library() *runtime.Library {
 			"objects": runtime.MakeDataSource[
 				svc.ObjectsDataSource, *svc.ObjectsDataSourceOutput, *config.Configuration,
 			](),
-			"object-info": runtime.MakeDataSource[
+			"object": runtime.MakeDataSource[
 				svc.ObjectDataSource, *svc.ObjectDataSourceOutput, *config.Configuration,
 			](),
 		},

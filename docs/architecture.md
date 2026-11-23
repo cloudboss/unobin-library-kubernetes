@@ -30,6 +30,9 @@ Each public package defines `Library()` in `library.go`. Registration names are
 local to that package. Importing `//api/apps/v1` as `apps` makes a Deployment
 available as `apps.deployment` once that construct is implemented. Resource, data
 source, and action registrations remain separate categories.
+Singular data sources use the same export name as the corresponding resource.
+For example, `core.config-map` creates a ConfigMap in `resources` and reads one
+in `data-sources`. Plural names such as `core.nodes` identify collection lookups.
 
 Short group directory names follow the Kubernetes Go API packages. The actual
 group strings remain exact: `networking.k8s.io`, `rbac.authorization.k8s.io`, and

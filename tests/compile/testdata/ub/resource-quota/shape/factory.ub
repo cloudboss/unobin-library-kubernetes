@@ -13,7 +13,7 @@ factory: {
     }
   }
   data-sources: {
-    live: core.config-map-info {
+    live: core.config-map {
       @depends-on: [resource.seed]
       metadata:    { name: 'quota-seed' }
     }

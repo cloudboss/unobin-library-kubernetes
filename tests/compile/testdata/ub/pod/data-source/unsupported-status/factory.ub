@@ -1,0 +1,15 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    endpoint: core.pod {
+      metadata: { name: 'pod' }
+    }
+  }
+  outputs: {
+    phase:      { value: data-source.endpoint.status?.phase }
+    pod-ip:     { value: data-source.endpoint.pod-ip }
+    conditions: { value: data-source.endpoint.conditions }
+    timestamp:  { value: data-source.endpoint.metadata.creation-timestamp }
+  }
+}

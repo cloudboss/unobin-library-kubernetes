@@ -3,10 +3,10 @@ factory: {
   library-configs: { core: { namespace: 'elsewhere' } }
   inputs:          { name: { type: string }, absent: { type: string } }
   data-sources: {
-    existing: core.persistent-volume-claim-info {
+    existing: core.persistent-volume-claim {
       metadata: { name: input.name, labels: { lookup: 'no-match' } }
     }
-    missing: core.persistent-volume-claim-info {
+    missing: core.persistent-volume-claim {
       metadata: { name: input.absent }
     }
   }

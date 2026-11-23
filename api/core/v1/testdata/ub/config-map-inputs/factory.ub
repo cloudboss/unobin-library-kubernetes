@@ -1,0 +1,28 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server, namespace: 'other' } }
+  inputs: {
+    server: { type: string }
+    metadata: {
+      type: object(
+        {
+          name:        { type: string }
+          namespace:   { type: string }
+          annotations: { type: map(string) }
+          labels:      { type: map(string) }
+        },
+      )
+    }
+  }
+  data-sources: {
+    endpoint: core.config-map {
+      metadata: input.metadata
+    }
+  }
+  outputs: {
+    metadata:    { value: data-source.endpoint.metadata }
+    data:        { value: data-source.endpoint.data }
+    binary-data: { value: data-source.endpoint.binary-data }
+    immutable:   { value: data-source.endpoint.immutable }
+  }
+}

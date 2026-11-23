@@ -1,0 +1,37 @@
+factory: {
+  imports: {
+    core:       'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1'
+  }
+  library-configs: {
+    core:       { server: input.server }
+    networking: { server: input.server }
+  }
+  resources: {
+    seed: core.config-map {
+      object: {
+        metadata: {
+          name:        'seed'
+          namespace:   'default'
+          annotations: { label-key: 'bad pending' }
+        }
+      }
+    }
+  }
+  data-sources: {
+    endpoint: networking.ingress {
+      metadata: {
+        name: 'route'
+        labels: {
+          for key in [input.label-key, 'upstream'] :
+          (if input.pending-key && key == 'upstream'
+            then resource.seed.object.metadata.annotations.label-key
+            else key) => if key == 'upstream' then resource.seed.object.metadata.uid else ''
+        }
+      }
+    }
+  }
+  outputs: {
+    labels: { value: data-source.endpoint.metadata.labels }
+  }
+}

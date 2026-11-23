@@ -4,17 +4,17 @@ factory: {
   library-configs: { core: { namespace: 'ignored' } }
   inputs:          { value: { type: string } }
   data-sources: {
-    existing: core.namespace-info {
+    existing: core.namespace {
       metadata: {
         name:        'default'
         annotations: { 'EXAMPLE.COM/Lookup': input.value }
         labels:      { lookup: input.value }
       }
     }
-    empty: core.namespace-info {
+    empty: core.namespace {
       metadata: { name: 'kube-public' }
     }
-    missing: core.namespace-info {
+    missing: core.namespace {
       metadata: {
         name:        'unobin-it-namespace-info-absent'
         annotations: { lookup: input.value, omitted: null }

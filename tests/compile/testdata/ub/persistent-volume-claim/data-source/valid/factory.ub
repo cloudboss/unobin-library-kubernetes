@@ -1,0 +1,32 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    claim: core.persistent-volume-claim {
+      metadata: {
+        name:        'valid.pvc'
+        namespace:   null
+        annotations: { 'İ.COM/Key': '! arbitrary value' }
+        labels:      { 'example.com/Key': 'value', empty: '' }
+      }
+    }
+  }
+  outputs: {
+    name:              { value: data-source.claim.metadata.name }
+    namespace:         { value: data-source.claim.metadata.namespace }
+    generate-name:     { value: data-source.claim.metadata.generate-name }
+    generation:        { value: data-source.claim.metadata.generation }
+    resource-version:  { value: data-source.claim.metadata.resource-version }
+    uid:               { value: data-source.claim.metadata.uid }
+    annotations:       { value: data-source.claim.metadata.annotations }
+    labels:            { value: data-source.claim.metadata.labels }
+    modes:             { value: data-source.claim.spec?.access-modes }
+    limits:            { value: data-source.claim.spec?.resources.limits }
+    requests:          { value: data-source.claim.spec?.resources.requests }
+    match-labels:      { value: data-source.claim.spec?.selector?.match-labels }
+    match-expressions: { value: data-source.claim.spec?.selector?.match-expressions }
+    volume:            { value: data-source.claim.spec?.volume-name }
+    storage-class:     { value: data-source.claim.spec?.storage-class-name }
+    volume-mode:       { value: data-source.claim.spec?.volume-mode }
+  }
+}

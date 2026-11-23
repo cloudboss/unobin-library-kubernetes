@@ -27,7 +27,7 @@ func TestCompiledPodLiterals(t *testing.T) {
 	require.NoError(t, err)
 	for _, fixture := range fixtures {
 		switch fixture.Name() {
-		case "configured":
+		case "configured", "data-source":
 			continue
 		}
 		t.Run(fixture.Name(), func(t *testing.T) {

@@ -17,7 +17,7 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		DataSources: map[string]runtime.DataSourceRegistration{
-			"ingress-info": runtime.MakeDataSource[
+			"ingress": runtime.MakeDataSource[
 				svc.IngressDataSource, *svc.IngressDataSourceOutput, *config.Configuration,
 			](),
 		},

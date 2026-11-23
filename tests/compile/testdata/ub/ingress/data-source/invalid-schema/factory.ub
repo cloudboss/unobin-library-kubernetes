@@ -1,0 +1,24 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: {} }
+  data-sources: {
+    omitted: networking.ingress {}
+    list: networking.ingress {
+      metadata: [{ name: 'lookup' }]
+    }
+    bad-type: networking.ingress {
+      metadata: { name: 1, namespace: false, labels: { key: 3 } }
+    }
+    generate: networking.ingress {
+      metadata: { generate-name: 'lookup-' }
+    }
+    camel: networking.ingress {
+      metadata: { resourceVersion: '1' }
+    }
+    computed: networking.ingress {
+      metadata: { generation: 1, resource-version: '1', uid: 'uid' }
+      spec:     {}
+      status:   {}
+    }
+  }
+}

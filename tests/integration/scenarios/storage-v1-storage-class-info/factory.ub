@@ -33,7 +33,7 @@ factory: {
     }
   }
   data-sources: {
-    hit: storage.storage-class-info {
+    hit: storage.storage-class {
       metadata: {
         name:        resource.class.name
         annotations: { wrong: 'configured' }
@@ -44,7 +44,7 @@ factory: {
       volume-binding-mode:    'WaitForFirstConsumer'
       allow-volume-expansion: true
     }
-    miss: storage.storage-class-info {
+    miss: storage.storage-class {
       metadata: {
         name:        'unobin-it-storage-class-info-absent'
         annotations: { 'EXAMPLE.COM/Lookup': input.fallback, '_omitted': null }
