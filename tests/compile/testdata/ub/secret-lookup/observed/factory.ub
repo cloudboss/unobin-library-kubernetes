@@ -1,0 +1,29 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server:   { type: string }
+    selector: { type: string }
+  }
+  library-configs: { core: { server: input.server, namespace: 'ignored' } }
+  data-sources: {
+    lookup: core.secret {
+      metadata: { name: 'lookup', namespace: null }
+      binary-data: {
+        bytes:       input.selector
+        absent:      ''
+        empty-bytes: ''
+        token:       null
+      }
+    }
+  }
+  outputs: {
+    text:      { value: data-source.lookup.data }
+    binary:    { value: data-source.lookup.binary-data }
+    index:     { value: data-source.lookup.data['token'] }
+    whole:     { @sensitive: true, value: data-source.lookup }
+    dotted:    { @sensitive: true, value: data-source.lookup.data.token }
+    metadata:  { value: data-source.lookup.metadata }
+    type:      { value: data-source.lookup.type }
+    immutable: { value: data-source.lookup.immutable }
+  }
+}

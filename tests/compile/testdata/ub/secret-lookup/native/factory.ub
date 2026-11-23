@@ -1,0 +1,41 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server: { type: string }
+    name:   { type: string, default: 'lookup' }
+    prefix: { type: optional(string) }
+    annotations: {
+      type:    map(optional(string))
+      default: { '?': null, 'İ.K/Key': 'any value' }
+    }
+    labels:     { type: map(optional(string)), default: { '?': null, 'valid.example/Case': '' } }
+    long-label: { type: optional(string) }
+    long-annotation:  { type: optional(string) }
+    long-label-value: { type: string, default: '' }
+    defer-name:       { type: boolean, default: false }
+    defer-selector:   { type: boolean, default: false }
+  }
+  library-configs: { core: { server: input.server, namespace: 'ignored' } }
+  resources: {
+    seed: core.config-map {
+      object: { metadata: { name: 'seed', namespace: 'default' } }
+    }
+  }
+  data-sources: {
+    lookup: core.secret {
+      metadata: {
+        name:          if input.defer-name then resource.seed.object.metadata.uid else input.name
+        generate-name: input.prefix
+        annotations: if input.long-annotation == null
+          then input.annotations
+          else { for key in [input.long-annotation] : key => 'free-form value' }
+        labels: if input.long-label == null
+          then input.labels
+          else { for key in [input.long-label] : key => input.long-label-value }
+      }
+      binary-data: if input.defer-selector
+        then { bytes: resource.seed.object.metadata.uid }
+        else { bytes: 'not base64', absent: 'non-base64 value' }
+    }
+  }
+}

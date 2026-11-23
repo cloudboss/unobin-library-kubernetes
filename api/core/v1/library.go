@@ -43,6 +43,9 @@ func Library() *runtime.Library {
 			"pod": runtime.MakeDataSource[
 				svc.PodDataSource, *svc.PodDataSourceOutput, *config.Configuration,
 			](),
+			"secret": runtime.MakeDataSource[
+				svc.SecretDataSource, *svc.SecretDataSourceOutput, *config.Configuration,
+			](),
 			"service": runtime.MakeDataSource[
 				svc.ServiceDataSource, *svc.ServiceDataSourceOutput, *config.Configuration,
 			](),
