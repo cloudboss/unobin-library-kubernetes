@@ -111,7 +111,7 @@ func compilePriorityClass(
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: factory, OutDir: work,
-		StackName: "priority-class", Version: "v0", CLIVersion: "v0.13.0-a.10",
+		StackName: "priority-class", Version: "v0", CLIVersion: "v0.13.0-a.11",
 		GoVersion: "1.26.2", Build: build, LibraryAPIDescriptor: descriptor,
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
@@ -170,5 +170,5 @@ func TestCompiledPriorityClassRejectsOlderLibraryAPI(t *testing.T) {
 	require.Len(t, diagnostics, 1)
 	require.Equal(t, "unobin.library-api.newer-minor", diagnostics[0].Code)
 	require.Contains(t, diagnostics[0].Message, "/api/scheduling/v1 requires API 1.1")
-	require.Contains(t, diagnostics[0].Hint, "The library recommends Unobin v0.13.0-a.10")
+	require.Contains(t, diagnostics[0].Hint, "The library recommends Unobin v0.13.0-a.11")
 }

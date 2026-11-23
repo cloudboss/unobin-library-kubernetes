@@ -413,7 +413,7 @@ func compileLimitRangeFactory(t *testing.T) string {
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: "testdata/ub/limit-range/native/factory.ub",
 		OutDir:      limitRangeWorkDir(t), Build: true, StackName: "limit-range", Version: "v0.0.0",
-		CLIVersion: "v0.13.0-a.10", GoVersion: "1.26.2",
+		CLIVersion: "v0.13.0-a.11", GoVersion: "1.26.2",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
 	})
