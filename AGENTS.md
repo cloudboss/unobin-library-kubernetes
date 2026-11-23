@@ -4,6 +4,9 @@
   and shared lifecycle helpers.
 - Register typed constructs in `api/<group>/<version>/library.go` and implement
   them in `internal/api/<group>/<version>/`.
+- Use the same export name for a singular data source and its corresponding
+  resource. Use the actual export in porting queues and distinguish constructs
+  by category when their keys match.
 - Name Go construct entry files `*_rsrc.go` for resources, `*_dsrc.go` for data
   sources, and `*_action.go` for actions. Matching tests use `*_rsrc_test.go`,
   `*_dsrc_test.go`, and `*_action_test.go`; helpers keep descriptive filenames.
