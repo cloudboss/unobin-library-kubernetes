@@ -1,0 +1,69 @@
+{
+  "apiVersion": "admissionregistration.k8s.io/v1",
+  "kind": "MutatingWebhookConfiguration",
+  "metadata": {
+    "name": "generated.x7",
+    "generateName": "generated.",
+    "namespace": "unexpected",
+    "generation": 7,
+    "resourceVersion": "42",
+    "uid": "live-uid",
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "live-internal",
+      "source": "live"
+    },
+    "labels": {
+      "kubernetes.io/metadata.name": "generated.x7",
+      "source": "live"
+    },
+    "finalizers": ["example.com/finalizer"]
+  },
+  "webhooks": [
+    {
+      "name": "z.example.com",
+      "admissionReviewVersions": ["v1beta1", "v1"],
+      "clientConfig": {
+        "url": "https://webhook.example.test/submit",
+        "caBundle": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCmV4YW1wbGUKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo="
+      },
+      "failurePolicy": "Ignore",
+      "matchPolicy": "Exact",
+      "reinvocationPolicy": "IfNeeded",
+      "sideEffects": "Some",
+      "timeoutSeconds": 0,
+      "rules": [
+        {
+          "apiGroups": ["batch", ""],
+          "apiVersions": ["v2", "v1"],
+          "operations": ["UPDATE", "CREATE"],
+          "resources": ["jobs", "configmaps"],
+          "scope": "Namespaced"
+        },
+        {
+          "apiGroups": ["apps"],
+          "apiVersions": ["v1"],
+          "operations": ["DELETE"],
+          "resources": ["deployments"]
+        }
+      ],
+      "namespaceSelector": {
+        "matchLabels": {"team": "blue"},
+        "matchExpressions": [
+          {"key": "z", "operator": "In", "values": ["west", "east", "west"]},
+          {"key": "a", "operator": "Exists"}
+        ]
+      },
+      "objectSelector": {"matchLabels": {}},
+      "matchConditions": [{"name": "excluded", "expression": "true"}]
+    },
+    {
+      "name": "a.example.com",
+      "clientConfig": {
+        "caBundle": "",
+        "service": {"name": "webhook", "namespace": "system", "path": "", "port": 0}
+      },
+      "namespaceSelector": {},
+      "objectSelector": {"matchExpressions": []}
+    }
+  ]
+}

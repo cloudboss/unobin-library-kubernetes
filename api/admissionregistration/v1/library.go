@@ -20,6 +20,13 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.0",
 		},
 		Configuration: config.LibraryConfiguration(),
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"mutating-webhook-configuration": runtime.MakeDataSource[
+				svc.MutatingWebhookConfigurationDataSource,
+				*svc.MutatingWebhookConfigurationDataSourceOutput,
+				*config.Configuration,
+			](),
+		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"validating-admission-policy": svc.ValidatingAdmissionPolicyRegistration[
 				svc.ValidatingAdmissionPolicyResource, *svc.ValidatingAdmissionPolicyResourceOutput,

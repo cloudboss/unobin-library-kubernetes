@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { labels: { key: 'bad value' } } }
+  state: local {
+    path: '.unobin/STATE_CASE'
+  }
+  encryption: noop {}
+}

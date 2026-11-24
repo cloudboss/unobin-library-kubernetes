@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { defer-label: true, label-key: 'Upper.example/label' } }
+  state: local {
+    path: '.unobin/STATE_CASE'
+  }
+  encryption: noop {}
+}

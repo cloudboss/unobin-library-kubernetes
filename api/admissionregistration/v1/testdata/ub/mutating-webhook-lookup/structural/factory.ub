@@ -1,0 +1,38 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  data-sources: {
+    missing-metadata: admission.mutating-webhook-configuration {}
+    null-metadata: admission.mutating-webhook-configuration {
+      metadata: null
+    }
+    missing-name: admission.mutating-webhook-configuration {
+      metadata: {}
+    }
+    null-name: admission.mutating-webhook-configuration {
+      metadata: { name: null }
+    }
+    wrong-name: admission.mutating-webhook-configuration {
+      metadata: { name: true }
+    }
+    wrong-map: admission.mutating-webhook-configuration {
+      metadata: { name: 'good', labels: { bad: 7 } }
+    }
+    computed-metadata: admission.mutating-webhook-configuration {
+      metadata: { name: 'good', resource-version: '7' }
+    }
+    generated-name: admission.mutating-webhook-configuration {
+      metadata: { name: 'good', generate-name: 'prefix-' }
+    }
+    computed-webhooks: admission.mutating-webhook-configuration {
+      metadata: { name: 'good' }
+      webhook:  []
+    }
+    read-timeout: admission.mutating-webhook-configuration {
+      metadata:        { name: 'good' }
+      timeout-seconds: 20
+    }
+  }
+}

@@ -18,9 +18,13 @@ factory: {
     mutating-webhook-configuration-example: admissionregistration.mutating-webhook-configuration {
       metadata: {
         generate-name: 'unobin-it-mutating-webhook-a11-'
-        labels:        { 'test.unobin.cloudboss.io/scenario': 'mutating-webhook-configuration' }
+        labels: {
+          'kubernetes.io/lookup':              'retained'
+          'test.unobin.cloudboss.io/scenario': 'mutating-webhook-configuration'
+        }
         annotations: {
-          'test.unobin.cloudboss.io/revision': input.mutating-webhook-configuration-revision
+          'kubectl.kubernetes.io/last-applied-configuration': 'retained'
+          'test.unobin.cloudboss.io/revision':                input.mutating-webhook-configuration-revision
         }
       }
       webhook: [
@@ -33,6 +37,29 @@ factory: {
             }
           }
           admission-review-versions: ['v1']
+          side-effects:              'None'
+          failure-policy:            'Ignore'
+          reinvocation-policy:       input.mutating-webhook-configuration-policy
+          namespace-selector: {
+            match-labels: {
+              'test.unobin.cloudboss.io/scenario': 'mutating-webhook-configuration'
+            }
+          }
+          object-selector: {
+            match-labels: {
+              'test.unobin.cloudboss.io/scenario': 'mutating-webhook-configuration'
+            }
+          }
+        },
+        {
+          name: 'auxiliary.test.unobin.cloudboss.io'
+          client-config: {
+            service: {
+              name:      'inert-mutating-webhook'
+              namespace: 'unobin-it-mutating-webhook'
+            }
+          }
+          admission-review-versions: ['v1beta1', 'v1']
           side-effects:              'None'
           failure-policy:            'Ignore'
           reinvocation-policy:       input.mutating-webhook-configuration-policy
@@ -119,7 +146,46 @@ factory: {
       ]
     }
   }
+  data-sources: {
+    mutating-webhook-hit: admissionregistration.mutating-webhook-configuration {
+      metadata: {
+        name:        resource.mutating-webhook-configuration-example.name
+        annotations: { 'example.com/input': 'fallback only' }
+        labels:      { 'example.com/input': 'fallback-only' }
+      }
+    }
+    mutating-webhook-miss: admissionregistration.mutating-webhook-configuration {
+      metadata: {
+        name:        'unobin-it-mutating-webhook-absent'
+        annotations: { 'EXAMPLE.COM/Lookup': 'any text' }
+        labels:      { 'example.com/value': '', nullable: null }
+      }
+    }
+  }
   outputs: {
+    mutating-webhook-lookup: {
+      value: {
+        hit: {
+          metadata: data-source.mutating-webhook-hit.metadata
+          webhook: [
+            for hook in data-source.mutating-webhook-hit.webhook :
+            {
+              name:                      hook.name
+              admission-review-versions: hook.admission-review-versions
+              failure-policy:            hook.failure-policy
+              match-policy:              hook.match-policy
+              reinvocation-policy:       hook.reinvocation-policy
+              side-effects:              hook.side-effects
+              timeout-seconds:           hook.timeout-seconds
+            }
+          ]
+        }
+        miss: {
+          metadata: data-source.mutating-webhook-miss.metadata
+          webhook:  data-source.mutating-webhook-miss.webhook
+        }
+      }
+    }
     mutating-webhook-configuration: {
       value: {
         name:    resource.mutating-webhook-configuration-example.name

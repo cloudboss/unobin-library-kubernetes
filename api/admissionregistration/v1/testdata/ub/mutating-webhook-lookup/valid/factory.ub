@@ -1,0 +1,34 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  data-sources: {
+    found: admission.mutating-webhook-configuration {
+      metadata: {
+        name: '''\-
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbb
+          bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccccccccccccccccccccccccccccc
+          ccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+          '''
+        labels: {
+          good:     ''
+          long:     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+          optional: null
+        }
+        annotations: { 'İ.COM/Key': 'free text', 'EXAMPLE.COM/Key': '' }
+      }
+    }
+    optional: admission.mutating-webhook-configuration {
+      metadata: { name: 'missing.name', labels: null, annotations: null }
+    }
+  }
+
+  outputs: {
+    metadata:          { value: data-source.found.metadata }
+    optional-metadata: { value: data-source.optional.metadata }
+    review-versions: {
+      value: [ for hook in data-source.found.webhook : hook.admission-review-versions ]
+    }
+  }
+}

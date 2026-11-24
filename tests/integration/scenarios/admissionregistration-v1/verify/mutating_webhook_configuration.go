@@ -67,6 +67,9 @@ func verifyMutatingWebhookConfiguration() error {
 	if err := checkWebhooksMutatingWebhookConfiguration(got.Webhooks, policy); err != nil {
 		return err
 	}
+	if err := verifyMutatingWebhookLookup(ctx, build, stage, got); err != nil {
+		return err
+	}
 	history := filepath.Join(build, "mutating-webhook-identity")
 	identity := got.Name + "/" + string(got.UID)
 	if stage == "applied" {
@@ -98,6 +101,10 @@ func checkWebhooksMutatingWebhookConfiguration(
 		ReinvocationPolicy: &policy, TimeoutSeconds: new(int32(10)),
 		NamespaceSelector: selector, ObjectSelector: selector,
 	}}
+	auxiliary := expected[0]
+	auxiliary.Name = "auxiliary.test.unobin.cloudboss.io"
+	auxiliary.AdmissionReviewVersions = []string{"v1beta1", "v1"}
+	expected = append(expected, auxiliary)
 	if !reflect.DeepEqual(got, expected) {
 		return fmt.Errorf("unexpected mutating webhook values: %+v", got)
 	}
