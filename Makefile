@@ -14,7 +14,7 @@ KIND_IMAGE_HASH := $(shell { printf '%s\n' '$(CTR_IMAGE_GO)' '$(KIND_VERSION)'; 
 CTR_IMAGE_KIND := $(PROJECT)-kind:$(KIND_IMAGE_HASH)
 HAS_IMAGE_KIND := $(DIR_OUT)/.image-kind-$(KIND_IMAGE_HASH)
 UNOBIN_VERSION := $(shell awk '/github.com[/]cloudboss[/]unobin v/{print $$2}' go.mod)
-DOCGEN ?= go run github.com/cloudboss/cloudboss-docs/unobin/cmd/docgen@v0.2.1
+DOCGEN ?= go run github.com/cloudboss/cloudboss-docs/unobin/cmd/docgen@v0.3.1
 
 HAS_COMMAND_DOCKER := $(DIR_OUT)/.command-docker
 BUILD_INPUTS := $(shell find . \
