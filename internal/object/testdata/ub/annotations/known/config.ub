@@ -1,0 +1,13 @@
+stack: {
+  factory: {
+    inputs: {
+      server:   'KUBE_SERVER'
+      top:      { managed: 'top' }
+      template: { managed: 'template' }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

@@ -1,0 +1,7 @@
+[
+  {
+    "kind": "predicate",
+    "when": "true",
+    "require": "input.field-manager == 'team'"
+  }
+]

@@ -1,0 +1,17 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: {} }
+  resources: {
+    selection: dynamic.annotations {
+      api-version:   'v1'
+      kind:          'ConfigMap'
+      metadata:      { name: 'example' }
+      annotations:   {}
+      field-manager: ''
+    }
+  }
+  outputs: {
+    object-annotations:   { value: resource.selection.annotations }
+    workload-annotations: { value: resource.selection.template-annotations }
+  }
+}

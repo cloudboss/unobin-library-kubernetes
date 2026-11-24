@@ -25,6 +25,9 @@ func Library() *runtime.Library {
 			](),
 		},
 		Resources: map[string]runtime.ResourceRegistration{
+			"annotations": runtime.MakeResource[
+				svc.AnnotationsResource, *svc.AnnotationsResourceOutput, *config.Configuration,
+			]((&svc.AnnotationsResource{}).ResourceDefinition()),
 			"labels": runtime.MakeResource[
 				svc.LabelsResource, *svc.LabelsResourceOutput, *config.Configuration,
 			]((&svc.LabelsResource{}).ResourceDefinition()),
