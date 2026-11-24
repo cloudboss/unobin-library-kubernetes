@@ -102,7 +102,7 @@ func newSecretLookupFactory(t *testing.T, fixture string) secretLookupFactory {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: factory, OutDir: work, Build: true, StackName: "secret-lookup",
-		Version: "v0.0.0", CLIVersion: "v0.13.0-a.11", GoVersion: "1.26.2",
+		Version: "v0.0.0", CLIVersion: "v0.13.0", GoVersion: "1.26.2",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
 	})

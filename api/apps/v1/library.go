@@ -16,7 +16,7 @@ func Library() *runtime.Library {
 		Description: "Kubernetes apps/v1 objects for Unobin.",
 		Compatibility: runtime.LibraryCompatibility{
 			RequiredAPI:            "1.1",
-			SuggestedUnobinVersion: "v0.13.0-a.11",
+			SuggestedUnobinVersion: "v0.13.0",
 		},
 		Configuration: config.LibraryConfiguration(),
 		Resources: map[string]runtime.ResourceRegistration{

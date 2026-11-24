@@ -32,7 +32,7 @@ func TestRuntimeClassCompiledFixtures(t *testing.T) {
 			var log bytes.Buffer
 			result, err := compile.RunResult(compile.Options{
 				FactoryPath: path, OutDir: work, ReplaceUnobin: sdk,
-				StackName: "runtime-class-test", Version: "v0.0.0", CLIVersion: "v0.13.0-a.11",
+				StackName: "runtime-class-test", Version: "v0.0.0", CLIVersion: "v0.13.0",
 				GoVersion: "1.26.2",
 				ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,

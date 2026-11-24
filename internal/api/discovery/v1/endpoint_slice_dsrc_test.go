@@ -499,7 +499,7 @@ func newLookupExecution(t *testing.T) lookupExecution {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: source, OutDir: work,
-		StackName: "endpoint-slice-lookup", Version: "v0.0.0", CLIVersion: "v0.13.0-a.11",
+		StackName: "endpoint-slice-lookup", Version: "v0.0.0", CLIVersion: "v0.13.0",
 		GoVersion:        "1.26.2",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Build:            true, Stdout: &log, Stderr: &log,

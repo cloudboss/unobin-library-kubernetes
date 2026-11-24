@@ -23,7 +23,7 @@ func compileEndpointSliceLookup(
 	var log bytes.Buffer
 	_, err = compile.RunResult(compile.Options{
 		FactoryPath: source, OutDir: t.TempDir(),
-		StackName: "endpoint-slice-lookup", Version: "v0.0.0", CLIVersion: "v0.13.0-a.11",
+		StackName: "endpoint-slice-lookup", Version: "v0.0.0", CLIVersion: "v0.13.0",
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		},

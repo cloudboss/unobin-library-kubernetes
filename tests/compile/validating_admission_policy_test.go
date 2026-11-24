@@ -77,7 +77,7 @@ func TestValidatingAdmissionPolicyLibraryAPICompatibility(t *testing.T) {
 	var log bytes.Buffer
 	_, err = compile.RunResult(compile.Options{
 		FactoryPath: factory, OutDir: work,
-		StackName: "compatibility", Version: "v0.0.0", CLIVersion: "v0.13.0-a.11",
+		StackName: "compatibility", Version: "v0.0.0", CLIVersion: "v0.13.0",
 		GoVersion:        "1.26.2",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		LibraryAPIDescriptor: &libraryapi.Descriptor{
@@ -89,5 +89,5 @@ func TestValidatingAdmissionPolicyLibraryAPICompatibility(t *testing.T) {
 	diagnostics := diagnostic.FromError(err, diagnostic.ConvertOptions{})
 	require.Len(t, diagnostics, 1)
 	require.Equal(t, "unobin.library-api.newer-minor", diagnostics[0].Code)
-	require.Contains(t, diagnostics[0].Hint, "v0.13.0-a.11")
+	require.Contains(t, diagnostics[0].Hint, "v0.13.0")
 }

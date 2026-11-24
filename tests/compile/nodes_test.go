@@ -445,7 +445,7 @@ func compileNodesFactory(
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: factory, OutDir: nodesWork(t), StackName: "nodes-test", Version: "v0.0.0",
-		CLIVersion: "v0.13.0-a.11", GoVersion: "1.26.2", LibraryAPIDescriptor: descriptor,
+		CLIVersion: "v0.13.0", GoVersion: "1.26.2", LibraryAPIDescriptor: descriptor,
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Build:            build, Stdout: &log, Stderr: &log,
 	})

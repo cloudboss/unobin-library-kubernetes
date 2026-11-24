@@ -98,7 +98,7 @@ func compilePersistentVolumeFixture(t *testing.T, path string, build bool,
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: fixture, OutDir: dir, StackName: "volume", Version: "v0",
-		CLIVersion: "v0.13.0-a.11", GoVersion: "1.26.2",
+		CLIVersion: "v0.13.0", GoVersion: "1.26.2",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Build:            build, Stdout: &log, Stderr: &log,
 	})
