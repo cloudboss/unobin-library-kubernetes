@@ -1,0 +1,11 @@
+stack: {
+  factory: {
+    inputs: {
+      name: 'unobin-it-csr-client'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

@@ -1,0 +1,39 @@
+factory: {
+  imports: { certificates: 'github.com/cloudboss/unobin-library-kubernetes//api/certificates/v1' }
+  library-configs: { certificates: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs: {
+    server: { type: string }
+    metadata: {
+      type: object(
+        {
+          name:          optional(string)
+          generate-name: optional(string)
+          labels:        optional(map(string))
+          annotations:   optional(map(string))
+        },
+      )
+    }
+    request:            { type: string }
+    signer-name:        { type: string }
+    expiration-seconds: { type: integer, default: null }
+    usages:             { type: list(string), default: null }
+    auto-approve:       { type: boolean, default: null }
+    create-timeout:     { type: string, default: null }
+  }
+  resources: {
+    subject: certificates.certificate-signing-request {
+      metadata: input.metadata
+      spec: {
+        request:            input.request
+        signer-name:        input.signer-name
+        expiration-seconds: input.expiration-seconds
+        usages:             input.usages
+      }
+      auto-approve:   input.auto-approve
+      create-timeout: input.create-timeout
+    }
+  }
+  outputs: {
+    certificate: { value: resource.subject.certificate }
+  }
+}

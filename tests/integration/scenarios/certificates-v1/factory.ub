@@ -1,0 +1,31 @@
+factory: {
+  imports: { certificates: 'github.com/cloudboss/unobin-library-kubernetes//api/certificates/v1' }
+  library-configs: { certificates: {} }
+  assets:          { request: './request.pem' }
+  inputs: {
+    name:          { type: optional(string), default: null }
+    generate-name: { type: optional(string), default: null }
+  }
+  resources: {
+    subject: certificates.certificate-signing-request {
+      metadata: {
+        name:          input.name
+        generate-name: input.generate-name
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'certificates-v1' }
+        annotations:   { 'TEST.UNOBIN.CLOUDBOSS.IO/Case': 'client-certificate' }
+      }
+      spec: {
+        request:            @core.b64-decode(@core.b64-encode(asset.request.content))
+        signer-name:        'kubernetes.io/kube-apiserver-client'
+        expiration-seconds: 600
+        usages:             ['digital signature', 'client auth', 'digital signature']
+      }
+      create-timeout: '30s'
+    }
+  }
+  outputs: {
+    certificate: { value: resource.subject.certificate }
+    metadata:    { value: resource.subject.metadata }
+    request:     { value: resource.subject.spec.request }
+  }
+}

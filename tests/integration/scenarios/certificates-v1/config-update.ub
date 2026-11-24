@@ -1,0 +1,11 @@
+stack: {
+  factory: {
+    inputs: {
+      generate-name: 'unobin-it-csr-generated-'
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
