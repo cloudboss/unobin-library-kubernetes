@@ -1,0 +1,45 @@
+factory: {
+  description:     'Checks defaulted, configured, and cleared CPU targets on v1 HPAs.'
+  imports:         { hpa: 'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v1' }
+  library-configs: { hpa: {} }
+  inputs: {
+    max:           { type: integer }
+    configure-cpu: { type: optional(integer) }
+    clear-cpu:     { type: optional(integer) }
+    stage:         { type: string }
+  }
+  resources: {
+    configure: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: {
+          generate-name: 'unobin-hpa-v1-configure-'
+          labels:        { 'example.com/stage': input.stage }
+          annotations:   { 'example.com/stage': input.stage }
+        }
+        spec: {
+          max-replicas:                      input.max
+          target-cpu-utilization-percentage: input.configure-cpu
+          scale-target-ref: { api-version: 'apps/v1', kind: 'Deployment', name: 'absent-target' }
+        }
+      }
+    }
+    clear: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: {
+          generate-name: 'unobin-hpa-v1-clear-'
+          labels:        { 'example.com/stage': input.stage }
+          annotations:   { 'example.com/stage': input.stage }
+        }
+        spec: {
+          max-replicas:                      input.max
+          target-cpu-utilization-percentage: input.clear-cpu
+          scale-target-ref: { api-version: 'apps/v1', kind: 'Deployment', name: 'absent-target' }
+        }
+      }
+    }
+  }
+  outputs: {
+    configure: { value: resource.configure.object }
+    clear:     { value: resource.clear.object }
+  }
+}

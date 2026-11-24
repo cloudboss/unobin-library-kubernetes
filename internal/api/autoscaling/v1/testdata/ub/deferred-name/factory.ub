@@ -1,0 +1,51 @@
+factory: {
+  imports: { hpa: 'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v1' }
+  library-configs: {
+    hpa: { server: input.server, token: input.token, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:             { type: string }
+    token:              { type: string, default: 'test' }
+    name:               { type: optional(string) }
+    prefix:             { type: optional(string) }
+    namespace:          { type: optional(string) }
+    labels:             { type: optional(map(string)) }
+    annotations:        { type: optional(map(string)) }
+    ignore-labels:      { type: optional(list(string)) }
+    ignore-annotations: { type: optional(list(string)) }
+    max:                { type: integer, default: 4 }
+    min:                { type: optional(integer) }
+    cpu:                { type: optional(integer) }
+    candidate:          { type: string }
+  }
+  resources: {
+    seed: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: { name: 'seed' }
+        spec: {
+          max-replicas:     4
+          scale-target-ref: { api-version: 'apps/v1', kind: 'Deployment', name: input.candidate }
+        }
+      }
+    }
+    hpa: hpa.horizontal-pod-autoscaler {
+      ignore-labels:      input.ignore-labels
+      ignore-annotations: input.ignore-annotations
+      object: {
+        metadata: {
+          name:          resource.seed.object.metadata.uid
+          generate-name: input.prefix
+          namespace:     input.namespace
+          labels:        input.labels
+          annotations:   input.annotations
+        }
+        spec: {
+          max-replicas:                      input.max
+          min-replicas:                      input.min
+          target-cpu-utilization-percentage: input.cpu
+          scale-target-ref: { api-version: 'apps/v1', kind: 'Deployment', name: 'target' }
+        }
+      }
+    }
+  }
+}

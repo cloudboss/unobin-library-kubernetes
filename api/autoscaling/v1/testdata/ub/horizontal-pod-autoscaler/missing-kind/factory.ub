@@ -1,0 +1,12 @@
+factory: {
+  imports:         { hpa: 'github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v1' }
+  library-configs: { hpa: {} }
+  resources: {
+    hpa: hpa.horizontal-pod-autoscaler {
+      object: {
+        metadata: { name: 'hpa' }
+        spec:     { max-replicas: 4, scale-target-ref: { name: 'target' } }
+      }
+    }
+  }
+}

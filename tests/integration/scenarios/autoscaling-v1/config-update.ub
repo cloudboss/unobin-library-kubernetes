@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { max: 6, configure-cpu: 75, stage: 'updated' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
