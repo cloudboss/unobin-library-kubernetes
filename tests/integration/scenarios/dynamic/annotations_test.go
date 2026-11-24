@@ -61,7 +61,12 @@ func TestAnnotationsServerSideApplyWorkloads(t *testing.T) {
 				live, err := api.Get(ctx, name, metav1.GetOptions{})
 				require.NoError(t, err)
 				require.Equal(t, original.GetUID(), live.GetUID())
-				require.Equal(t, top, live.GetAnnotations())
+				annotations := live.GetAnnotations()
+				if gvk.Kind == "Deployment" {
+					// The Deployment controller updates the revision independently.
+					delete(annotations, "deployment.kubernetes.io/revision")
+				}
+				require.Equal(t, top, annotations)
 				got, _, err := unstructured.NestedStringMap(live.Object, templateAnnotations...)
 				require.NoError(t, err)
 				require.Equal(t, nested, got)
