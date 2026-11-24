@@ -1,0 +1,12 @@
+factory: {
+  imports: {
+    auth: 'github.com/cloudboss/unobin-library-kubernetes//api/authentication/v1'
+  }
+  library-configs: { auth: {} }
+  resources: {
+    subject: auth.token-request {
+      metadata: { name: 'issuer' }
+      spec:     { expiration-seconds: 599 }
+    }
+  }
+}

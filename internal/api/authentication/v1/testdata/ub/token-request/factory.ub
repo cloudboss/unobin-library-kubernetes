@@ -1,0 +1,74 @@
+factory: {
+  imports: {
+    auth:   'github.com/cloudboss/unobin-library-kubernetes//api/authentication/v1'
+    tokens: 'github.com/cloudboss/unobin-library-kubernetes//tests/compile/token'
+  }
+  library-configs: {
+    auth: {
+      server:          input.server
+      kubeconfig:      input.kubeconfig
+      current-context: input.context
+    }
+  }
+  inputs: {
+    server:      { type: optional(string) }
+    kubeconfig:  { type: optional(string) }
+    context:     { type: optional(string) }
+    name:        { type: string, default: 'issuer' }
+    namespace:   { type: optional(string) }
+    labels:      { type: optional(map(string)) }
+    annotations: { type: optional(map(string)) }
+    spec: {
+      type: optional(
+        object(
+          {
+            audiences:          optional(list(string))
+            expiration-seconds: optional(integer)
+            bound-object-ref: optional(
+              object(
+                {
+                  api-version: optional(string)
+                  kind:        optional(string)
+                  name:        optional(string)
+                  uid:         optional(string)
+                },
+              ),
+            )
+          },
+        ),
+      )
+    }
+    defer-expiration: { type: boolean, default: false }
+    defer-label:      { type: boolean, default: false }
+    seed:             { type: string, default: 'valid' }
+  }
+  actions: {
+    seed: tokens.issue {
+      value: input.seed
+    }
+  }
+  resources: {
+    request: auth.token-request {
+      metadata: {
+        name:        input.name
+        namespace:   input.namespace
+        annotations: input.annotations
+        labels:      if input.defer-label then { phase: action.seed.token } else input.labels
+      }
+      spec: if input.defer-expiration
+        then @core.lookup(
+          {
+            valid:       { expiration-seconds: 600 }
+            invalid:     { expiration-seconds: 599 }
+            replacement: { expiration-seconds: 900 }
+          },
+          action.seed.token,
+        )
+        else input.spec
+    }
+  }
+  outputs: {
+    issued-token: { value: resource.request.token }
+    issued-spec:  { value: resource.request.spec }
+  }
+}

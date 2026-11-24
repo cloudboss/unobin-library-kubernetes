@@ -1,0 +1,27 @@
+factory: {
+  imports: {
+    auth: 'github.com/cloudboss/unobin-library-kubernetes//api/authentication/v1'
+  }
+  library-configs: { auth: {} }
+  resources: {
+    subject: auth.token-request {
+      metadata: {
+        name:        'issuer.default'
+        labels:      { 'example.com/Empty': '' }
+        annotations: { 'Example.COM/Description': 'arbitrary spaces & symbols' }
+      }
+      spec: {
+        audiences:          ['second', '', 'first', 'second']
+        expiration-seconds: 600
+        bound-object-ref:   {}
+      }
+    }
+  }
+  outputs: {
+    namespace:  { value: resource.subject.metadata.namespace }
+    audiences:  { value: resource.subject.spec.audiences }
+    expiration: { value: resource.subject.spec.expiration-seconds }
+    binding:    { value: resource.subject.spec.bound-object-ref }
+    token:      { value: resource.subject.token }
+  }
+}

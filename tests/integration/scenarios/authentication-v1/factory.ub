@@ -1,0 +1,37 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  inputs: {
+    revision:  { type: string }
+    audiences: { type: list(string) }
+  }
+  resources: {
+    account: core.service-account {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-token-request-'
+          annotations:   { 'test.unobin.cloudboss.io/revision': input.revision }
+        }
+        automount-service-account-token: false
+      }
+    }
+    binding: core.secret {
+      object: { metadata: { generate-name: 'unobin-it-token-binding-' } }
+    }
+  }
+  outputs: {
+    fixtures: {
+      value: {
+        account: {
+          name: resource.account.object.metadata.name
+          uid:  resource.account.object.metadata.uid
+        }
+        binding: {
+          name: resource.binding.object.metadata.name
+          uid:  resource.binding.object.metadata.uid
+        }
+      }
+    }
+    audiences: { value: input.audiences }
+  }
+}
