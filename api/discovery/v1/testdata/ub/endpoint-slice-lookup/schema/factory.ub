@@ -1,0 +1,22 @@
+factory: {
+  imports:         { discovery: 'github.com/cloudboss/unobin-library-kubernetes//api/discovery/v1' }
+  library-configs: { discovery: {} }
+  data-sources: {
+    absent: discovery.endpoint-slice {}
+    wrong-metadata: discovery.endpoint-slice {
+      metadata: [{ name: 'example' }]
+    }
+    wrong-map: discovery.endpoint-slice {
+      metadata: { labels: { key: true } }
+    }
+    metadata-output: discovery.endpoint-slice {
+      metadata: { uid: 'example' }
+    }
+    output-input: discovery.endpoint-slice {
+      metadata:     {}
+      address-type: 'IPv4'
+      endpoints:    []
+      ports:        []
+    }
+  }
+}

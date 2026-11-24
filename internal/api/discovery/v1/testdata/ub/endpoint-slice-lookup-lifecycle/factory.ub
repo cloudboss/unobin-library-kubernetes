@@ -1,0 +1,12 @@
+factory: {
+  imports: {
+    discovery: 'github.com/cloudboss/unobin-library-kubernetes//api/discovery/v1'
+  }
+  library-configs: { discovery: { server: input.server } }
+  inputs:          { server: { type: string } }
+  data-sources: {
+    selected: discovery.endpoint-slice {
+      metadata: { name: 'lookup' }
+    }
+  }
+}

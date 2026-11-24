@@ -16,6 +16,13 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.0-a.11",
 		},
 		Configuration: config.LibraryConfiguration(),
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"endpoint-slice": runtime.MakeDataSource[
+				discovery.EndpointSliceDataSource,
+				*discovery.EndpointSliceDataSourceOutput,
+				*config.Configuration,
+			](),
+		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"endpoint-slice": runtime.MakeResource[
 				discovery.EndpointSliceResource,

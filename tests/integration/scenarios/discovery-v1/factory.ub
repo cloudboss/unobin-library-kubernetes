@@ -26,8 +26,33 @@ factory: {
       ports:        [{ port: '81', app-protocol: 'http', protocol: 'SCTP' }]
     }
   }
+  data-sources: {
+    live-slice: discovery.endpoint-slice {
+      metadata: {
+        name:        resource.stable.name
+        namespace:   resource.stable.namespace
+        annotations: { ignored: 'configured' }
+        labels:      { ignored: 'configured' }
+      }
+    }
+    missing-slice: discovery.endpoint-slice {
+      metadata: {
+        name:          'unobin-it-endpoint-slice-absent'
+        generate-name: 'missing-'
+        labels:        { expectation: 'absent', omitted: null }
+      }
+    }
+  }
   outputs: {
-    stable-uid:   { value: resource.stable.uid }
-    replaced-uid: { value: resource.replaced.uid }
+    live-metadata:        { value: data-source.live-slice.metadata }
+    live-address-type:    { value: data-source.live-slice.address-type }
+    live-endpoints:       { value: data-source.live-slice.endpoints }
+    live-ports:           { value: data-source.live-slice.ports }
+    missing-metadata:     { value: data-source.missing-slice.metadata }
+    missing-address-type: { value: data-source.missing-slice.address-type }
+    missing-endpoints:    { value: data-source.missing-slice.endpoints }
+    missing-ports:        { value: data-source.missing-slice.ports }
+    stable-uid:           { value: resource.stable.uid }
+    replaced-uid:         { value: resource.replaced.uid }
   }
 }

@@ -60,6 +60,11 @@ func run() error {
 		if err := verifyContents(obj, role, verifyStep); err != nil {
 			return err
 		}
+		if role == "stable" {
+			if err := verifyLookupOutputs(dir, verifyStep, obj); err != nil {
+				return err
+			}
+		}
 		path := filepath.Join(dir, role+"-uid")
 		if verifyStep == "applied" {
 			if err := os.WriteFile(path, []byte(obj.UID), 0o600); err != nil {

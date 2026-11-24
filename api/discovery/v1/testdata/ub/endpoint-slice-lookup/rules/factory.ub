@@ -1,0 +1,30 @@
+factory: {
+  imports:         { discovery: 'github.com/cloudboss/unobin-library-kubernetes//api/discovery/v1' }
+  library-configs: { discovery: {} }
+  data-sources: {
+    empty-name: discovery.endpoint-slice {
+      metadata: { name: '' }
+    }
+    upper-name: discovery.endpoint-slice {
+      metadata: { name: 'Example' }
+    }
+    trailing-dash: discovery.endpoint-slice {
+      metadata: { name: 'example-' }
+    }
+    empty-prefix: discovery.endpoint-slice {
+      metadata: { generate-name: '' }
+    }
+    bad-prefix: discovery.endpoint-slice {
+      metadata: { generate-name: 'ZZ-' }
+    }
+    bad-label-key: discovery.endpoint-slice {
+      metadata: { labels: { 'Example.com/Label': 'valid' } }
+    }
+    bad-label-value: discovery.endpoint-slice {
+      metadata: { labels: { Label: 'with space' } }
+    }
+    bad-annotation-key: discovery.endpoint-slice {
+      metadata: { annotations: { 'prefix/name/extra': 'value' } }
+    }
+  }
+}
