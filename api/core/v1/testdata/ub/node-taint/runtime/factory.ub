@@ -1,0 +1,16 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server, namespace: 'ignored' } }
+  resources: {
+    attachment: core.node-taint {
+      object:        input.object
+      field-manager: input.manager
+      force:         input.force
+    }
+  }
+  outputs: {
+    name:   { value: resource.attachment.object.metadata.name }
+    uid:    { value: resource.attachment.object.metadata.uid }
+    taints: { value: resource.attachment.object.spec.taints }
+  }
+}

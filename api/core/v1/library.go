@@ -64,6 +64,9 @@ func Library() *runtime.Library {
 			"limit-range": runtime.MakeResource[
 				svc.LimitRangeResource, *svc.LimitRangeResourceOutput, *config.Configuration,
 			]((&svc.LimitRangeResource{}).ResourceDefinition()),
+			"node-taint": runtime.MakeResource[
+				svc.NodeTaintResource, *svc.NodeTaintResourceOutput, *config.Configuration,
+			]((&svc.NodeTaintResource{}).ResourceDefinition()),
 			"resource-quota": runtime.MakeResource[
 				svc.ResourceQuotaResource, *svc.ResourceQuotaResourceOutput, *config.Configuration,
 			]((&svc.ResourceQuotaResource{}).ResourceDefinition()),

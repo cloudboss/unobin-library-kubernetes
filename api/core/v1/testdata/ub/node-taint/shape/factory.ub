@@ -1,0 +1,67 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    missing-object: core.node-taint {}
+    missing-spec: core.node-taint {
+      object: { metadata: { name: 'host' } }
+    }
+    missing-taints: core.node-taint {
+      object: { metadata: { name: 'host' }, spec: {} }
+    }
+    null-taints: core.node-taint {
+      object: { metadata: { name: 'host' }, spec: { taints: null } }
+    }
+    null-taint: core.node-taint {
+      object: { metadata: { name: 'host' }, spec: { taints: [null] } }
+    }
+    missing-key: core.node-taint {
+      object: {
+        metadata: { name: 'host' }
+        spec:     { taints: [{ value: 'one', effect: 'NoSchedule' }] }
+      }
+    }
+    missing-value: core.node-taint {
+      object: { metadata: { name: 'host' }, spec: { taints: [{ key: 'x', effect: 'NoSchedule' }] } }
+    }
+    missing-effect: core.node-taint {
+      object: { metadata: { name: 'host' }, spec: { taints: [{ key: 'x', value: '' }] } }
+    }
+    null-key: core.node-taint {
+      object: {
+        metadata: { name: 'host' }
+        spec:     { taints: [{ key: null, value: 'one', effect: 'NoSchedule' }] }
+      }
+    }
+    null-value: core.node-taint {
+      object: {
+        metadata: { name: 'host' }
+        spec:     { taints: [{ key: 'x', value: null, effect: 'NoSchedule' }] }
+      }
+    }
+    null-effect: core.node-taint {
+      object: {
+        metadata: { name: 'host' }
+        spec:     { taints: [{ key: 'x', value: '', effect: null }] }
+      }
+    }
+    wrong-key: core.node-taint {
+      object: {
+        metadata: { name: 'host' }
+        spec:     { taints: [{ key: true, value: 'one', effect: 'NoSchedule' }] }
+      }
+    }
+    wrong-value: core.node-taint {
+      object: {
+        metadata: { name: 'host' }
+        spec:     { taints: [{ key: 'x', value: 4, effect: 'NoSchedule' }] }
+      }
+    }
+    wrong-effect: core.node-taint {
+      object: {
+        metadata: { name: 'host' }
+        spec:     { taints: [{ key: 'x', value: '', effect: false }] }
+      }
+    }
+  }
+}

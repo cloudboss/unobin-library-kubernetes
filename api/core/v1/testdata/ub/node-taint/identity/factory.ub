@@ -1,0 +1,50 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    missing-name: core.node-taint {
+      object: {
+        metadata: {}
+        spec: {
+          taints: [
+            { key: 'example.com/b', value: '', effect: 'PreferNoSchedule' },
+            { key: 'example.com/a', value: 'marked', effect: 'NoExecute' },
+          ]
+        }
+      }
+    }
+    null-name: core.node-taint {
+      object: {
+        metadata: { name: null }
+        spec: {
+          taints: [
+            { key: 'example.com/b', value: '', effect: 'PreferNoSchedule' },
+            { key: 'example.com/a', value: 'marked', effect: 'NoExecute' },
+          ]
+        }
+      }
+    }
+    namespace: core.node-taint {
+      object: {
+        metadata: { name: 'host', namespace: 'default' }
+        spec: {
+          taints: [
+            { key: 'example.com/b', value: '', effect: 'PreferNoSchedule' },
+            { key: 'example.com/a', value: 'marked', effect: 'NoExecute' },
+          ]
+        }
+      }
+    }
+    generate-name: core.node-taint {
+      object: {
+        metadata: { generate-name: 'unobin-' }
+        spec: {
+          taints: [
+            { key: 'example.com/b', value: '', effect: 'PreferNoSchedule' },
+            { key: 'example.com/a', value: 'marked', effect: 'NoExecute' },
+          ]
+        }
+      }
+    }
+  }
+}

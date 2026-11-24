@@ -8,6 +8,7 @@ stack: {
       config-map-lookup-binary-value: 'AAE='
       namespace-value:                'first'
       namespace-lookup-value:         'first'
+      node-taint-value:               'first'
       nodes-selector:                 'first'
       persistent-volume-backing-path: '/unobin/first'
       persistent-volume-capacity:     '1Gi'

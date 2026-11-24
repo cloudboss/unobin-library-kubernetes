@@ -1,0 +1,23 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server } }
+  actions: {
+    source: core.test-taint-input {
+      desired-key: input.key
+      revision:    input.revision
+    }
+  }
+  resources: {
+    attachment: core.node-taint {
+      object: {
+        metadata: { name: input.name }
+        spec: {
+          taints: [
+            { key: 'example.com/first', value: '', effect: 'NoSchedule' },
+            { key: action.source.key, value: 'b', effect: 'NoExecute' },
+          ]
+        }
+      }
+    }
+  }
+}

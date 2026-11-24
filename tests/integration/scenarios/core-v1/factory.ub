@@ -1,9 +1,11 @@
 factory: {
   imports: {
+    dynamic:               'github.com/cloudboss/unobin-library-kubernetes//dynamic'
     core:                  'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
     core-namespace-lookup: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
   }
   library-configs: {
+    dynamic:               {}
     core:                  {}
     core-namespace-lookup: { namespace: 'ignored' }
   }
@@ -15,6 +17,7 @@ factory: {
     config-map-lookup-binary-value: { type: string }
     namespace-value:                { type: string }
     namespace-lookup-value:         { type: string }
+    node-taint-value:               { type: string }
     nodes-selector:                 { type: string }
     persistent-volume-backing-path: { type: string }
     persistent-volume-capacity:     { type: string }
@@ -65,6 +68,35 @@ factory: {
       }
       wait-for-default-service-account: true
       delete-timeout:                   '30s'
+    }
+    node-taint-fixture: dynamic.object {
+      manifest: '''|-
+        apiVersion: v1
+        kind: Node
+        metadata:
+          name: unobin-it-core-v1-node-taint
+          labels:
+            test.unobin.cloudboss.io/scenario: core-v1-node-taint
+        spec:
+          unschedulable: true
+        '''
+    }
+    node-taint: core.node-taint {
+      object: {
+        metadata: { name: resource.node-taint-fixture.name }
+        spec: {
+          taints: [
+            { key: 'test.unobin.cloudboss.io/second', effect: 'PreferNoSchedule', value: '' },
+            {
+              key:    'test.unobin.cloudboss.io/first'
+              effect: 'NoExecute'
+              value:  input.node-taint-value
+            },
+          ]
+        }
+      }
+      field-manager: 'unobin-node-taint-scenario'
+      force:         true
     }
     persistent-volume-update: core.persistent-volume {
       object: {
@@ -324,6 +356,16 @@ factory: {
       }
     }
     namespaces: { value: data-source.namespaces.namespaces }
+    node-taint: {
+      value: {
+        original-uid: resource.node-taint-fixture.uid
+        uid:          resource.node-taint.object.metadata.uid
+        name:         resource.node-taint.object.metadata.name
+        api-version:  resource.node-taint.api-version
+        kind:         resource.node-taint.kind
+        taints:       resource.node-taint.object.spec.taints
+      }
+    }
     nodes: {
       value: {
         nodes: data-source.nodes-selected.nodes

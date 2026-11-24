@@ -49,7 +49,9 @@ func verifyNodes() error {
 	}
 	current := make(map[string]string, len(nodes.Items))
 	for _, node := range nodes.Items {
-		current[node.Name] = string(node.UID)
+		if node.Name != nodeTaintFixtureName {
+			current[node.Name] = string(node.UID)
+		}
 	}
 	if len(current) == 0 {
 		return fmt.Errorf("test cluster has no Nodes")

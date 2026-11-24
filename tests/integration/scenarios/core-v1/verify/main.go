@@ -13,6 +13,7 @@ func main() {
 		{"namespace-lookup", verifyNamespaceLookup},
 		{"namespaces", verifyNamespaceList},
 		{"nodes", verifyNodes},
+		{"node-taint", verifyNodeTaint},
 		{"persistent-volume", verifyPersistentVolume},
 		{"persistent-volume-claim", verifyPersistentVolumeClaim},
 		{"pod", verifyPod},
