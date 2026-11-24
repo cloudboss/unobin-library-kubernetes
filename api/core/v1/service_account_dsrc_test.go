@@ -1,4 +1,4 @@
-package compile_test
+package v1
 
 import (
 	"bytes"
@@ -36,10 +36,9 @@ const serviceAccountLookupGET = "GET /api/v1/namespaces/default/serviceaccounts/
 
 func serviceAccountCompileOptions(t *testing.T, factory string) (compile.Options, *bytes.Buffer) {
 	t.Helper()
-	root, err := filepath.Abs("../..")
+	root, err := filepath.Abs("../../..")
 	require.NoError(t, err)
-	// The porting manifest selects a durable temporary directory for compiled fixtures.
-	work := t.TempDir()
+	work := coreCompileDirectory(t)
 	factory, err = filepath.Abs(factory)
 	require.NoError(t, err)
 	log := new(bytes.Buffer)

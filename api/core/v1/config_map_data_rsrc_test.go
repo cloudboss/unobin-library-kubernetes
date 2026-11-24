@@ -1,4 +1,4 @@
-package compile_test
+package v1
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestCompiledConfigMapDataLiterals(t *testing.T) {
-	require.NoError(t, compileFixture(t, "config-map-data/valid"))
+	require.NoError(t, compileCoreInputFixture(t, "config-map-data/literals/valid"))
 	for _, tc := range []struct{ fixture, detail string }{
 		{"missing-object", "object"},
 		{"missing-metadata", "metadata"},
@@ -21,7 +21,7 @@ func TestCompiledConfigMapDataLiterals(t *testing.T) {
 		{"long-name", "constraints["},
 	} {
 		t.Run(tc.fixture, func(t *testing.T) {
-			err := compileFixture(t, "config-map-data/"+tc.fixture)
+			err := compileCoreInputFixture(t, "config-map-data/literals/"+tc.fixture)
 			require.ErrorContains(t, err, tc.detail)
 			if tc.detail == "constraints[" {
 				require.ErrorContains(t, err, "resource.subject")

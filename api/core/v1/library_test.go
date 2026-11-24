@@ -197,3 +197,23 @@ func coreCompileDirectory(t *testing.T) string {
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
 	return work
 }
+
+func compileCoreInputFixture(t *testing.T, fixture string) error {
+	t.Helper()
+	root, err := filepath.Abs("../../..")
+	require.NoError(t, err)
+	factory, err := filepath.Abs(filepath.Join("testdata/ub", fixture, "factory.ub"))
+	require.NoError(t, err)
+	var log bytes.Buffer
+	_, err = compile.RunResult(compile.Options{
+		FactoryPath: factory, OutDir: coreCompileDirectory(t),
+		StackName: "constraints", Version: "v0.0.0", CLIVersion: "v0.13.0",
+		GoVersion: "1.26.2", ReplaceUnobin: unobinSource(t),
+		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
+		Stdout:           &log, Stderr: &log,
+	})
+	if err != nil {
+		t.Log(log.String())
+	}
+	return err
+}

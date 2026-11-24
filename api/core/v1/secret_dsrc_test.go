@@ -1,4 +1,4 @@
-package compile_test
+package v1
 
 import (
 	"strings"
@@ -35,7 +35,7 @@ func TestCompiledSecretLookupLiterals(t *testing.T) {
 		{"annotation-key-length", "constraints[4] (predicate)", "metadata.annotations["},
 	} {
 		t.Run(tc.fixture, func(t *testing.T) {
-			err := compileFixture(t, "secret-lookup/"+tc.fixture)
+			err := compileCoreInputFixture(t, "secret-lookup/literals/"+tc.fixture)
 			if tc.diagnostic == "" {
 				require.NoError(t, err)
 				return

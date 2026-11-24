@@ -28,6 +28,7 @@ factory: {
     pod-epoch:                      { type: string }
     pod-image:                      { type: string }
     pod-phase:                      { type: optional(list(string)), default: null }
+    temporary-secret-lookups:       { type: map(boolean), default: { temporary: true } }
     secret-value:                   { type: string }
     secret-binary-value:            { type: string }
     secret-immutable:               { type: boolean }
@@ -192,6 +193,27 @@ factory: {
       create-timeout: '2m'
       delete-timeout: '30s'
     }
+    secret-lookup-fixture: core.secret {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-secret-lookup-'
+          labels: {
+            'app.kubernetes.io/name':            'synthetic'
+            'kubernetes.io/metadata.name':       'kept'
+            'test.unobin.cloudboss.io/scenario': 'core-v1-secret-lookup'
+          }
+          annotations: { 'deployment.kubernetes.io/revision': '9' }
+        }
+        type:      'example.test/custom'
+        immutable: true
+        data:      { unicode: '日本語', empty-text: '' }
+        binary-data: {
+          text:        'IP/+6Zuq/++/vSBlzIEJCg=='
+          bytes:       'IP/+6Zuq/++/vSBlzIEJCg=='
+          empty-bytes: ''
+        }
+      }
+    }
     secret-mutable: core.secret {
       object: {
         metadata: {
@@ -327,6 +349,25 @@ factory: {
     }
     default-service-account-before: core.service-account {
       metadata: { name: 'default', namespace: resource.namespace-project.object.metadata.name }
+    }
+    secret-lookup-existing: core-namespace-lookup.secret {
+      @for-each: input.temporary-secret-lookups
+      metadata: {
+        name:          resource.secret-lookup-fixture.object.metadata.name
+        generate-name: 'lookup-only-'
+        annotations:   { 'example.com/unused': 'unused' }
+      }
+      binary-data: { bytes: 'not base64', empty-bytes: '', absent: 'unused', unicode: null }
+    }
+    secret-lookup-missing: core-namespace-lookup.secret {
+      metadata: {
+        name:          'unobin-it-secret-lookup-absent'
+        namespace:     null
+        generate-name: 'missing-'
+        annotations:   { 'EXAMPLE.COM/Lookup': 'missing', 'bad key': null }
+        labels:        { app: 'missing', 'bad key': null }
+      }
+      binary-data: { missing: 'synthetic placeholder', unused: null }
     }
     service-account-lookup-existing: core.service-account {
       metadata: {

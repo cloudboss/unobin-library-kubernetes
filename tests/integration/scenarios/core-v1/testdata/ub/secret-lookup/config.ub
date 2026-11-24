@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { name: 'SECRET_LOOKUP_NAME', absent: 'SECRET_LOOKUP_NAME-absent' } }
-  state: local {
-    path: 'state'
-  }
-  encryption: noop {}
-}

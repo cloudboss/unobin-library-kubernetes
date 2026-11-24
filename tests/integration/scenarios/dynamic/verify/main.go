@@ -95,5 +95,16 @@ func run() error {
 	if absent, ok := snapshot.Outputs["absent"]; !ok || absent != nil {
 		return fmt.Errorf("missing ConfigMap lookup must return null")
 	}
+	if phase == "applied" {
+		if err := verifyLabelsOwnership(ctx); err != nil {
+			return fmt.Errorf("labels: %w", err)
+		}
+		if err := verifyAnnotationsOwnership(ctx); err != nil {
+			return fmt.Errorf("annotations: %w", err)
+		}
+		if err := verifyMetadataUIDGuards(ctx); err != nil {
+			return err
+		}
+	}
 	return verifyEnv(ctx, api, snapshot, phase, dir)
 }

@@ -1,6 +1,4 @@
-//go:build integration
-
-package integration_test
+package v1
 
 import (
 	"bytes"
@@ -25,9 +23,9 @@ import (
 )
 
 const (
-	serviceAccountAnchorCollection = "/api/v1/namespaces/default/configmaps"
-	serviceAccountAnchorPath       = serviceAccountAnchorCollection + "/anchor"
-	serviceAccountLookupPath       = "/api/v1/namespaces/default/serviceaccounts/lookup"
+	serviceAccountLifecycleAnchorCollection = "/api/v1/namespaces/default/configmaps"
+	serviceAccountAnchorPath                = serviceAccountLifecycleAnchorCollection + "/anchor"
+	serviceAccountLookupPath                = "/api/v1/namespaces/default/serviceaccounts/lookup"
 )
 
 func TestServiceAccountLookupSavedPlanLifecycle(t *testing.T) {
@@ -45,7 +43,7 @@ func TestServiceAccountLookupSavedPlanLifecycle(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		var response any
 		switch call {
-		case "POST " + serviceAccountAnchorCollection:
+		case "POST " + serviceAccountLifecycleAnchorCollection:
 			var object corev1.ConfigMap
 			if err := json.NewDecoder(r.Body).Decode(&object); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -123,7 +121,7 @@ func TestServiceAccountLookupSavedPlanLifecycle(t *testing.T) {
 	const anchorGET = "GET " + serviceAccountAnchorPath
 	const lookupGET = "GET " + serviceAccountLookupPath
 	success("apply", "pending.ubp")
-	expectRequests("POST "+serviceAccountAnchorCollection, anchorGET, lookupGET, lookupGET)
+	expectRequests("POST "+serviceAccountLifecycleAnchorCollection, anchorGET, lookupGET, lookupGET)
 
 	success("plan", "-c", "config.ub", "-o", "steady.ubp")
 	expectRequests(anchorGET, lookupGET, lookupGET)
@@ -159,24 +157,12 @@ func TestServiceAccountLookupSavedPlanLifecycle(t *testing.T) {
 
 func buildServiceAccountLookupFixture(t *testing.T, server string) (string, string) {
 	t.Helper()
-	root, err := filepath.Abs("../../../..")
-	require.NoError(t, err)
-	base := filepath.Join(root, "_output", "integration")
-	require.NoError(t, os.MkdirAll(base, 0o700))
-	work, err := os.MkdirTemp(base, "service-account-lookup-")
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
+	fixture := filepath.Join(serviceAccountLookupFixture, "lifecycle")
+	opts, log := serviceAccountCompileOptions(t, filepath.Join(fixture, "factory.ub"))
+	opts.Build = true
+	work := opts.OutDir
 	t.Setenv("KUBECONFIG", filepath.Join(work, "missing-kubeconfig"))
-	fixture, err := filepath.Abs("testdata/ub/service-account-lookup")
-	require.NoError(t, err)
-	var log bytes.Buffer
-	result, err := compile.RunResult(compile.Options{
-		FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work, Build: true,
-		StackName: "service-account-lookup", Version: "v0.0.0",
-		CLIVersion: "v0.13.0", GoVersion: "1.26.2",
-		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
-		Stdout:           &log, Stderr: &log,
-	})
+	result, err := compile.RunResult(opts)
 	require.NoError(t, err, "%s", log.String())
 	body, err := os.ReadFile(filepath.Join(fixture, "config.ub"))
 	require.NoError(t, err)

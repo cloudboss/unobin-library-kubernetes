@@ -1,4 +1,4 @@
-package compile_test
+package v1
 
 import (
 	"bytes"
@@ -31,6 +31,7 @@ import (
 
 const configMapDataAddress = "resource.attachment"
 const configMapDataRuntimeFixture = "testdata/ub/config-map-data/factory.ub"
+const configMapDataCollection = "/api/v1/namespaces/default/configmaps"
 
 type configMapDataWrite struct {
 	Name, UID, Manager, Force string
@@ -53,7 +54,7 @@ func (a *configMapDataPlanAPI) ServeHTTP(w http.ResponseWriter, req *http.Reques
 	a.calls = append(a.calls, req.Method+" "+req.URL.Path)
 	live := a.maps[name]
 	switch {
-	case req.Method == http.MethodPost && req.URL.Path == seedCollection:
+	case req.Method == http.MethodPost && req.URL.Path == configMapDataCollection:
 		live = &corev1.ConfigMap{}
 		require.NoError(a.t, json.NewDecoder(req.Body).Decode(live))
 		require.Equal(a.t, "seed", live.Name)
@@ -63,7 +64,7 @@ func (a *configMapDataPlanAPI) ServeHTTP(w http.ResponseWriter, req *http.Reques
 		writeConfigMapDataStatus(a.t, w, apierrors.NewNotFound(corev1.Resource("configmaps"), name))
 		return
 	case req.Method == http.MethodGet:
-		require.Equal(a.t, seedCollection+"/"+name, req.URL.Path)
+		require.Equal(a.t, configMapDataCollection+"/"+name, req.URL.Path)
 	case req.Method == http.MethodPatch && name == "seed":
 		body, err := io.ReadAll(req.Body)
 		require.NoError(a.t, err)
@@ -77,7 +78,7 @@ func (a *configMapDataPlanAPI) ServeHTTP(w http.ResponseWriter, req *http.Reques
 		require.NoError(a.t, json.Unmarshal(body, live))
 		a.maps[name] = live
 	case req.Method == http.MethodPatch:
-		require.Equal(a.t, seedCollection+"/"+name, req.URL.Path)
+		require.Equal(a.t, configMapDataCollection+"/"+name, req.URL.Path)
 		require.Equal(a.t, string(types.ApplyPatchType), req.Header.Get("Content-Type"))
 		var payload corev1.ConfigMap
 		require.NoError(a.t, json.NewDecoder(req.Body).Decode(&payload))
@@ -127,7 +128,7 @@ func (a *configMapDataPlanAPI) expectTargetCalls(t *testing.T, want ...string) {
 	defer a.mu.Unlock()
 	var actual []string
 	for _, call := range a.calls {
-		if !strings.HasSuffix(call, "/seed") && call != "POST "+seedCollection {
+		if !strings.HasSuffix(call, "/seed") && call != "POST "+configMapDataCollection {
 			actual = append(actual, call)
 		}
 	}
@@ -143,7 +144,7 @@ type configMapDataFactory struct {
 
 func compileConfigMapDataFactory(t *testing.T, fixture string) *configMapDataFactory {
 	t.Helper()
-	root, err := filepath.Abs("../..")
+	root, err := filepath.Abs("../../..")
 	require.NoError(t, err)
 	base := filepath.Join(root, "_output", "tests", "config-map-data")
 	require.NoError(t, os.MkdirAll(base, 0o700))
@@ -251,7 +252,7 @@ func requireConfigMapDataNameError(t *testing.T, out string, err error) {
 
 func TestConfigMapDataNativeOmissionDefaults(t *testing.T) {
 	factory := compileConfigMapDataFactory(t,
-		"testdata/ub/input-constraints/config-map-data/valid/factory.ub")
+		"testdata/ub/config-map-data/literals/valid/factory.ub")
 	factory.inputs = map[string]any{}
 	plan := factory.savedPlan(t)
 	wantInputs := map[string]map[string]any{
@@ -287,7 +288,7 @@ func TestConfigMapDataNativePlans(t *testing.T) {
 	factory.apply(t)
 	api.expectWrites(t, configMapDataWrite{"old", "uid-old", "Terraform", "false",
 		map[string]string{"value": "", "one": "initial"}})
-	oldPath := seedCollection + "/old"
+	oldPath := configMapDataCollection + "/old"
 	api.expectTargetCalls(t, "GET "+oldPath, "PATCH "+oldPath, "GET "+oldPath)
 
 	factory.inputs["namespace"] = "default"
@@ -352,7 +353,7 @@ func TestConfigMapDataNativeDeferredReplacement(t *testing.T) {
 	factory.apply(t)
 	api.expectWrites(t, configMapDataWrite{"old", "uid-old", "old-owner", "true",
 		map[string]string{"value": "", "one": "initial"}})
-	oldPath, nextPath := seedCollection+"/old", seedCollection+"/next"
+	oldPath, nextPath := configMapDataCollection+"/old", configMapDataCollection+"/next"
 	api.expectTargetCalls(t, "GET "+oldPath, "PATCH "+oldPath, "GET "+oldPath)
 
 	factory.inputs["deferred"], factory.inputs["revision"] = true, "Bad_Name"

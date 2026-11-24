@@ -1,9 +1,11 @@
-package compile_test
+package dynamic
 
 import (
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -12,12 +14,13 @@ import (
 	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/encrypters"
 	"github.com/cloudboss/unobin/pkg/runtime"
+	"github.com/cloudboss/unobin/pkg/sdk/encrypt"
+	"github.com/cloudboss/unobin/pkg/sdk/state"
 	"github.com/cloudboss/unobin/pkg/state/local"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	"github.com/cloudboss/unobin-library-kubernetes/dynamic"
 )
 
 const (
@@ -229,12 +232,12 @@ func TestLabelsSavedNoOpAndHistoricalDestroyWithTightenedRule(t *testing.T) {
 	require.NoError(t, err)
 	syntax, _, err := compile.ParseFactorySyntaxSource(path, source)
 	require.NoError(t, err)
-	lib := dynamic.Library()
+	lib := Library()
 	libs := map[string]*runtime.Library{"dynamic": lib}
-	store, err := local.NewStore(objectInfoWork(t), "labels", "test", encrypters.Noop{})
+	store, err := local.NewStore(dynamicCompileDirectory(t), "labels", "test", encrypters.Noop{})
 	require.NoError(t, err)
 	api := newLabelsPlanAPI(t, "")
-	t.Setenv("KUBECONFIG", filepath.Join(objectInfoWork(t), "missing"))
+	t.Setenv("KUBECONFIG", filepath.Join(dynamicCompileDirectory(t), "missing"))
 	exec := &runtime.Executor{
 		DAG: runtime.BuildSyntaxDAG(syntax.Factory.Body, libs), SyntaxSource: &syntax.Factory.Body,
 		Libraries: libs, Store: store, Inputs: map[string]any{
@@ -280,19 +283,19 @@ func TestLabelsSavedNoOpAndHistoricalDestroyWithTightenedRule(t *testing.T) {
 
 func compileLabels(t *testing.T, fixture string, build bool) (string, error) {
 	t.Helper()
-	return compileDynamicFixtureForAPI(t, filepath.Join(labelsFixtures, fixture, "factory.ub"),
+	return compileDynamicFixture(t, filepath.Join(labelsFixtures, fixture, "factory.ub"),
 		"dynamic-labels", build, nil)
 }
 
-func labelsRun(t *testing.T, binary, fixture, server string, pairs ...string) objectInfoRun {
+func labelsRun(t *testing.T, binary, fixture, server string, pairs ...string) labelsFactoryRun {
 	t.Helper()
-	run := objectInfoRun{t: t, binary: binary, work: objectInfoWork(t)}
+	run := labelsFactoryRun{t: t, binary: binary, work: dynamicCompileDirectory(t)}
 	t.Setenv("KUBECONFIG", filepath.Join(run.work, "missing"))
 	labelsConfigure(run, fixture, server, pairs...)
 	return run
 }
 
-func labelsConfigure(run objectInfoRun, fixture, server string, pairs ...string) {
+func labelsConfigure(run labelsFactoryRun, fixture, server string, pairs ...string) {
 	run.t.Helper()
 	body, err := os.ReadFile(filepath.Join(labelsFixtures, fixture, "config.ub"))
 	require.NoError(run.t, err)
@@ -309,7 +312,7 @@ func labelsPlanStep(t *testing.T, plan *runtime.PlanFile) *runtime.PlanStep {
 			return &plan.Steps[i]
 		}
 	}
-	t.Fatalf("missing %s in %v", labelsAddress, objectInfoStepAddresses(plan.Steps))
+	t.Fatalf("missing %s in plan", labelsAddress)
 	return nil
 }
 
@@ -326,7 +329,7 @@ func newLabelsPlanAPI(t *testing.T, seedUID string) *labelsPlanAPI {
 	api := &labelsPlanAPI{
 		objects: map[string]map[string]string{"example": {}, "next": {}}, seedUID: seedUID,
 	}
-	server, requests := newObjectInfoHTTP(t, func(req *http.Request) (int, any) {
+	server, requests := newLabelsHTTP(t, func(req *http.Request) (int, any) {
 		api.mu.Lock()
 		defer api.mu.Unlock()
 		name := filepath.Base(req.URL.Path)
@@ -420,4 +423,88 @@ func labelPatch(name, manager string, force bool) string {
 
 func labelApplyCalls(name, manager string, force bool) []string {
 	return []string{labelGet(name), labelPatch(name, manager, force), labelGet(name)}
+}
+
+type labelsFactoryRun struct {
+	t            *testing.T
+	binary, work string
+}
+
+func (r labelsFactoryRun) command(args ...string) ([]byte, error) {
+	cmd := exec.CommandContext(r.t.Context(), r.binary, args...)
+	cmd.Dir = r.work
+	return cmd.CombinedOutput()
+}
+
+func (r labelsFactoryRun) ok(args ...string) []byte {
+	r.t.Helper()
+	out, err := r.command(args...)
+	require.NoError(r.t, err, "%s %v\n%s", r.binary, args, out)
+	return out
+}
+
+func (r labelsFactoryRun) fail(args ...string) string {
+	r.t.Helper()
+	out, err := r.command(args...)
+	require.Error(r.t, err, "%s %v\n%s", r.binary, args, out)
+	return string(out)
+}
+
+func (r labelsFactoryRun) plan(path string) *runtime.PlanFile {
+	r.t.Helper()
+	body, err := os.ReadFile(filepath.Join(r.work, path))
+	require.NoError(r.t, err)
+	plan, err := runtime.OpenPlan(body, func(ref *runtime.StateRef) (encrypt.Encrypter, error) {
+		require.NotNil(r.t, ref)
+		require.Equal(r.t, "noop", ref.Name)
+		return encrypters.Noop{}, nil
+	})
+	require.NoError(r.t, err)
+	return plan
+}
+
+func (r labelsFactoryRun) state() *state.Snapshot {
+	r.t.Helper()
+	snapshot, err := state.DecodeSnapshot(r.ok("state", "pull", "-c", "config.ub"))
+	require.NoError(r.t, err)
+	return snapshot
+}
+
+func newLabelsHTTP(
+	t *testing.T, handle func(*http.Request) (int, any),
+) (string, func() []string) {
+	t.Helper()
+	var mu sync.Mutex
+	var calls []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		status, body := http.StatusOK, any(nil)
+		switch req.URL.Path {
+		case "/api":
+			body = metav1.APIVersions{Versions: []string{"v1"}}
+		case "/apis":
+			body = metav1.APIGroupList{}
+		case "/api/v1":
+			body = metav1.APIResourceList{GroupVersion: "v1", APIResources: []metav1.APIResource{
+				{Name: "configmaps", Kind: "ConfigMap", Namespaced: true},
+			}}
+		default:
+			mu.Lock()
+			calls = append(calls, req.Method+" "+req.URL.RequestURI())
+			mu.Unlock()
+			status, body = handle(req)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		if err := json.NewEncoder(w).Encode(body); err != nil {
+			t.Errorf("write Kubernetes response: %v", err)
+		}
+	}))
+	t.Cleanup(server.Close)
+	return server.URL, func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		result := calls
+		calls = nil
+		return result
+	}
 }

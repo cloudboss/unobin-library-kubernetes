@@ -1,4 +1,4 @@
-package compile_test
+package v1
 
 import (
 	"bytes"
@@ -89,7 +89,7 @@ type secretLookupFactory struct {
 
 func newSecretLookupFactory(t *testing.T, fixture string) secretLookupFactory {
 	t.Helper()
-	root, err := filepath.Abs("../..")
+	root, err := filepath.Abs("../../..")
 	require.NoError(t, err)
 	base := filepath.Join(root, "_output", "tests", "secret-lookup")
 	require.NoError(t, os.MkdirAll(base, 0o700))
@@ -413,14 +413,4 @@ func TestCompiledSecretLookupNativeInputs(t *testing.T) {
 			require.Equal(t, map[string]any{"bytes": "AP8="}, entry.Outputs["binary-data"])
 		})
 	}
-}
-
-func TestCompiledSecretLookupScenario(t *testing.T) {
-	fixture := "../../tests/integration/scenarios/core-v1/testdata/ub/secret-lookup"
-	factory := newSecretLookupFactory(t, fixture)
-	body, err := os.ReadFile(filepath.Join(fixture, "config.ub"))
-	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(factory.work, "config.ub"), body, 0o600))
-	factory.success(t, "pin", "-c", "config.ub")
-	factory.success(t, "validate", "-c", "config.ub")
 }

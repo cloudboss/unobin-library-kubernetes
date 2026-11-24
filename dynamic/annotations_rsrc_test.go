@@ -1,4 +1,4 @@
-package compile_test
+package dynamic
 
 import (
 	"path/filepath"
@@ -32,7 +32,7 @@ func TestCompiledAnnotationsLiterals(t *testing.T) {
 		{"unicode-manager", rule + "4]"},
 	} {
 		t.Run(tc.fixture, func(t *testing.T) {
-			_, err := compileDynamicFixtureForAPI(t,
+			_, err := compileDynamicFixture(t,
 				filepath.Join("testdata/ub/annotations/literals", tc.fixture, "factory.ub"),
 				"dynamic-annotations", false, nil,
 			)
@@ -49,7 +49,7 @@ func TestCompiledAnnotationsRequireLibraryAPI11(t *testing.T) {
 	descriptor := &libraryapi.Descriptor{
 		FormatVersion: 1, ImplementedAPIs: []string{"1.0"}, GeneratorAPI: "1.0",
 	}
-	_, err := compileDynamicFixtureForAPI(t,
+	_, err := compileDynamicFixture(t,
 		"testdata/ub/annotations/literals/valid-top/factory.ub",
 		"dynamic-annotations", false, descriptor,
 	)

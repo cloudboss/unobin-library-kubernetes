@@ -8,6 +8,7 @@ func main() {
 		run  func() error
 	}{
 		{"config-map", verifyConfigMap},
+		{"config-map-data", verifyConfigMapData},
 		{"config-map-lookup", verifyConfigMapLookup},
 		{"namespace", verifyNamespace},
 		{"namespace-lookup", verifyNamespaceLookup},
@@ -19,6 +20,7 @@ func main() {
 		{"persistent-volume-claim", verifyPersistentVolumeClaim},
 		{"pod", verifyPod},
 		{"secret", verifySecret},
+		{"secret-lookup", verifySecretLookup},
 		{"service", verifyService},
 		{"service-account", verifyServiceAccount},
 		{"default-service-account", verifyDefaultServiceAccount},

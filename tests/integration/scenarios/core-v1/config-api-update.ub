@@ -19,6 +19,7 @@ stack: {
       pod-epoch:                      'updated'
       pod-image:                      'registry.k8s.io/pause:3.10'
       pod-phase:                      ['Pending']
+      temporary-secret-lookups:       {}
       secret-value:                   'updated'
       secret-binary-value:            'AgM='
       secret-immutable:               true
