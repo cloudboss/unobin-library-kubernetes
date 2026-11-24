@@ -11,6 +11,7 @@ func main() {
 		{"config-map-lookup", verifyConfigMapLookup},
 		{"namespace", verifyNamespace},
 		{"namespace-lookup", verifyNamespaceLookup},
+		{"namespaces", verifyNamespaceList},
 		{"nodes", verifyNodes},
 		{"persistent-volume", verifyPersistentVolume},
 		{"persistent-volume-claim", verifyPersistentVolumeClaim},

@@ -1,0 +1,18 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { namespace: 'configured' } }
+  resources: {
+    stable: core.namespace {
+      object: { metadata: { name: 'managed' } }
+    }
+  }
+  data-sources: {
+    cluster: core.namespaces {
+      @depends-on: [resource.stable]
+    }
+  }
+  outputs: {
+    names:  { value: data-source.cluster.namespaces }
+    joined: { value: @core.join(data-source.cluster.namespaces, ',') }
+  }
+}

@@ -33,6 +33,9 @@ func Library() *runtime.Library {
 			"namespace": runtime.MakeDataSource[
 				svc.NamespaceDataSource, *svc.NamespaceDataSourceOutput, *config.Configuration,
 			](),
+			"namespaces": runtime.MakeDataSource[
+				svc.NamespacesDataSource, *svc.NamespacesDataSourceOutput, *config.Configuration,
+			](),
 			"nodes": runtime.MakeDataSource[
 				svc.NodesDataSource, *svc.NodesDataSourceOutput, *config.Configuration,
 			](),
