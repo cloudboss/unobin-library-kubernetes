@@ -4,13 +4,176 @@ factory: {
     dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
   }
   library-configs: { core: {}, dynamic: { namespace: 'other' } }
-  inputs:          { value: { type: string } }
+  inputs: {
+    temporary-envs: { type: map(boolean), default: { temporary: true } }
+    value:          { type: string }
+    updated:        { type: boolean, default: false }
+  }
+  locals: {
+    deployment-name:  'unobin-it-dynamic-env'
+    replacement-name: 'unobin-it-dynamic-env-next'
+    cron-name:        'unobin-it-dynamic-env-cron'
+    pod-name:         'unobin-it-dynamic-env-pod'
+    containers: [
+      {
+        name:    'main'
+        image:   'busybox:1.36'
+        command: ['sleep', '3600']
+        env:     [{ name: 'EXTERNAL', value: 'keep' }]
+      },
+    ]
+    init-containers: [
+      {
+        name:    'init'
+        image:   'busybox:1.36'
+        command: ['true']
+        env:     [{ name: 'INIT_EXTERNAL', value: 'keep-init' }]
+      },
+    ]
+    deployment-spec: {
+      replicas: 0
+      selector: { matchLabels: { app: local.deployment-name } }
+      template: {
+        metadata: { labels: { app: local.deployment-name } }
+        spec:     { containers: local.containers, initContainers: local.init-containers }
+      }
+    }
+  }
   resources: {
     settings: core.config-map {
       object: {
         metadata: { name: 'unobin-it-dynamic-object-info', namespace: 'default' }
         data:     { value: input.value }
       }
+    }
+    deployment: dynamic.object {
+      field-manager: 'scenario-workloads'
+      manifest: @core.to-json(
+        {
+          apiVersion: 'apps/v1'
+          kind:       'Deployment'
+          metadata: {
+            name:        local.deployment-name
+            namespace:   'default'
+            annotations: { 'unobin.cloudboss.dev/scenario': 'env' }
+          }
+          spec: local.deployment-spec
+        },
+      )
+    }
+    replacement: dynamic.object {
+      field-manager: 'scenario-workloads'
+      manifest: @core.to-json(
+        {
+          apiVersion: 'apps/v1'
+          kind:       'Deployment'
+          metadata:   { name: local.replacement-name, namespace: 'default' }
+          spec:       local.deployment-spec
+        },
+      )
+    }
+    cron: dynamic.object {
+      field-manager: 'scenario-workloads'
+      manifest: @core.to-json(
+        {
+          apiVersion: 'batch/v1'
+          kind:       'CronJob'
+          metadata:   { name: local.cron-name, namespace: 'default' }
+          spec: {
+            schedule: '0 0 31 12 *'
+            suspend:  true
+            jobTemplate: {
+              spec: {
+                template: {
+                  spec: {
+                    restartPolicy:  'Never'
+                    containers:     local.containers
+                    initContainers: local.init-containers
+                  }
+                }
+              }
+            }
+          }
+        },
+      )
+    }
+    pod: dynamic.object {
+      field-manager: 'scenario-workloads'
+      manifest: @core.to-json(
+        {
+          apiVersion: 'v1'
+          kind:       'Pod'
+          metadata:   { name: local.pod-name, namespace: 'default' }
+          spec:       { containers: local.containers, initContainers: local.init-containers }
+        },
+      )
+    }
+    deployment-env: dynamic.env {
+      @depends-on: [resource.deployment]
+      api-version: 'apps/v1'
+      kind:        'deployment'
+      metadata:    { name: local.deployment-name }
+      container:   'main'
+      env: if input.updated
+        then [
+          { name: 'LAST', value: '$$(BASE)' },
+          { name: 'FIRST', value: 'updated' },
+          { name: 'CPU', value: 'literal' },
+          { name: 'BACK', value-from: { field-ref: { field-path: 'metadata.namespace' } } },
+        ]
+        else [
+          { name: 'FIRST', value: '$(BASE)' },
+          {
+            name:       'CONFIG'
+            value-from: { config-map-key-ref: { name: 'example', key: 'value', optional: true } }
+          },
+          {
+            name:       'SECRET'
+            value-from: { secret-key-ref: { name: 'example', key: 'key', optional: false } }
+          },
+          { name: 'FIELD', value-from: { field-ref: { field-path: 'metadata.name' } } },
+          {
+            name:       'CPU'
+            value-from: { resource-field-ref: { resource: 'limits.cpu', divisor: '0.001' } }
+          },
+          { name: 'LAST', value: '$$(BASE)' },
+          { name: 'EMPTY', value: '' },
+          { name: 'BACK', value: 'literal' },
+        ]
+    }
+    relocated-env: dynamic.env {
+      @depends-on: [resource.deployment, resource.replacement]
+      api-version: 'apps/v1'
+      kind:        'Deployment'
+      metadata:    { name: if input.updated then local.replacement-name else local.deployment-name }
+      init-container: 'init'
+      field-manager:  'relocated-env'
+      env:            [{ name: 'RELOCATED', value: input.value }]
+    }
+    cron-env: dynamic.env {
+      @depends-on:     [resource.cron]
+      api-version:     'batch/v1'
+      kind:            'cRoNJoB'
+      metadata:        { name: local.cron-name, namespace: 'default' }
+      container:       if input.updated then 'main' else null
+      init-container:  if input.updated then null else 'init'
+      force-conflicts: input.updated
+      env: if input.updated
+        then [
+          { name: 'EXTERNAL', value: 'claimed' },
+          { name: 'MANAGED', value: input.value },
+        ]
+        else [{ name: 'MANAGED', value: input.value }]
+    }
+    temporary-env: dynamic.env {
+      @for-each:     input.temporary-envs
+      @depends-on:   [resource.replacement]
+      api-version:   'apps/v1'
+      kind:          'Deployment'
+      metadata:      { name: local.replacement-name, namespace: 'default' }
+      container:     'main'
+      field-manager: 'temporary-env'
+      env:           [{ name: 'TEMPORARY', value: 'remove' }]
     }
   }
   data-sources: {
@@ -34,5 +197,14 @@ factory: {
     config-map: { value: data-source.config-map.object }
     namespace:  { value: data-source.namespace.object }
     absent:     { value: data-source.absent.object }
+    deployment-env: {
+      value: [ for item in resource.deployment-env.env : { name: item.name, value: item.value } ]
+    }
+    relocated-env: {
+      value: [ for item in resource.relocated-env.env : { name: item.name, value: item.value } ]
+    }
+    cron-env: {
+      value: [ for item in resource.cron-env.env : { name: item.name, value: item.value } ]
+    }
   }
 }

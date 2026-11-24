@@ -1,0 +1,32 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: { server: input.server, namespace: 'configured' } }
+  inputs: {
+    server:         { type: string }
+    version:        { type: string, default: 'apps/v1' }
+    kind:           { type: string, default: 'deployment' }
+    name:           { type: string, default: 'example' }
+    namespace:      { type: optional(string), default: null }
+    container:      { type: optional(string), default: 'main' }
+    init-container: { type: optional(string), default: null }
+    env: {
+      type:    list(object({ name: string, value: string }))
+      default: [{ name: 'MANAGED', value: 'desired' }]
+    }
+    manager: { type: string, default: 'manager' }
+    force:   { type: boolean, default: false }
+  }
+  resources: {
+    selection: dynamic.env {
+      api-version:     input.version
+      kind:            input.kind
+      metadata:        { name: input.name, namespace: input.namespace }
+      container:       input.container
+      init-container:  input.init-container
+      env:             input.env
+      field-manager:   input.manager
+      force-conflicts: input.force
+    }
+  }
+  outputs: { observed: { value: resource.selection.env } }
+}

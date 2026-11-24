@@ -1,5 +1,5 @@
 stack: {
-  factory: { inputs: { value: 'updated' } }
+  factory: { inputs: { value: 'updated', updated: true, temporary-envs: {} } }
   state: local {
     path: '.unobin/state'
   }

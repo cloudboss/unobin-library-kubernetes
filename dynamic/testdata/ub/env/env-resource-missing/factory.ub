@@ -1,0 +1,14 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: {} }
+  resources: {
+    selection: dynamic.env {
+      api-version: 'v1'
+      kind:        'pOd'
+      metadata:    { name: 'example' }
+      container:   'main'
+      env:         [{ name: 'VALUE', value-from: { resource-field-ref: { divisor: '1' } } }]
+    }
+  }
+  outputs: { observed: { value: resource.selection.env } }
+}

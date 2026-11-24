@@ -1,0 +1,38 @@
+factory: {
+  imports: {
+    core:    'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+  }
+  library-configs: { core: { server: input.server }, dynamic: { server: input.server } }
+  inputs: {
+    divisor: { type: string, default: '1m' }
+
+    server: { type: string }
+    mode:   { type: string }
+    kind:   { type: string, default: 'Deployment' }
+  }
+  resources: {
+    seed: core.config-map {
+      object: { metadata: { name: 'seed', namespace: 'default' } }
+    }
+    selection: dynamic.env {
+      api-version: 'apps/v1'
+      kind:        input.kind
+      metadata:    { name: if input.mode != 'initial' then 'next' else 'example' }
+      container:   if input.mode == 'selector' then resource.seed.object.metadata.uid else 'main'
+      env: [
+        {
+          name: 'CPU'
+          value-from: {
+            resource-field-ref: {
+              resource: 'limits.cpu'
+              divisor: if input.mode == 'divisor'
+                then resource.seed.object.metadata.uid
+                else input.divisor
+            }
+          }
+        },
+      ]
+    }
+  }
+}

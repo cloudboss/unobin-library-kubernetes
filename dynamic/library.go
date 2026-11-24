@@ -8,6 +8,9 @@ import (
 )
 
 func Library() *runtime.Library {
+	env := runtime.MakeResource[
+		svc.EnvResource, *svc.EnvResourceOutput, *config.Configuration,
+	]((&svc.EnvResource{}).ResourceDefinition())
 	return &runtime.Library{
 		Name:        "kubernetes-dynamic",
 		Description: "Kubernetes objects for Unobin.",
@@ -28,6 +31,8 @@ func Library() *runtime.Library {
 			"annotations": runtime.MakeResource[
 				svc.AnnotationsResource, *svc.AnnotationsResourceOutput, *config.Configuration,
 			]((&svc.AnnotationsResource{}).ResourceDefinition()),
+			"env": svc.EnvRegistration[svc.EnvResource, *svc.EnvResourceOutput](
+				env, env.Read, env.KnownReplacementReasons),
 			"labels": runtime.MakeResource[
 				svc.LabelsResource, *svc.LabelsResourceOutput, *config.Configuration,
 			]((&svc.LabelsResource{}).ResourceDefinition()),

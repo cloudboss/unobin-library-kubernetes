@@ -44,8 +44,10 @@ func run() error {
 		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("expected deleted ConfigMap, got %v", err)
 		}
-		_, err := api.CoreV1().Namespaces().Get(ctx, "default", metav1.GetOptions{})
-		return err
+		if _, err := api.CoreV1().Namespaces().Get(ctx, "default", metav1.GetOptions{}); err != nil {
+			return err
+		}
+		return verifyEnvDestroyed(ctx, api, dir)
 	}
 	if err != nil {
 		return err
@@ -93,5 +95,5 @@ func run() error {
 	if absent, ok := snapshot.Outputs["absent"]; !ok || absent != nil {
 		return fmt.Errorf("missing ConfigMap lookup must return null")
 	}
-	return nil
+	return verifyEnv(ctx, api, snapshot, phase, dir)
 }
