@@ -78,6 +78,7 @@ func verifyServiceAccount() error {
 		value = "updated"
 	}
 	identities := map[string]identityServiceAccount{}
+	var explicit *corev1.ServiceAccount
 	for _, account := range list.Items {
 		role := account.Labels["role"]
 		if role != "explicit" && role != "defaulted" {
@@ -102,6 +103,9 @@ func verifyServiceAccount() error {
 			return fmt.Errorf("ServiceAccount %s references differ", account.Name)
 		}
 		identities[role] = identityServiceAccount{Name: account.Name, UID: string(account.UID)}
+		if role == "explicit" {
+			explicit = &account
+		}
 	}
 	if phase == "applied" {
 		body, err := json.Marshal(identities)
@@ -114,6 +118,12 @@ func verifyServiceAccount() error {
 	} else if !reflect.DeepEqual(identities, initial) {
 		return fmt.Errorf("ServiceAccount identities changed after update")
 	}
-	fmt.Printf("ok: ServiceAccounts match the %s configuration\n", phase)
+	if explicit == nil {
+		return fmt.Errorf("missing scenario ServiceAccount with role explicit")
+	}
+	if err := verifyServiceAccountLookups(ctx, build, phase, explicit); err != nil {
+		return err
+	}
+	fmt.Printf("ok: ServiceAccounts and lookups match the %s configuration\n", phase)
 	return nil
 }

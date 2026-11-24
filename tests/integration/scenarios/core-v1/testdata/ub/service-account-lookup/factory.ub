@@ -1,0 +1,23 @@
+factory: {
+  imports: {
+    core:      'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    bootstrap: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+  }
+  library-configs: {
+    core:      { server: resource.anchor.server }
+    bootstrap: { server: input.server }
+  }
+  inputs: { server: { type: string } }
+  resources: {
+    anchor: bootstrap.config-map {
+      object: {
+        metadata: { name: 'anchor', namespace: 'default' }
+      }
+    }
+  }
+  data-sources: {
+    lookup: core.service-account {
+      metadata: { name: 'lookup' }
+    }
+  }
+}

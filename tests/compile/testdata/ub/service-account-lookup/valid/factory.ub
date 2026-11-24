@@ -1,0 +1,35 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    lookup: core.service-account {
+      metadata: {
+        name: '''\-
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbb
+          bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccccccccccccccccccccccccccccc
+          ccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+          '''
+        namespace:   null
+        annotations: { 'EXAMPLE.COM/Key': 'arbitrary value', 'İ.COM/Key': 'another' }
+        labels: {
+          'example.com/Key': 'kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk'
+          empty:             ''
+          'bad key':         null
+        }
+      }
+    }
+    omitted: core.service-account {
+      metadata: {}
+    }
+    nulls: core.service-account {
+      metadata: { name: null, annotations: null, labels: {} }
+    }
+  }
+  outputs: {
+    metadata:      { value: data-source.lookup.metadata }
+    automount:     { value: data-source.lookup.automount-service-account-token }
+    default-token: { value: data-source.lookup.default-secret-name }
+    image-links:   { value: data-source.lookup.image-pull-secrets }
+    links:         { value: data-source.lookup.secrets }
+  }
+}

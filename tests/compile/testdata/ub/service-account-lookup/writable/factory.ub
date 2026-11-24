@@ -1,0 +1,25 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    generated: core.service-account {
+      metadata: { generate-name: 'lookup-' }
+    }
+    secret: core.service-account {
+      metadata: {}
+      secrets:  []
+    }
+    pull-secret: core.service-account {
+      metadata:           {}
+      image-pull-secrets: []
+    }
+    automount: core.service-account {
+      metadata:                        {}
+      automount-service-account-token: true
+    }
+    token: core.service-account {
+      metadata:            {}
+      default-secret-name: 'synthetic'
+    }
+  }
+}

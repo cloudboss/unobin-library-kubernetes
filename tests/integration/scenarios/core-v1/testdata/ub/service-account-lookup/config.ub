@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { server: 'SERVICE_ACCOUNT_LOOKUP_SERVER' } }
+  state: local {
+    path: 'state'
+  }
+  encryption: noop {}
+}

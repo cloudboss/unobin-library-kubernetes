@@ -242,6 +242,19 @@ factory: {
         labels: { 'unobin.cloudboss.com/nodes-integration-absent': input.nodes-selector }
       }
     }
+    service-account-lookup-existing: core.service-account {
+      metadata: {
+        name:      resource.service-account-explicit.object.metadata.name
+        namespace: resource.service-account-explicit.object.metadata.namespace
+        labels:    { lookup: 'different' }
+      }
+    }
+    service-account-lookup-missing: core.service-account {
+      metadata: {
+        name:        'unobin-it-service-account-lookup-absent'
+        annotations: { 'EXAMPLE.COM/Lookup': 'fallback', omitted: null }
+      }
+    }
     service-lookup-existing: core.service {
       metadata: {
         name:        'kubernetes'
@@ -342,6 +355,20 @@ factory: {
         defaulted-name:      resource.service-account-defaulted.object.metadata.name
         defaulted-uid:       resource.service-account-defaulted.object.metadata.uid
         default-secret-name: resource.service-account-defaulted.default-secret-name
+      }
+    }
+    service-account-lookup: {
+      value: {
+        metadata:                    data-source.service-account-lookup-existing.metadata
+        automount:                   data-source.service-account-lookup-existing.automount-service-account-token
+        secrets:                     data-source.service-account-lookup-existing.secrets
+        image-pull-secrets:          data-source.service-account-lookup-existing.image-pull-secrets
+        default-secret-name:         data-source.service-account-lookup-existing.default-secret-name
+        missing-metadata:            data-source.service-account-lookup-missing.metadata
+        missing-automount:           data-source.service-account-lookup-missing.automount-service-account-token
+        missing-secrets:             data-source.service-account-lookup-missing.secrets
+        missing-image-pull-secrets:  data-source.service-account-lookup-missing.image-pull-secrets
+        missing-default-secret-name: data-source.service-account-lookup-missing.default-secret-name
       }
     }
     service-lookup: {

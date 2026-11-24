@@ -49,6 +49,10 @@ func Library() *runtime.Library {
 			"service": runtime.MakeDataSource[
 				svc.ServiceDataSource, *svc.ServiceDataSourceOutput, *config.Configuration,
 			](),
+			"service-account": runtime.MakeDataSource[
+				svc.ServiceAccountDataSource, *svc.ServiceAccountDataSourceOutput,
+				*config.Configuration,
+			](),
 		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"config-map-data": runtime.MakeResource[

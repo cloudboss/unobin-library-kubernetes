@@ -1,0 +1,38 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server } }
+  inputs: {
+    server:      { type: string }
+    name:        { type: optional(string) }
+    namespace:   { type: optional(string) }
+    annotations: { type: optional(map(optional(string))) }
+    labels:      { type: optional(map(optional(string))) }
+    long-label:  { type: optional(string) }
+  }
+  resources: {
+    anchor: core.config-map {
+      object: {
+        metadata: { name: 'anchor', namespace: 'default' }
+      }
+    }
+  }
+  data-sources: {
+    lookup: core.service-account {
+      metadata: {
+        name:        input.name
+        namespace:   input.namespace
+        annotations: input.annotations
+        labels: if input.long-label == null
+          then input.labels
+          else { for key in [input.long-label] : key => '' }
+      }
+    }
+  }
+  outputs: {
+    metadata:      { value: data-source.lookup.metadata }
+    automount:     { value: data-source.lookup.automount-service-account-token }
+    default-token: { value: data-source.lookup.default-secret-name }
+    image-links:   { value: data-source.lookup.image-pull-secrets }
+    links:         { value: data-source.lookup.secrets }
+  }
+}
