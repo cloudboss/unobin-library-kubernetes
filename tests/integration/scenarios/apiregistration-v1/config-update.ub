@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { revision: 'updated', priority: 2001, port: 8443 } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

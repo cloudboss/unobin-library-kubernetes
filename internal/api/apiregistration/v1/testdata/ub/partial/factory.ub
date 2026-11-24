@@ -1,0 +1,43 @@
+factory: {
+  imports: {
+    registration: 'github.com/cloudboss/unobin-library-kubernetes//api/apiregistration/v1'
+  }
+  library-configs: { registration: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs: {
+    server:           { type: string }
+    metadata:         { type: opaque }
+    group:            { type: string }
+    service:          { type: opaque }
+    ca-bundle:        { type: opaque }
+    skip:             { type: opaque }
+    group-priority:   { type: integer }
+    version-priority: { type: integer }
+  }
+  actions: {
+    seed: registration.seed {
+      echo-group:          input.group
+      echo-service:        input.service
+      echo-ca-bundle:      input.ca-bundle
+      echo-skip:           input.skip
+      echo-group-priority: input.group-priority
+    }
+  }
+  resources: {
+    example: registration.api-service {
+      metadata: input.metadata
+      spec: {
+        group:                    action.seed.group
+        version:                  'v1'
+        group-priority-minimum:   action.seed.group-priority
+        version-priority:         input.version-priority
+        ca-bundle:                action.seed.ca-bundle
+        insecure-skip-tls-verify: action.seed.skip
+        service:                  action.seed.service
+      }
+    }
+  }
+  outputs: {
+    metadata: { value: resource.example.metadata }
+    uid:      { value: resource.example.uid }
+  }
+}

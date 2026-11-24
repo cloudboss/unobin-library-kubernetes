@@ -1,0 +1,27 @@
+factory: {
+  imports: {
+    registration: 'github.com/cloudboss/unobin-library-kubernetes//api/apiregistration/v1'
+    seed:         'github.com/cloudboss/unobin-library-kubernetes//api/apiregistration/v1'
+  }
+  library-configs: {
+    registration: { server: action.seed.server, insecure-skip-tls-verify: true }
+    seed:         { server: input.server, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:   { type: string }
+    metadata: { type: opaque }
+    spec:     { type: opaque }
+  }
+  actions: {
+    seed: seed.seed {
+      echo-server: input.server
+    }
+  }
+  resources: {
+    example: registration.api-service {
+      metadata: input.metadata
+      spec:     input.spec
+    }
+  }
+  outputs: { uid: { value: resource.example.uid } }
+}

@@ -1,0 +1,39 @@
+factory: {
+  imports: {
+    registration: 'github.com/cloudboss/unobin-library-kubernetes//api/apiregistration/v1'
+  }
+  library-configs: { registration: {} }
+  inputs: {
+    revision: { type: string }
+    priority: { type: integer }
+    port:     { type: integer }
+  }
+  resources: {
+    local: registration.api-service {
+      metadata: {
+        name:        'v1.apiregistration-local.unobin-integration.test'
+        annotations: { 'test.unobin.cloudboss.io/revision': input.revision }
+      }
+      spec: {
+        group:                  'apiregistration-local.unobin-integration.test'
+        version:                'v1'
+        group-priority-minimum: input.priority
+        version-priority:       10
+      }
+    }
+    remote: registration.api-service {
+      metadata: {
+        name:        'v1.apiregistration-remote.unobin-integration.test'
+        annotations: { 'test.unobin.cloudboss.io/revision': input.revision }
+      }
+      spec: {
+        group:                    'apiregistration-remote.unobin-integration.test'
+        version:                  'v1'
+        group-priority-minimum:   input.priority
+        version-priority:         10
+        insecure-skip-tls-verify: true
+        service: { name: 'unobin-it-absent-aggregation', namespace: 'default', port: input.port }
+      }
+    }
+  }
+}
