@@ -12,6 +12,8 @@ stack: {
       nodes-selector:                 'first'
       persistent-volume-backing-path: '/unobin/first'
       persistent-volume-capacity:     '1Gi'
+      persistent-volume-lookup-value: 'first'
+      temporary-pv-lookups:           { fixture: true }
       persistent-volume-claim-value:  'first'
       pod-deadline:                   3600
       pod-epoch:                      'first'

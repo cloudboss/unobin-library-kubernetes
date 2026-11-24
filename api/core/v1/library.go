@@ -39,6 +39,10 @@ func Library() *runtime.Library {
 			"nodes": runtime.MakeDataSource[
 				svc.NodesDataSource, *svc.NodesDataSourceOutput, *config.Configuration,
 			](),
+			"persistent-volume": runtime.MakeDataSource[
+				svc.PersistentVolumeDataSource, *svc.PersistentVolumeDataSourceOutput,
+				*config.Configuration,
+			](),
 			"persistent-volume-claim": runtime.MakeDataSource[
 				svc.PersistentVolumeClaimDataSource, *svc.PersistentVolumeClaimDataSourceOutput,
 				*config.Configuration,

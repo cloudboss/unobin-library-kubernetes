@@ -1,0 +1,18 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server } }
+  actions: {
+    seed: core.seed {
+      name-input:  input.name
+      label-input: input.label
+    }
+  }
+  data-sources: {
+    volume: core.persistent-volume {
+      metadata: {
+        name:   action.seed.name
+        labels: { pending: action.seed.label, settled: input.settled }
+      }
+    }
+  }
+}

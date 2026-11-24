@@ -1,0 +1,18 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server } }
+  resources: {
+    anchor: core.anchor {
+      value: 'unchanged'
+    }
+  }
+  data-sources: {
+    volume: core.persistent-volume {
+      metadata: input.metadata
+    }
+  }
+  outputs: {
+    metadata: { value: data-source.volume.metadata }
+    csi:      { value: data-source.volume.spec.persistent-volume-source.csi }
+  }
+}

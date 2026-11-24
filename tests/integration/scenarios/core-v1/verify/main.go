@@ -15,6 +15,7 @@ func main() {
 		{"nodes", verifyNodes},
 		{"node-taint", verifyNodeTaint},
 		{"persistent-volume", verifyPersistentVolume},
+		{"persistent-volume-lookup", verifyPersistentVolumeLookup},
 		{"persistent-volume-claim", verifyPersistentVolumeClaim},
 		{"pod", verifyPod},
 		{"secret", verifySecret},

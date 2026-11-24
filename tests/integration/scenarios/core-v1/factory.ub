@@ -21,6 +21,8 @@ factory: {
     nodes-selector:                 { type: string }
     persistent-volume-backing-path: { type: string }
     persistent-volume-capacity:     { type: string }
+    persistent-volume-lookup-value: { type: string }
+    temporary-pv-lookups:           { type: map(boolean) }
     persistent-volume-claim-value:  { type: string }
     pod-deadline:                   { type: integer }
     pod-epoch:                      { type: string }
@@ -100,7 +102,11 @@ factory: {
     }
     persistent-volume-update: core.persistent-volume {
       object: {
-        metadata: { name: 'unobin-it-pv-update' }
+        metadata: {
+          name:        'unobin-it-pv-update'
+          labels:      { 'example.com/fixture': 'persistent-volume' }
+          annotations: { 'example.com/fixture': 'read by the group scenario' }
+        }
         spec: {
           access-modes:             ['ReadWriteOnce']
           storage-class-name:       'unobin-it-static-volume'
@@ -117,6 +123,25 @@ factory: {
           storage-class-name:       'unobin-it-static-volume'
           capacity:                 { storage: '1Gi' }
           persistent-volume-source: { host-path: { path: input.persistent-volume-backing-path } }
+        }
+      }
+    }
+    persistent-volume-lookup-fixture: core.persistent-volume {
+      object: {
+        metadata: {
+          name:        'unobin-it-pv-lookup-fixture'
+          labels:      { 'example.com/fixture': 'persistent-volume-lookup' }
+          annotations: { 'example.com/fixture': 'retained after lookup removal' }
+        }
+        spec: {
+          access-modes:                     ['ReadWriteOnce']
+          capacity:                         { storage: '1Gi' }
+          persistent-volume-reclaim-policy: 'Retain'
+          storage-class-name:               'unobin-it-static-volume'
+          volume-mode:                      'Filesystem'
+          persistent-volume-source: {
+            host-path: { path: '/unobin/lookup-fixture', type: 'DirectoryOrCreate' }
+          }
         }
       }
     }
@@ -281,6 +306,17 @@ factory: {
         labels:      { omitted: null }
       }
     }
+    persistent-volume-existing: core-namespace-lookup.persistent-volume {
+      metadata: {
+        name:        resource.persistent-volume-update.object.metadata.name
+        labels:      { lookup: input.persistent-volume-lookup-value }
+        annotations: { 'EXAMPLE.COM/Lookup': input.persistent-volume-lookup-value }
+      }
+    }
+    persistent-volume-temporary: core-namespace-lookup.persistent-volume {
+      @for-each: input.temporary-pv-lookups
+      metadata:  { name: resource.persistent-volume-lookup-fixture.object.metadata.name }
+    }
     namespaces: core.namespaces {
       @depends-on: [resource.namespace-project]
     }
@@ -375,6 +411,12 @@ factory: {
       value: {
         updated-uid:     resource.persistent-volume-update.object.metadata.uid
         replacement-uid: resource.persistent-volume-replacement.object.metadata.uid
+      }
+    }
+    persistent-volume-lookup: {
+      value: {
+        metadata: data-source.persistent-volume-existing.metadata
+        spec:     data-source.persistent-volume-existing.spec
       }
     }
     persistent-volume-claim: {

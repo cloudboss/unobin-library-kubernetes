@@ -12,6 +12,8 @@ stack: {
       nodes-selector:                 'second'
       persistent-volume-backing-path: '/unobin/second'
       persistent-volume-capacity:     '2Gi'
+      persistent-volume-lookup-value: 'updated'
+      temporary-pv-lookups:           {}
       persistent-volume-claim-value:  'updated'
       pod-deadline:                   1800
       pod-epoch:                      'updated'

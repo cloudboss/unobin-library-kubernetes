@@ -1,0 +1,30 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    empty-name: core.persistent-volume {
+      metadata: { name: '' }
+    }
+    long-name: core.persistent-volume {
+      metadata: {
+        name: '''\-
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          '''
+      }
+    }
+    invalid-name: core.persistent-volume {
+      metadata: { name: 'Bad_Name' }
+    }
+    invalid-label-key: core.persistent-volume {
+      metadata: { name: 'disk', labels: { 'EXAMPLE.COM/Label': 'value' } }
+    }
+    invalid-label-value: core.persistent-volume {
+      metadata: { name: 'disk', labels: { valid: 'bad value' } }
+    }
+    invalid-annotation-key: core.persistent-volume {
+      metadata: { name: 'disk', annotations: { 'bad key': 'value' } }
+    }
+  }
+}

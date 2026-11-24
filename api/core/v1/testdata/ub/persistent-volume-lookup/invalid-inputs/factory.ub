@@ -1,0 +1,33 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    missing-metadata: core.persistent-volume {}
+    null-metadata: core.persistent-volume {
+      metadata: null
+    }
+    list-metadata: core.persistent-volume {
+      metadata: [{ name: 'disk' }]
+    }
+    missing-name: core.persistent-volume {
+      metadata: {}
+    }
+    null-name: core.persistent-volume {
+      metadata: { name: null }
+    }
+    null-label: core.persistent-volume {
+      metadata: { name: 'disk', labels: { empty: null } }
+    }
+    numeric-annotation: core.persistent-volume {
+      metadata: { name: 'disk', annotations: { number: 12 } }
+    }
+    resource-metadata: core.persistent-volume {
+      metadata: { name: 'disk', namespace: 'default', generate-name: 'disk-' }
+    }
+    resource-inputs: core.persistent-volume {
+      metadata:           { name: 'disk' }
+      spec:               { capacity: { storage: '1Gi' } }
+      ignore-annotations: ['.*']
+    }
+  }
+}
