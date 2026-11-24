@@ -53,6 +53,10 @@ func Library() *runtime.Library {
 			"secret": runtime.MakeDataSource[
 				svc.SecretDataSource, *svc.SecretDataSourceOutput, *config.Configuration,
 			](),
+			"server-version": runtime.MakeDataSource[
+				svc.ServerVersionDataSource, *svc.ServerVersionDataSourceOutput,
+				*config.Configuration,
+			](),
 			"service": runtime.MakeDataSource[
 				svc.ServiceDataSource, *svc.ServiceDataSourceOutput, *config.Configuration,
 			](),

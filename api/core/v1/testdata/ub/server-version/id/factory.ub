@@ -1,0 +1,8 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    cluster: core.server-version {}
+  }
+  outputs: { id: { value: data-source.cluster.id } }
+}

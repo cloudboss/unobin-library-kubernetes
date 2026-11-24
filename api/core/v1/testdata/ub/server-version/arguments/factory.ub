@@ -1,0 +1,16 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  inputs:          { argument: { type: string } }
+  data-sources: {
+    computed-field: core.server-version {
+      version: 'v1.34'
+    }
+    configuration-field: core.server-version {
+      server: input.argument
+    }
+    undeclared-field: core.server-version {
+      metadata: {}
+    }
+  }
+}

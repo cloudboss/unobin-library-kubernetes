@@ -1,0 +1,16 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { kubeconfig: input.kubeconfig, current-context: 'selected' } }
+  inputs:          { kubeconfig: { type: string } }
+  resources: {
+    managed: core.namespace {
+      object: { metadata: { name: 'managed' } }
+    }
+  }
+  data-sources: {
+    cluster: core.server-version {
+      @depends-on: [resource.managed]
+    }
+  }
+  outputs: { version: { value: data-source.cluster.version } }
+}

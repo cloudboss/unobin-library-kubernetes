@@ -341,6 +341,7 @@ factory: {
         annotations: { 'EXAMPLE.COM/Lookup': 'fallback', omitted: null }
       }
     }
+    server-version: core.server-version {}
     service-lookup-existing: core.service {
       metadata: {
         name:        'kubernetes'
@@ -486,6 +487,20 @@ factory: {
         missing-secrets:             data-source.service-account-lookup-missing.secrets
         missing-image-pull-secrets:  data-source.service-account-lookup-missing.image-pull-secrets
         missing-default-secret-name: data-source.service-account-lookup-missing.default-secret-name
+      }
+    }
+    server-version: {
+      value: {
+        version:        data-source.server-version.version
+        build-date:     data-source.server-version.build-date
+        compiler:       data-source.server-version.compiler
+        git-commit:     data-source.server-version.git-commit
+        git-tree-state: data-source.server-version.git-tree-state
+        git-version:    data-source.server-version.git-version
+        go-version:     data-source.server-version.go-version
+        major:          data-source.server-version.major
+        minor:          data-source.server-version.minor
+        platform:       data-source.server-version.platform
       }
     }
     service-lookup: {

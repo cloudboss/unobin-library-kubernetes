@@ -23,6 +23,7 @@ func main() {
 		{"service-account", verifyServiceAccount},
 		{"default-service-account", verifyDefaultServiceAccount},
 		{"service-lookup", verifyServiceLookup},
+		{"server-version", verifyServerVersion},
 	}
 	for _, check := range checks {
 		if err := check.run(); err != nil {
