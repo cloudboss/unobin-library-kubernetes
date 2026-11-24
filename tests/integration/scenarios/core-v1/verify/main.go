@@ -19,6 +19,7 @@ func main() {
 		{"secret", verifySecret},
 		{"service", verifyService},
 		{"service-account", verifyServiceAccount},
+		{"default-service-account", verifyDefaultServiceAccount},
 		{"service-lookup", verifyServiceLookup},
 	}
 	for _, check := range checks {

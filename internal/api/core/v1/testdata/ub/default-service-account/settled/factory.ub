@@ -1,0 +1,28 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: {
+    core: {
+      server:                   input.server
+      token:                    input.token
+      kubeconfig:               input.kubeconfig
+      current-context:          input.current-context
+      insecure-skip-tls-verify: true
+    }
+  }
+  inputs: {
+    server:             { type: string }
+    token:              { type: optional(string), default: null }
+    kubeconfig:         { type: optional(string), default: null }
+    current-context:    { type: optional(string), default: null }
+    object:             { type: opaque }
+    ignore-annotations: { type: optional(list(string)), default: null }
+    ignore-labels:      { type: optional(list(string)), default: null }
+  }
+  resources: {
+    account: core.default-service-account {
+      object:             input.object
+      ignore-annotations: input.ignore-annotations
+      ignore-labels:      input.ignore-labels
+    }
+  }
+}

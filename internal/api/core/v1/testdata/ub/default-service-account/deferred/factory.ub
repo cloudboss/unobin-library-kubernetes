@@ -1,0 +1,28 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: {
+    core: { server: input.server, insecure-skip-tls-verify: true }
+  }
+  inputs: {
+    server:    { type: string }
+    namespace: { type: string }
+    known:     { type: string }
+    value:     { type: string }
+  }
+  actions: {
+    seed: core.seed {
+      echo-namespace: input.namespace
+      echo-value:     input.value
+    }
+  }
+  resources: {
+    account: core.default-service-account {
+      object: {
+        metadata: {
+          namespace: action.seed.namespace
+          labels:    { known: input.known, deferred: action.seed.value }
+        }
+      }
+    }
+  }
+}

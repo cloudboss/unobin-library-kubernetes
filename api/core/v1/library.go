@@ -73,6 +73,10 @@ func Library() *runtime.Library {
 			"persistent-volume-claim": svc.PersistentVolumeClaimRegistration[
 				svc.PersistentVolumeClaimResource, *svc.PersistentVolumeClaimResourceOutput,
 			](pvc, pvc.Read, pvc.KnownReplacementReasons),
+			"default-service-account": runtime.MakeResource[
+				svc.DefaultServiceAccountResource, *svc.DefaultServiceAccountResourceOutput,
+				*config.Configuration,
+			]((&svc.DefaultServiceAccountResource{}).ResourceDefinition()),
 			"service-account": runtime.MakeResource[
 				svc.ServiceAccountResource, *svc.ServiceAccountResourceOutput, *config.Configuration,
 			]((&svc.ServiceAccountResource{}).ResourceDefinition()),

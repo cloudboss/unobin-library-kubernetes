@@ -174,6 +174,18 @@ factory: {
       }
       spec: { port: [{ port: 81 }] }
     }
+    default-service-account: core.default-service-account {
+      object: {
+        metadata: {
+          namespace:   data-source.default-service-account-before.metadata.namespace
+          labels:      { value: input.service-account-value }
+          annotations: { 'example.com/value': input.service-account-value }
+        }
+        automount-service-account-token: input.service-account-automount
+        image-pull-secrets:              [{ name: input.service-account-value }]
+        secrets:                         [{ name: input.service-account-value }]
+      }
+    }
     service-account-explicit: core.service-account {
       object: {
         metadata: {
@@ -244,6 +256,9 @@ factory: {
       metadata: {
         labels: { 'unobin.cloudboss.com/nodes-integration-absent': input.nodes-selector }
       }
+    }
+    default-service-account-before: core.service-account {
+      metadata: { name: 'default', namespace: resource.namespace-project.object.metadata.name }
     }
     service-account-lookup-existing: core.service-account {
       metadata: {
@@ -350,6 +365,20 @@ factory: {
         ports:            resource.service-stable.spec.port
         replacement-name: resource.service-replaced.name
         replacement-uid:  resource.service-replaced.uid
+      }
+    }
+    default-service-account: {
+      value: {
+        original-uid:        data-source.default-service-account-before.metadata.uid
+        uid:                 resource.default-service-account.object.metadata.uid
+        namespace:           resource.default-service-account.object.metadata.namespace
+        name:                resource.default-service-account.object.metadata.name
+        image-pull-secrets:  resource.default-service-account.object.image-pull-secrets
+        secrets:             resource.default-service-account.object.secrets
+        automount:           resource.default-service-account.object.automount-service-account-token
+        default-secret-name: resource.default-service-account.default-secret-name
+        api-version:         resource.default-service-account.api-version
+        kind:                resource.default-service-account.kind
       }
     }
     service-account: {

@@ -4,6 +4,7 @@ go 1.26.2
 
 require (
 	github.com/cloudboss/unobin v0.13.0
+	github.com/hashicorp/go-version v1.9.0
 	github.com/robfig/cron v1.2.0
 	github.com/stretchr/testify v1.12.1
 	gopkg.in/evanphx/json-patch.v4 v4.12.0
