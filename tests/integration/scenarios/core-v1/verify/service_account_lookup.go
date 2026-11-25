@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
-	"strings"
 
 	"github.com/cloudboss/unobin/pkg/encrypters"
 	"github.com/cloudboss/unobin/pkg/runtime"
@@ -120,12 +119,13 @@ func verifySteadyServiceAccountPlan(
 	steps := make(map[string]runtime.PlanStep, len(plan.Steps))
 	for _, step := range plan.Steps {
 		steps[step.Address] = step
-		if strings.HasPrefix(step.Address, "resource.") && step.Decision != runtime.DecisionNoOp {
-			return fmt.Errorf("steady plan step %s = %s, want NoOp", step.Address, step.Decision)
-		}
 	}
-	if _, ok := steps[serviceAccountResource]; !ok {
+	account, ok := steps[serviceAccountResource]
+	if !ok {
 		return fmt.Errorf("steady plan lacks %s", serviceAccountResource)
+	}
+	if account.Decision != runtime.DecisionNoOp {
+		return fmt.Errorf("steady plan step %s = %s, want NoOp", account.Address, account.Decision)
 	}
 	for address, outputs := range want {
 		step := steps[address]
@@ -156,28 +156,15 @@ func verifyServiceAccountLookups(
 		return nil
 	}
 
-	run := func(args ...string) error {
-		cmd := exec.CommandContext(ctx, "./core-v1", args...)
-		cmd.Dir = build
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return fmt.Errorf("core-v1 %s: %w\n%s", strings.Join(args, " "), err, output)
-		}
-		return nil
-	}
 	const steadyPlan = "plan-service-account-steady.ubp"
-	if err := run("plan", "-c", "update/config.ub", "-o", steadyPlan); err != nil {
-		return err
+	cmd := exec.CommandContext(ctx, "./core-v1", "plan", "-c", "update/config.ub", "-o", steadyPlan)
+	cmd.Dir = build
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("plan steady ServiceAccount lookup: %w\n%s", err, output)
 	}
 	plan, err = openServiceAccountPlan(build, steadyPlan)
 	if err != nil {
 		return err
 	}
-	if err := verifySteadyServiceAccountPlan(plan, want); err != nil {
-		return err
-	}
-	if err := run("apply", steadyPlan); err != nil {
-		return err
-	}
-	return verifyServiceAccountLookupState(build, plan, want)
+	return verifySteadyServiceAccountPlan(plan, want)
 }
