@@ -1,0 +1,15 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server: { type: string }
+    port:   { type: number }
+  }
+  library-configs: { core: { server: input.server } }
+  data-sources: {
+    endpoint: core.endpoints {
+      metadata: { name: 'lookup.test' }
+      subset:   [{ port: [{ port: @core.lookup({ selected: input.port }, 'selected') }] }]
+    }
+  }
+  outputs: { subset: { value: data-source.endpoint.subset } }
+}

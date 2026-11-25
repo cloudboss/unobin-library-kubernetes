@@ -30,6 +30,9 @@ func Library() *runtime.Library {
 			"config-map": runtime.MakeDataSource[
 				svc.ConfigMapDataSource, *svc.ConfigMapDataSourceOutput, *config.Configuration,
 			](),
+			"endpoints": runtime.MakeDataSource[
+				svc.EndpointsDataSource, *svc.EndpointsDataSourceOutput, *config.Configuration,
+			](),
 			"namespace": runtime.MakeDataSource[
 				svc.NamespaceDataSource, *svc.NamespaceDataSourceOutput, *config.Configuration,
 			](),

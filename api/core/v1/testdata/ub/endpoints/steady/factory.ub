@@ -1,0 +1,17 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server, namespace: 'configured' } }
+  inputs:          { server: { type: string }, port: { type: optional(number), default: null } }
+  resources: {
+    stable: core.stable {
+      value: 'unchanged'
+    }
+  }
+  data-sources: {
+    endpoint: core.endpoints {
+      @depends-on: [resource.stable]
+      metadata:    input.metadata
+      subset:      if input.port == null then null else [{ port: [{ port: input.port }] }]
+    }
+  }
+}

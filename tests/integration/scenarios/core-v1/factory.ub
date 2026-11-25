@@ -75,6 +75,33 @@ factory: {
       wait-for-default-service-account: true
       delete-timeout:                   '30s'
     }
+    endpoints-lookup-fixture: dynamic.object {
+      manifest: '''|-
+        apiVersion: v1
+        kind: Endpoints
+        metadata:
+          name: unobin-it-core-v1-endpoints-lookup
+          namespace: default
+          labels:
+            example.com/fixture: endpoints
+          annotations:
+            example.com/fixture: standalone
+        subsets:
+        - addresses:
+          - ip: 192.0.2.12
+            hostname: primary
+            nodeName: worker-a
+          notReadyAddresses:
+          - ip: 192.0.2.11
+          ports:
+          - { name: dns, port: 53, protocol: UDP }
+          - { name: api, port: 8080, protocol: TCP }
+        - addresses:
+          - ip: "2001:db8::1"
+          ports:
+          - { name: alternate, port: 9090 }
+        '''
+    }
     node-taint-fixture: dynamic.object {
       manifest: '''|-
         apiVersion: v1
@@ -340,6 +367,31 @@ factory: {
       metadata:  { name: 'unobin-it-config-map-info-absent', namespace: 'default' }
       immutable: true
     }
+    endpoints-lookup-existing: core-namespace-lookup.endpoints {
+      metadata: {
+        name:          resource.endpoints-lookup-fixture.name
+        generate-name: 'ignored-'
+        labels:        { lookup: 'ignored' }
+        annotations:   { lookup: 'ignored' }
+      }
+      subset: [{ port: [{ port: 1234 }] }]
+    }
+    endpoints-lookup-missing: core-namespace-lookup.endpoints {
+      metadata: {
+        name:          'unobin-it-core-v1-endpoints-lookup-absent'
+        generate-name: 'fallback-'
+        annotations:   { 'EXAMPLE.COM/Lookup': 'fallback text', omitted: null }
+        labels:        { lookup: '', omitted: null }
+      }
+      subset: [
+        {},
+        {
+          address:           [{ ip: 'not parsed', node-name: null }]
+          not-ready-address: [{ ip: '2001:DB8::2', hostname: 'odd name' }]
+          port:              [{ port: 1099511627776, protocol: null }, { port: -1, protocol: '' }]
+        },
+      ]
+    }
     namespace-lookup-existing: core-namespace-lookup.namespace {
       metadata: {
         name:        'default'
@@ -445,6 +497,18 @@ factory: {
         missing-data:        data-source.config-map-lookup-missing.data
         missing-binary-data: data-source.config-map-lookup-missing.binary-data
         missing-immutable:   data-source.config-map-lookup-missing.immutable
+      }
+    }
+    endpoints-lookup: {
+      value: {
+        existing: {
+          metadata: data-source.endpoints-lookup-existing.metadata
+          subset:   data-source.endpoints-lookup-existing.subset
+        }
+        missing: {
+          metadata: data-source.endpoints-lookup-missing.metadata
+          subset:   data-source.endpoints-lookup-missing.subset
+        }
       }
     }
     namespace: {

@@ -10,6 +10,7 @@ func main() {
 		{"config-map", verifyConfigMap},
 		{"config-map-data", verifyConfigMapData},
 		{"config-map-lookup", verifyConfigMapLookup},
+		{"endpoints-lookup", verifyEndpointsLookup},
 		{"namespace", verifyNamespace},
 		{"namespace-lookup", verifyNamespaceLookup},
 		{"namespaces", verifyNamespaceList},

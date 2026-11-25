@@ -1,0 +1,21 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server, namespace: 'configured' } }
+  inputs:          { server: { type: string } }
+  actions: {
+    seed: core.seed {
+      metadata-input: input.metadata
+      port-input:     input.port
+    }
+  }
+  data-sources: {
+    endpoint: core.endpoints {
+      metadata: action.seed.metadata
+      subset:   if action.seed.port == null then null else [{ port: [{ port: action.seed.port }] }]
+    }
+  }
+  outputs: {
+    metadata: { value: data-source.endpoint.metadata }
+    subset:   { value: data-source.endpoint.subset }
+  }
+}
