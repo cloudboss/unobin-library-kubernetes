@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -328,6 +329,57 @@ func TestValidatingAdmissionPolicyWriteProjectionAndReplacement(t *testing.T) {
 	}, credentials)
 }
 
+func TestValidatingAdmissionPolicyRetriesUpdateConflict(t *testing.T) {
+	for _, replace := range []bool{false, true} {
+		name := "refresh resource version"
+		if replace {
+			name = "reject replacement"
+		}
+		t.Run(name, func(t *testing.T) {
+			input, _ := populatedPolicy()
+			live := livePolicy()
+			var calls []string
+			cfg := policyAPI(t, func(w http.ResponseWriter, req *http.Request) {
+				calls = append(calls, req.Method)
+				require.Equal(t, policyEndpoint+"/policy-generated", req.URL.Path)
+				if req.Method == http.MethodGet {
+					policyResponse(t, w, live)
+					return
+				}
+				require.Equal(t, http.MethodPut, req.Method)
+				var body admissionv1.ValidatingAdmissionPolicy
+				require.NoError(t, json.NewDecoder(req.Body).Decode(&body))
+				want := *live.DeepCopy()
+				want.Spec = nativePolicySpec(input.Spec)
+				want.Labels = policyValue(input.Metadata.Labels)
+				want.Annotations = policyValue(input.Metadata.Annotations)
+				require.Equal(t, want, body)
+				if live.ResourceVersion == "7" {
+					live.ResourceVersion = "8"
+					live.Status.ObservedGeneration = 6
+					if replace {
+						live.UID = "different"
+					}
+					policyStatus(t, w, metav1.StatusReasonConflict)
+					return
+				}
+				policyResponse(t, w, body)
+			})
+			prior := policyPrior{Outputs: savedPolicy(*cfg.Server)}
+			updated, err := input.Update(t.Context(), cfg, prior)
+			if replace {
+				require.True(t, changedPolicyUID(err), "%v", err)
+				require.Nil(t, updated)
+				require.Equal(t, []string{"GET", "PUT", "GET"}, calls)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, prior.Outputs.UID, updated.UID)
+			require.Equal(t, []string{"GET", "PUT", "GET", "PUT"}, calls)
+		})
+	}
+}
+
 func TestValidatingAdmissionPolicyAPIErrors(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
@@ -345,8 +397,8 @@ func TestValidatingAdmissionPolicyAPIErrors(t *testing.T) {
 		{"update absent", "update", metav1.StatusReasonNotFound, false,
 			apierrors.IsNotFound, []string{"GET"}},
 		{"update replaced", "update", "", true, changedPolicyUID, []string{"GET"}},
-		{"update PUT conflict", "update", metav1.StatusReasonConflict, false,
-			apierrors.IsConflict, []string{"GET", "PUT"}},
+		{"update persistent PUT conflict", "update", metav1.StatusReasonConflict, false,
+			apierrors.IsConflict, slices.Repeat([]string{"GET", "PUT"}, 5)},
 		{"update PUT absent", "update", metav1.StatusReasonNotFound, false,
 			apierrors.IsNotFound, []string{"GET", "PUT"}},
 		{"delete absent", "delete", metav1.StatusReasonNotFound, false,
@@ -359,7 +411,7 @@ func TestValidatingAdmissionPolicyAPIErrors(t *testing.T) {
 			var calls []string
 			cfg := policyAPI(t, func(w http.ResponseWriter, req *http.Request) {
 				calls = append(calls, req.Method)
-				if req.Method == http.MethodGet && (len(tc.expectedCalls) == 2 || tc.changedUID) {
+				if req.Method == http.MethodGet && (slices.Contains(tc.expectedCalls, "PUT") || tc.changedUID) {
 					live := livePolicy()
 					if tc.changedUID {
 						live.UID = "different"

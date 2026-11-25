@@ -12,7 +12,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	typedv1 "k8s.io/client-go/kubernetes/typed/admissionregistration/v1"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
@@ -219,19 +221,32 @@ func (r *ValidatingAdmissionPolicyResource) Update(
 	if err != nil {
 		return nil, err
 	}
-	live, err := api.Get(ctx, p.Outputs.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("read ValidatingAdmissionPolicy for update: %w", err)
+	var updated *admissionv1.ValidatingAdmissionPolicy
+	backoff := retry.DefaultRetry
+	attempts := 0
+	attempt := func(ctx context.Context) (bool, error) {
+		attempts++
+		live, err := api.Get(ctx, p.Outputs.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, fmt.Errorf("read ValidatingAdmissionPolicy for update: %w", err)
+		}
+		if err := checkPolicyUID(p.Outputs, live); err != nil {
+			return false, err
+		}
+		live.Spec = nativePolicySpec(r.Spec)
+		live.Labels = policyValue(r.Metadata.Labels)
+		live.Annotations = policyValue(r.Metadata.Annotations)
+		updated, err = api.Update(ctx, live, metav1.UpdateOptions{})
+		if apierrors.IsConflict(err) && attempts < backoff.Steps {
+			return false, nil
+		}
+		if err != nil {
+			return false, fmt.Errorf("update ValidatingAdmissionPolicy: %w", err)
+		}
+		return true, nil
 	}
-	if err := checkPolicyUID(p.Outputs, live); err != nil {
+	if err := wait.ExponentialBackoffWithContext(ctx, backoff, attempt); err != nil {
 		return nil, err
-	}
-	live.Spec = nativePolicySpec(r.Spec)
-	live.Labels = policyValue(r.Metadata.Labels)
-	live.Annotations = policyValue(r.Metadata.Annotations)
-	updated, err := api.Update(ctx, live, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("update ValidatingAdmissionPolicy: %w", err)
 	}
 	return r.policyOutput(updated, p.Outputs.Server), nil
 }
