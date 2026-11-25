@@ -1,0 +1,28 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    named: core.endpoints {
+      metadata: {
+        name:        'dotted.name'
+        namespace:   null
+        annotations: { 'EXAMPLE.COM/Key': 'arbitrary value!', 'bad key': null }
+        labels:      { 'example.com/Key': '', 'BAD.EXAMPLE/key': null }
+      }
+      subset: [
+        {},
+        { address: [], not-ready-address: null, port: [] },
+        {
+          address: [{ ip: 'api-validated', hostname: 'API validated', node-name: 'API validated' }]
+          port:    [{ name: 'API validated', port: -17, protocol: 'API validated' }]
+        },
+      ]
+      ignore-annotations: ['^external/']
+      ignore-labels:      ['^label/']
+    }
+    generated: core.endpoints {
+      metadata: { name: null, generate-name: 'generated-', namespace: '' }
+      subset:   null
+    }
+  }
+}

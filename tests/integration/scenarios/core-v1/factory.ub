@@ -35,6 +35,7 @@ factory: {
     secret-data-values:             { type: map(string) }
     secret-data-force:              { type: boolean }
     temporary-secret-data:          { type: map(boolean) }
+    endpoints-value:                { type: string }
     service-value:                  { type: string }
     service-target-port:            { type: string }
     service-replacement-prefix:     { type: string }
@@ -291,6 +292,38 @@ factory: {
         binary-data: { bytes: input.secret-binary-value, empty: '' }
         immutable:   true
       }
+    }
+    endpoints: core.endpoints {
+      metadata: {
+        name:        'unobin-it-independent-endpoints'
+        annotations: { 'example.com/value': input.endpoints-value }
+      }
+      subset: [
+        {
+          address: [
+            {
+              ip:       if input.endpoints-value == 'first' then '192.0.2.1' else '192.0.2.2'
+              hostname: if input.endpoints-value == 'first' then 'first' else ''
+            },
+          ]
+          not-ready-address: [
+            {
+              ip:       if input.endpoints-value == 'first' then '192.0.2.2' else '192.0.2.1'
+              hostname: if input.endpoints-value == 'first' then '' else 'first'
+            },
+          ]
+          port: [{ port: 8080, protocol: '' }]
+        },
+        {
+          address: [{ ip: '192.0.2.3' }]
+          port: [
+            {
+              port:     if input.endpoints-value == 'first' then 8082 else 8081
+              protocol: 'UDP'
+            },
+          ]
+        },
+      ]
     }
     service-stable: core.service {
       metadata: {
@@ -572,6 +605,13 @@ factory: {
       value: {
         mutable-name: resource.secret-mutable.object.metadata.name
         locked-name:  resource.secret-locked.object.metadata.name
+      }
+    }
+    endpoints: {
+      value: {
+        metadata: resource.endpoints.metadata
+        uid:      resource.endpoints.uid
+        subset:   resource.endpoints.subset
       }
     }
     service: {

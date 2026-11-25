@@ -21,6 +21,7 @@ stack: {
       secret-value:                   'first'
       secret-binary-value:            'AP8='
       secret-immutable:               false
+      endpoints-value:                'first'
       service-value:                  'first'
       service-target-port:            '8080'
       service-replacement-prefix:     'unobin-it-service-first-'

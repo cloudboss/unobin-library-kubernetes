@@ -1,0 +1,48 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server:          { type: string }
+    token:           { type: optional(string) }
+    kubeconfig:      { type: optional(string) }
+    current-context: { type: optional(string) }
+    metadata: {
+      type: object(
+        {
+          name:          { type: optional(string) }
+          generate-name: { type: optional(string) }
+          namespace:     { type: optional(string) }
+          annotations:   { type: optional(map(optional(string))) }
+          labels:        { type: optional(map(optional(string))) }
+        },
+      )
+    }
+    ignore-annotations: { type: optional(list(string)) }
+    ignore-labels:      { type: optional(list(string)) }
+    subset:             { type: optional(list(opaque)) }
+    subset-key:         { type: string }
+  }
+  library-configs: {
+    core: {
+      server:                   input.server
+      token:                    input.token
+      kubeconfig:               input.kubeconfig
+      current-context:          input.current-context
+      insecure-skip-tls-verify: true
+    }
+  }
+  locals: {
+    subsets: {
+      selected:          input.subset
+      wrong-subset-kind: 'not a list'
+      wrong-port-kind:   [{ port: [{ port: 'not an integer' }] }]
+    }
+  }
+  resources: {
+    subject: core.endpoints {
+      metadata:           input.metadata
+      subset:             @core.lookup(local.subsets, input.subset-key)
+      ignore-annotations: input.ignore-annotations
+      ignore-labels:      input.ignore-labels
+    }
+  }
+}

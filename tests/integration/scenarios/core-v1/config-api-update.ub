@@ -23,6 +23,7 @@ stack: {
       secret-value:                   'updated'
       secret-binary-value:            'AgM='
       secret-immutable:               true
+      endpoints-value:                'updated'
       service-value:                  'updated'
       service-target-port:            '8081'
       service-replacement-prefix:     'unobin-it-service-updated-'

@@ -23,6 +23,7 @@ func main() {
 		{"secret", verifySecret},
 		{"secret-data", verifySecretData},
 		{"secret-lookup", verifySecretLookup},
+		{"endpoints", verifyEndpoints},
 		{"service", verifyService},
 		{"service-account", verifyServiceAccount},
 		{"default-service-account", verifyDefaultServiceAccount},

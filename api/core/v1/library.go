@@ -72,6 +72,9 @@ func Library() *runtime.Library {
 			"config-map-data": runtime.MakeResource[
 				svc.ConfigMapDataResource, *svc.ConfigMapDataResourceOutput, *config.Configuration,
 			]((&svc.ConfigMapDataResource{}).ResourceDefinition()),
+			"endpoints": runtime.MakeResource[
+				svc.EndpointsResource, *svc.EndpointsResourceOutput, *config.Configuration,
+			]((&svc.EndpointsResource{}).ResourceDefinition()),
 			"limit-range": runtime.MakeResource[
 				svc.LimitRangeResource, *svc.LimitRangeResourceOutput, *config.Configuration,
 			]((&svc.LimitRangeResource{}).ResourceDefinition()),
