@@ -27,6 +27,14 @@ stack: {
       service-account-value:          'first'
       service-account-automount:      false
       service-lookup-value:           'first'
+      secret-data-force:              false
+      temporary-secret-data:          { fixture: true }
+      secret-data-values: {
+        take:   'before'
+        shared: 'same'
+        prune:  'remove'
+        value:  'first'
+      }
     }
   }
   state: local {

@@ -28,6 +28,9 @@ stack: {
       service-account-value:          'updated'
       service-account-automount:      true
       service-lookup-value:           'updated'
+      secret-data-values:             { take: 'forced', value: 'updated' }
+      secret-data-force:              true
+      temporary-secret-data:          {}
     }
   }
   state: local {

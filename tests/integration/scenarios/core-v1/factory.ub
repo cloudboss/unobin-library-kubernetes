@@ -32,6 +32,9 @@ factory: {
     secret-value:                   { type: string }
     secret-binary-value:            { type: string }
     secret-immutable:               { type: boolean }
+    secret-data-values:             { type: map(string) }
+    secret-data-force:              { type: boolean }
+    temporary-secret-data:          { type: map(boolean) }
     service-value:                  { type: string }
     service-target-port:            { type: string }
     service-replacement-prefix:     { type: string }
@@ -213,6 +216,32 @@ factory: {
           empty-bytes: ''
         }
       }
+    }
+    secret-data-fixture: core.secret {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-secret-data-'
+          labels:        { 'test.unobin.cloudboss.io/scenario': 'core-v1-secret-data' }
+          annotations:   { fixture: 'preserved' }
+        }
+        type:        'example.test/custom'
+        binary-data: { base: 'b3JpZ2luYWw=', binary: 'AP/+AQ==' }
+      }
+    }
+    secret-data: core.secret-data {
+      object: {
+        metadata: { name: resource.secret-data-fixture.object.metadata.name }
+        data:     input.secret-data-values
+      }
+      force: input.secret-data-force
+    }
+    secret-data-temporary: core.secret-data {
+      @for-each: input.temporary-secret-data
+      object: {
+        metadata: { name: resource.secret-data-fixture.object.metadata.name }
+        data:     { temporary: 'remove with attachment' }
+      }
+      field-manager: 'temporary'
     }
     secret-mutable: core.secret {
       object: {

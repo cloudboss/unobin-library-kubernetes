@@ -1,0 +1,9 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    subject: core.secret-data {
+      object: null
+    }
+  }
+}

@@ -1,0 +1,37 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    subject: core.secret-data {
+      object: {
+        metadata: {
+          name: '''\-
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            '''
+        }
+        data: {}
+      }
+    }
+    text: core.secret-data {
+      field-manager: null
+      force:         null
+      object:        { metadata: { name: 'dotted.name', namespace: null }, data: { empty: '' } }
+    }
+    unscoped: core.secret-data {
+      field-manager: 'manager'
+      force:         true
+      object:        { metadata: { name: 'test', namespace: '' }, data: {} }
+    }
+  }
+  outputs: {
+    server:      { value: resource.subject.server }
+    api-version: { value: resource.subject.api-version }
+    kind:        { value: resource.subject.kind }
+    name:        { value: resource.subject.object.metadata.name }
+    namespace:   { value: resource.text.object.metadata.namespace }
+    uid:         { value: resource.text.object.metadata.uid }
+    data:        { value: resource.text.object.data.empty, @sensitive: true }
+  }
+}

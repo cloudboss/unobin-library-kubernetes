@@ -91,6 +91,9 @@ func Library() *runtime.Library {
 			"service-account": runtime.MakeResource[
 				svc.ServiceAccountResource, *svc.ServiceAccountResourceOutput, *config.Configuration,
 			]((&svc.ServiceAccountResource{}).ResourceDefinition()),
+			"secret-data": runtime.MakeResource[
+				svc.SecretDataResource, *svc.SecretDataResourceOutput, *config.Configuration,
+			]((&svc.SecretDataResource{}).ResourceDefinition()),
 			"secret": runtime.MakeResource[
 				svc.SecretResource, *svc.SecretResourceOutput, *config.Configuration,
 			]((&svc.SecretResource{}).ResourceDefinition()),

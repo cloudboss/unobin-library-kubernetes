@@ -20,6 +20,7 @@ func main() {
 		{"persistent-volume-claim", verifyPersistentVolumeClaim},
 		{"pod", verifyPod},
 		{"secret", verifySecret},
+		{"secret-data", verifySecretData},
 		{"secret-lookup", verifySecretLookup},
 		{"service", verifyService},
 		{"service-account", verifyServiceAccount},
