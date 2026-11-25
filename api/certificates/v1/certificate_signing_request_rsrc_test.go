@@ -26,7 +26,7 @@ func compileCertificateSigningRequest(
 	var log bytes.Buffer
 	err = compile.Run(compile.Options{
 		FactoryPath: factory, OutDir: t.TempDir(),
-		StackName: "certificate-signing-request", Version: "v0.0.0", CLIVersion: "v0.13.0",
+		StackName: "certificate-signing-request", Version: "v0.0.0", CLIVersion: "v0.13.1",
 		GoVersion: "1.26.2", LibraryAPIDescriptor: descriptor,
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
@@ -83,7 +83,7 @@ func TestCompiledCertificateSigningRequestAPICompatibility(t *testing.T) {
 		FormatVersion: 1, ImplementedAPIs: []string{"1.0"}, GeneratorAPI: "1.0",
 	}
 	ctx, err := golibrary.NewCompatibilityContext(golibrary.CompatibilityOptions{
-		Descriptor: descriptor, UnobinVersion: "v0.13.0",
+		Descriptor: descriptor, UnobinVersion: "v0.13.1",
 	})
 	require.NoError(t, err)
 	cache := sourcecheck.NewSchemaCacheWithReadersAndCompatibility(
@@ -103,5 +103,5 @@ func TestCompiledCertificateSigningRequestAPICompatibility(t *testing.T) {
 	require.Len(t, diagnostics, 1)
 	require.Equal(t, "unobin.library-api.newer-minor", diagnostics[0].Code)
 	require.NotNil(t, diagnostics[0].LibraryCompatibility)
-	require.Equal(t, "v0.13.0", diagnostics[0].LibraryCompatibility.SuggestedUnobinVersion)
+	require.Equal(t, "v0.13.1", diagnostics[0].LibraryCompatibility.SuggestedUnobinVersion)
 }

@@ -103,7 +103,7 @@ func compileNodeTaintFixture(
 	_, err = compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(nodeTaintFixtures, fixture, "factory.ub"),
 		OutDir:      coreCompileDirectory(t), StackName: "node-taint-test", Version: "v0.0.0",
-		CLIVersion: "v0.13.0", GoVersion: "1.26.2", LibraryAPIDescriptor: api,
+		CLIVersion: "v0.13.1", GoVersion: "1.26.2", LibraryAPIDescriptor: api,
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
 	})

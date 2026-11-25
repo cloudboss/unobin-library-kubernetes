@@ -90,7 +90,7 @@ func TestHPAV1CompilerAPICompatibility(t *testing.T) {
 			break
 		}
 	}
-	require.Contains(t, hint, "The library recommends Unobin v0.13.0.")
+	require.Contains(t, hint, "The library recommends Unobin v0.13.1.")
 }
 
 func compileHPAV1Fixture(t *testing.T, name string, api *libraryapi.Descriptor) error {
@@ -102,7 +102,7 @@ func compileHPAV1Fixture(t *testing.T, name string, api *libraryapi.Descriptor) 
 	var log bytes.Buffer
 	_, err = compile.RunResult(compile.Options{
 		FactoryPath: fixture, OutDir: t.TempDir(), StackName: "hpa-v1-test",
-		Version: "v0.0.0", CLIVersion: "v0.13.0", GoVersion: "1.26.2",
+		Version: "v0.0.0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
 		LibraryAPIDescriptor: api,
 		ReplaceGoModules:     map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:               &log, Stderr: &log,

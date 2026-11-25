@@ -29,7 +29,7 @@ func TestCompiledNamespacesFixtures(t *testing.T) {
 			_, err = compile.RunResult(compile.Options{
 				FactoryPath: factory, OutDir: coreCompileDirectory(t),
 				StackName: "namespaces-test", Version: "v0.0.0",
-				CLIVersion: "v0.13.0", GoVersion: "1.26.2",
+				CLIVersion: "v0.13.1", GoVersion: "1.26.2",
 				ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,
 				},

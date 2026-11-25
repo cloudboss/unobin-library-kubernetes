@@ -166,7 +166,7 @@ func compileNamespacesFactory(t *testing.T, fixture string) namespacesCommand {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: factory, OutDir: work, StackName: fixture, Version: "v0.0.0",
-		CLIVersion: "v0.13.0", GoVersion: "1.26.2",
+		CLIVersion: "v0.13.1", GoVersion: "1.26.2",
 		ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		},

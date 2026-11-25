@@ -83,7 +83,7 @@ func TestCompiledObjectInfoRejectsOlderLibraryAPI(t *testing.T) {
 	diagnostics := diagnostic.FromError(err, diagnostic.ConvertOptions{})
 	require.Len(t, diagnostics, 1)
 	require.Equal(t, "unobin.library-api.newer-minor", diagnostics[0].Code)
-	require.Contains(t, diagnostics[0].Hint, "The library recommends Unobin v0.13.0")
+	require.Contains(t, diagnostics[0].Hint, "The library recommends Unobin v0.13.1")
 }
 
 func TestCompiledObjectInfoObservedPlan(t *testing.T) {
@@ -483,7 +483,7 @@ func compileDynamicFixtureForAPI(
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: path, OutDir: objectInfoWork(t),
-		StackName: stack, Version: "v0.0.0", CLIVersion: "v0.13.0",
+		StackName: stack, Version: "v0.0.0", CLIVersion: "v0.13.1",
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		},

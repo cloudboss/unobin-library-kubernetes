@@ -29,7 +29,7 @@ func TestCompiledNamespaceInfoInputs(t *testing.T) {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-		StackName: "namespace-info-inputs", Version: "v0.0.0", CLIVersion: "v0.13.0",
+		StackName: "namespace-info-inputs", Version: "v0.0.0", CLIVersion: "v0.13.1",
 		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		}, Build: true, Stdout: &log, Stderr: &log,

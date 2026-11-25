@@ -41,7 +41,7 @@ func TestTokenRequestLiteralInputs(t *testing.T) {
 			var log bytes.Buffer
 			err := compile.Run(compile.Options{
 				FactoryPath: fixture, OutDir: t.TempDir(), StackName: "token-request-schema",
-				Version: "v0.0.0", CLIVersion: "v0.13.0", GoVersion: "1.26.2",
+				Version: "v0.0.0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
 				ReplaceUnobin: strings.TrimSpace(string(module)),
 				ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,
@@ -80,8 +80,8 @@ func TestTokenRequestLibraryAPICompatibility(t *testing.T) {
 	require.ErrorAs(t, err, &newer)
 	for _, issue := range diagnostic.FromError(err, diagnostic.ConvertOptions{}) {
 		if issue.Code == "unobin.library-api.newer-minor" {
-			require.Contains(t, issue.Hint, "v0.13.0")
-			require.NotContains(t, issue.Hint, "v0.13.0-")
+			require.Contains(t, issue.Hint, "v0.13.1")
+			require.NotContains(t, issue.Hint, "v0.13.1-")
 			return
 		}
 	}

@@ -58,5 +58,5 @@ func TestCompiledAnnotationsRequireLibraryAPI11(t *testing.T) {
 	diagnostics := diagnostic.FromError(err, diagnostic.ConvertOptions{})
 	require.Len(t, diagnostics, 1)
 	require.Equal(t, "unobin.library-api.newer-minor", diagnostics[0].Code)
-	require.Contains(t, diagnostics[0].Hint, "The library recommends Unobin v0.13.0")
+	require.Contains(t, diagnostics[0].Hint, "The library recommends Unobin v0.13.1")
 }

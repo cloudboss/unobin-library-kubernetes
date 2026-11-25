@@ -100,7 +100,7 @@ func TestCompiledMutatingWebhookLookupRuntime(t *testing.T) {
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: filepath.Join(mutatingLookupFixture, "factory.ub"), OutDir: work,
 		StackName: "mutating-webhook-lookup", Version: "v0",
-		CLIVersion: "v0.13.0", GoVersion: "1.26.2", Build: true,
+		CLIVersion: "v0.13.1", GoVersion: "1.26.2", Build: true,
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
 	})

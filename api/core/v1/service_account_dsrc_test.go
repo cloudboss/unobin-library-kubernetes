@@ -44,7 +44,7 @@ func serviceAccountCompileOptions(t *testing.T, factory string) (compile.Options
 	log := new(bytes.Buffer)
 	return compile.Options{
 		FactoryPath: factory, OutDir: work, StackName: "service-account-lookup", Version: "v0.0.0",
-		CLIVersion: "v0.13.0", GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
+		CLIVersion: "v0.13.1", GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
 			"github.com/cloudboss/unobin-library-kubernetes": root,
 		}, Stdout: log, Stderr: log,
 	}, log

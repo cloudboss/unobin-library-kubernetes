@@ -307,7 +307,7 @@ func TestAnnotationsCompiledLifecycle(t *testing.T) {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: source, OutDir: dir, StackName: "annotations",
-		Version: "v0.0.0", CLIVersion: "v0.13.0", GoVersion: "1.26.2",
+		Version: "v0.0.0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Build:            true, Stdout: &log, Stderr: &log,
 	})

@@ -207,7 +207,7 @@ func compileCoreInputFixture(t *testing.T, fixture string) error {
 	var log bytes.Buffer
 	_, err = compile.RunResult(compile.Options{
 		FactoryPath: factory, OutDir: coreCompileDirectory(t),
-		StackName: "constraints", Version: "v0.0.0", CLIVersion: "v0.13.0",
+		StackName: "constraints", Version: "v0.0.0", CLIVersion: "v0.13.1",
 		GoVersion: "1.26.2", ReplaceUnobin: unobinSource(t),
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,

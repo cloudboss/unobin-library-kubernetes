@@ -60,7 +60,7 @@ func compileDefaultServiceAccount(
 	work := coreCompileDirectory(t)
 	options := compile.Options{
 		FactoryPath: factory, OutDir: work, StackName: "default-service-account",
-		Version: "v0.0.0", CLIVersion: "v0.13.0",
+		Version: "v0.0.0", CLIVersion: "v0.13.1",
 		GoVersion: "1.26.2", LibraryAPIDescriptor: descriptor,
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log, Build: descriptor == nil && fixture == "compatible",

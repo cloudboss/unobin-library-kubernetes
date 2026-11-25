@@ -46,7 +46,7 @@ func compileTokenRequest(t *testing.T) tokenRequestFactory {
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: factory, OutDir: work, Build: true, StackName: "token-request",
-		Version: "v0.0.0", CLIVersion: "v0.13.0", GoVersion: "1.26.2",
+		Version: "v0.0.0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
 	})

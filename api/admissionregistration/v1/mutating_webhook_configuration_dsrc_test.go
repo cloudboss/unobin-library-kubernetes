@@ -73,7 +73,7 @@ func compileMutatingWebhookLookup(t *testing.T, fixture string) error {
 	var log bytes.Buffer
 	err = compile.Run(compile.Options{
 		FactoryPath: factory, OutDir: t.TempDir(), StackName: "mutating-webhook-lookup",
-		Version: "v0", CLIVersion: "v0.13.0", GoVersion: "1.26.2",
+		Version: "v0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Stdout:           &log, Stderr: &log,
 	})

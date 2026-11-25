@@ -165,7 +165,7 @@ func compileObjectsFactory(t *testing.T, namespace, group string) func(...string
 	var log bytes.Buffer
 	result, err := compile.RunResult(compile.Options{
 		FactoryPath: factory, OutDir: work, StackName: "dynamic-objects",
-		Version: "v0.0.0", CLIVersion: "v0.13.0", GoVersion: "1.26.2",
+		Version: "v0.0.0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
 		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 		Build:            true, Stdout: &log, Stderr: &log,
 	})

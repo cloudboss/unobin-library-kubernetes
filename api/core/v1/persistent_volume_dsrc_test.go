@@ -61,7 +61,7 @@ func TestPVLookupCompiler(t *testing.T) {
 			_, err := compile.RunResult(compile.Options{
 				FactoryPath: filepath.Join("testdata/ub/persistent-volume-lookup", tc.fixture, "factory.ub"),
 				OutDir:      coreCompileDirectory(t), StackName: "persistent-volume-lookup",
-				Version: "v0.0.0", CLIVersion: "v0.13.0", GoVersion: "1.26.2",
+				Version: "v0.0.0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
 				LibraryAPIDescriptor: tc.api,
 				ReplaceGoModules:     map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
 				Stdout:               &log, Stderr: &log,

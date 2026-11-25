@@ -30,7 +30,7 @@ func TestIngressInfoCompiledFixtures(t *testing.T) {
 			path := filepath.Join(root, "tests/compile/testdata/ub/ingress/data-source", fixture, "factory.ub")
 			result, err := compile.RunResult(compile.Options{
 				FactoryPath: path, OutDir: work, ReplaceUnobin: ingressSDKDir(t),
-				StackName: "ingress-info-test", Version: "v0.0.0", CLIVersion: "v0.13.0",
+				StackName: "ingress-info-test", Version: "v0.0.0", CLIVersion: "v0.13.1",
 				GoVersion: "1.26.2",
 				ReplaceGoModules: map[string]string{
 					"github.com/cloudboss/unobin-library-kubernetes": root,
@@ -80,7 +80,7 @@ func TestIngressInfoLibraryAPICompatibility(t *testing.T) {
 		Descriptor: &libraryapi.Descriptor{
 			FormatVersion: 1, ImplementedAPIs: []string{"1.0"}, GeneratorAPI: "1.0",
 		},
-		UnobinVersion: "v0.13.0",
+		UnobinVersion: "v0.13.1",
 	})
 	require.NoError(t, err)
 	cache := sourcecheck.NewSchemaCacheWithReadersAndCompatibility(
@@ -100,5 +100,5 @@ func TestIngressInfoLibraryAPICompatibility(t *testing.T) {
 	diagnostics := diagnostic.FromError(err, diagnostic.ConvertOptions{})
 	require.Len(t, diagnostics, 1)
 	require.Equal(t, "unobin.library-api.newer-minor", diagnostics[0].Code)
-	require.Contains(t, diagnostics[0].Hint, "v0.13.0")
+	require.Contains(t, diagnostics[0].Hint, "v0.13.1")
 }
