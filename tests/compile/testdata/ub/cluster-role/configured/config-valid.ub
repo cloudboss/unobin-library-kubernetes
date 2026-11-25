@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { name: 'system:reader', groups: [''] } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

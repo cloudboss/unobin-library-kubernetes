@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { metadata: { name: 'test', labels: { example: null } }, spec: {} } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

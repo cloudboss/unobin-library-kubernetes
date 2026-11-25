@@ -1,9 +1,0 @@
-factory: {
-  imports:         { storage: 'github.com/cloudboss/unobin-library-kubernetes//api/storage/v1' }
-  library-configs: { storage: { server: 'https://127.0.0.1:1' } }
-  resources: {
-    driver: storage.csi-driver {
-      metadata: { name: 'Invalid/name' }
-    }
-  }
-}

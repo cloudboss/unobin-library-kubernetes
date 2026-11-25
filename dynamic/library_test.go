@@ -1,7 +1,6 @@
 package dynamic
 
 import (
-	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,9 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/goschema"
-	"github.com/cloudboss/unobin/pkg/libraryapi"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/cloudboss/unobin/pkg/sdk/cfg"
 	"github.com/cloudboss/unobin/pkg/typecheck"
@@ -81,28 +78,4 @@ func dynamicCompileDirectory(t *testing.T) string {
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
 	return work
-}
-
-func compileDynamicFixture(
-	t *testing.T, fixture, stack string, build bool, descriptor *libraryapi.Descriptor,
-) (string, error) {
-	t.Helper()
-	root, err := filepath.Abs("..")
-	require.NoError(t, err)
-	path, err := filepath.Abs(fixture)
-	require.NoError(t, err)
-	var log bytes.Buffer
-	result, err := compile.RunResult(compile.Options{
-		FactoryPath: path, OutDir: dynamicCompileDirectory(t),
-		StackName: stack, Version: "v0.0.0", CLIVersion: "v0.13.1",
-		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
-			"github.com/cloudboss/unobin-library-kubernetes": root,
-		},
-		LibraryAPIDescriptor: descriptor, Build: build, Stdout: &log, Stderr: &log,
-	})
-	if err != nil {
-		t.Log(log.String())
-		return "", err
-	}
-	return result.BinaryPath, nil
 }

@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { label-key: 'UPPER.example/ok' } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

@@ -1,91 +1,11 @@
 package v1
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
-
-func TestDaemonSetValidationMatrix(t *testing.T) {
-	type invalid struct {
-		path       string
-		value      any
-		conversion bool
-	}
-	var cases []invalid
-	visitFields(reflect.ValueOf(fullDaemonSetInput(t)).Elem(), "", func(
-		field reflect.StructField, value reflect.Value, key string,
-	) {
-		if choices := field.Tag.Get("enum"); choices != "" {
-			cases = append(cases, invalid{path: key, value: "invalid"})
-			if !strings.HasPrefix(choices, ",") {
-				cases = append(cases, invalid{path: key, value: ""})
-			}
-		}
-		if field.Tag.Get("min") != "" {
-			cases = append(cases, invalid{path: key, value: int64(-1)})
-		}
-		switch field.Tag.Get("format") {
-		case "int32", "int64", "mode", "threshold", "quantity", "quantities":
-			conversion := field.Tag.Get("format") == "quantity" ||
-				field.Tag.Get("format") == "quantities"
-			cases = append(cases, invalid{key, "malformed", conversion})
-			if field.Tag.Get("format") == "mode" || field.Tag.Get("format") == "quantity" {
-				cases = append(cases, invalid{key, "", conversion})
-			}
-		case "relative-path":
-			for _, text := range []string{"/absolute", "a/../b", "..prefix"} {
-				cases = append(cases, invalid{path: key, value: text})
-			}
-		case "ip", "ips":
-			cases = append(cases, invalid{path: key, value: "invalid-IP"})
-		case "names":
-			cases = append(cases, invalid{path: key, value: "INVALID_DNS"})
-		case "port-number":
-			cases = append(cases, invalid{path: key, value: int64(65536)},
-				invalid{path: key, value: int64(0)})
-		case "port", "port-name":
-			cases = append(cases, invalid{path: key, value: "invalid_port"},
-				invalid{path: key, value: ""})
-		}
-	})
-	for _, tc := range cases {
-		t.Run(fmt.Sprintf("%s=%v", tc.path, tc.value), func(t *testing.T) {
-			r := fullDaemonSetInput(t)
-			visitFields(reflect.ValueOf(r).Elem(), "", func(
-				field reflect.StructField, value reflect.Value, key string,
-			) {
-				if key != tc.path {
-					return
-				}
-				value = indirect(value)
-				switch value.Kind() {
-				case reflect.String:
-					value.SetString(tc.value.(string))
-				case reflect.Int64:
-					value.SetInt(tc.value.(int64))
-				case reflect.Slice:
-					if value.Type().Elem().Kind() == reflect.String {
-						value.Index(0).SetString(tc.value.(string))
-					} else {
-						value.SetLen(0)
-					}
-				case reflect.Map:
-					value.SetMapIndex(reflect.ValueOf("cpu"), reflect.ValueOf(tc.value.(string)))
-				}
-			})
-			if tc.conversion {
-				_, err := r.expand(nil)
-				require.Error(t, err)
-			} else {
-				require.NotEmpty(t, checkNativeDaemonSetInputs(t, r))
-			}
-		})
-	}
-}
 
 func TestDaemonSetQuantityModeSetSemantics(t *testing.T) {
 	for _, mode := range []string{"0", "00", "0644", "0777"} {

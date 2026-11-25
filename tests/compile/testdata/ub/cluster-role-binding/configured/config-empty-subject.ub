@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { name: 'system:reader', group: 'rbac.authorization.k8s.io', subjects: [] } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { use-metadata: true, metadata: { name: null } } }
-  state: local {
-    path: '.unobin/STATE_CASE'
-  }
-  encryption: noop {}
-}

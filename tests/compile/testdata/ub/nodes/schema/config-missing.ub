@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { server: 'KUBE_SERVER', metadata: {} } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

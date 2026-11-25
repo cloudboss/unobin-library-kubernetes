@@ -1,9 +1,0 @@
-factory: {
-  imports:         { k: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
-  library-configs: { k: {} }
-  resources: {
-    subject: k.config-map {
-      object: { metadata: { name: 'test' } }
-    }
-  }
-}

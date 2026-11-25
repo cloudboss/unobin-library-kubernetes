@@ -1,87 +1,11 @@
 package v1
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
-
-func TestCronJobValidationMatrix(t *testing.T) {
-	type invalid struct {
-		path   string
-		value  any
-		parser bool
-	}
-	var cases []invalid
-	visitFields(reflect.ValueOf(cronJobFullInput(t)).Elem(), "", func(
-		field reflect.StructField, value reflect.Value, key, model string,
-	) {
-		for _, value := range invalidJobFields[model] {
-			cases = append(cases, invalid{path: key, value: value})
-		}
-		switch field.Tag.Get("format") {
-		case "int32", "int64", "mode", "threshold", "quantity", "quantities":
-			cases = append(cases, invalid{
-				path: key, value: "malformed", parser: strings.HasPrefix(field.Tag.Get("format"),
-					"quantit") || strings.HasPrefix(field.Tag.Get("format"), "int")})
-			if field.Tag.Get("format") == "mode" || field.Tag.Get("format") == "quantity" {
-				if field.Tag.Get("omit") != "true" {
-					cases = append(cases, invalid{
-						path: key, value: "", parser: field.Tag.Get("format") == "quantity"})
-				}
-			}
-		case "relative-path":
-			for _, text := range []string{"/absolute", "a/../b", "..prefix"} {
-				cases = append(cases, invalid{path: key, value: text})
-			}
-		case "ip", "ips":
-			cases = append(cases, invalid{path: key, value: "invalid-IP"})
-		case "names":
-			cases = append(cases, invalid{path: key, value: "INVALID_DNS"})
-		case "port-number":
-			cases = append(cases, invalid{path: key, value: int64(65536)}, invalid{path: key,
-				value: int64(0)})
-		case "port", "port-name":
-			cases = append(cases, invalid{path: key, value: "invalid_port"}, invalid{path: key, value: ""})
-		}
-	})
-	for _, tc := range cases {
-		t.Run(fmt.Sprintf("%s=%v", tc.path, tc.value), func(t *testing.T) {
-			r := cronJobFullInput(t)
-			visitFields(reflect.ValueOf(r).Elem(), "", func(
-				field reflect.StructField, value reflect.Value, key, model string,
-			) {
-				if key != tc.path {
-					return
-				}
-				value = indirect(value)
-				switch value.Kind() {
-				case reflect.String:
-					value.SetString(tc.value.(string))
-				case reflect.Int64:
-					value.SetInt(tc.value.(int64))
-				case reflect.Slice:
-					if value.Type().Elem().Kind() == reflect.String {
-						value.Index(0).SetString(tc.value.(string))
-					} else {
-						value.SetLen(0)
-					}
-				case reflect.Map:
-					value.SetMapIndex(reflect.ValueOf("cpu"), reflect.ValueOf(tc.value.(string)))
-				}
-			})
-			if tc.parser {
-				_, err := r.prepare(nil)
-				require.Error(t, err)
-			} else {
-				require.NotEmpty(t, checkNativeCronJobInputs(t, r))
-			}
-		})
-	}
-}
 
 func TestCronJobNativeEnumAlternatives(t *testing.T) {
 	values := map[string][]string{

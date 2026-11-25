@@ -1,15 +1,9 @@
 package v1
 
 import (
-	"bytes"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/encoding/ub"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/stretchr/testify/require"
@@ -25,66 +19,6 @@ func TestRoleBindingStableID(t *testing.T) {
 	require.Equal(t, "https://saved/uid", *id)
 	_, err = reg.StableID(nil, map[string]any{})
 	require.Error(t, err)
-}
-
-func TestRoleBindingCompiledFixtures(t *testing.T) {
-	for _, tt := range []struct{ name, want string }{
-		{"valid", ""}, {"missing-metadata", "metadata"}, {"missing-ref", "role-ref"},
-		{"missing-ref-member", "api-group"}, {"missing-subject", "subject"},
-		{"missing-subject-kind", "kind"}, {"missing-subject-name", "name"},
-		{"null-map", "expected string, got null"},
-		{"null-subject-name", "expected string, got null"}, {"unsupported", "finalizers"},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			compileBindingFixture(t, filepath.Join("testdata/ub/role-binding", tt.name), tt.want)
-		})
-	}
-}
-
-func TestRoleBindingCompiledScenario(t *testing.T) {
-	compileBindingFixture(t, "testdata/ub/role-binding-scenario", "")
-}
-
-func compileBindingFixture(t *testing.T, fixture, wantError string) {
-	t.Helper()
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	fixture, err = filepath.Abs(fixture)
-	require.NoError(t, err)
-	work := t.TempDir()
-	var log bytes.Buffer
-	sdk, err := exec.CommandContext(t.Context(), "go", "list", "-m", "-f", "{{.Dir}}",
-		"github.com/cloudboss/unobin").Output()
-	require.NoError(t, err)
-	result, err := compile.RunResult(compile.Options{
-		ReplaceUnobin: strings.TrimSpace(string(sdk)),
-		FactoryPath:   filepath.Join(fixture, "factory.ub"), OutDir: work,
-		StackName: "role-binding-test", Version: "v0.0.0", CLIVersion: "dev",
-		GoVersion: "1.26.2", Build: wantError == "",
-		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
-		Stdout:           &log, Stderr: &log,
-	})
-	if wantError != "" {
-		require.ErrorContains(t, err, wantError, "%s", log.String())
-		return
-	}
-	require.NoError(t, err, "%s", log.String())
-	require.True(t, result.Built)
-	configs, err := filepath.Glob(filepath.Join(fixture, "config*.ub"))
-	require.NoError(t, err)
-	require.NotEmpty(t, configs)
-	for _, path := range configs {
-		body, err := os.ReadFile(path)
-		require.NoError(t, err)
-		name := filepath.Base(path)
-		require.NoError(t, os.WriteFile(filepath.Join(work, name), body, 0o600))
-		for _, args := range [][]string{{"pin", "-c", name}, {"validate", "-c", name}} {
-			cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
-			cmd.Dir = work
-			output, err := cmd.CombinedOutput()
-			require.NoError(t, err, "%s", output)
-		}
-	}
 }
 
 func bindingReasons(

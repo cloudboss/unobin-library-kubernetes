@@ -26,6 +26,10 @@
   Unobin source in Go test strings.
 - Extend integration scenarios by Kubernetes API group and version. Add a
   separate scenario when its setup or lifecycle needs isolation.
-- Test behavior. Do not add tests that inspect documentation or tooling text.
+- Test this library's behavior. Do not test Unobin or Kubernetes behavior, or
+  add tests that inspect documentation or tooling text.
+- Keep one shared-configuration fixture under `tests/compile/`. Compile
+  scenario factories through the integration runner. Default Go tests exercise
+  registrations, constraints, and lifecycle code without building factories.
 - Make discrete commits after the relevant tests pass. Use the `git-commit`
   skill and preserve unrelated changes.

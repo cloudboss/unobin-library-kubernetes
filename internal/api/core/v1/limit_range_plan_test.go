@@ -1,23 +1,19 @@
 package v1
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"maps"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/encrypters"
 	"github.com/cloudboss/unobin/pkg/lang/syntax"
 	"github.com/cloudboss/unobin/pkg/runtime"
-	"github.com/cloudboss/unobin/pkg/sdk/encrypt"
 	"github.com/cloudboss/unobin/pkg/sdk/state"
 	"github.com/cloudboss/unobin/pkg/state/local"
 	"github.com/stretchr/testify/require"
@@ -33,7 +29,6 @@ import (
 
 const limitRangePath = "/api/v1/namespaces/default/limitranges"
 const limitRangeSubject = limitRangePath + "/subject"
-const limitRangeSeedRead = "GET /api/v1/namespaces/default/configmaps/limit-seed"
 
 func TestLimitRangeReplacementPlans(t *testing.T) {
 	executor, api, dir := limitRangeExecutor(t)
@@ -214,129 +209,6 @@ func TestLimitRangeObservedDefaultsAndVolatileMetadataNoOp(t *testing.T) {
 	require.Equal(t, []string{"GET " + limitRangeSubject}, api.requests()[before:])
 }
 
-func TestLimitRangeGeneratedFactoryInputs(t *testing.T) {
-	binary := compileLimitRangeFactory(t)
-	for _, tt := range []struct {
-		name, target, knownType, chosenType, quantity, shape, choice string
-		planErr, applyErr                                            string
-	}{
-		{name: "evaluated Pod requests", target: "subject", knownType: "Pod", quantity: "1",
-			shape: "policy", planErr: "schema: constraints[8] (predicate)"},
-		{name: "known Pod and pending quantity", target: "subject", knownType: "Pod",
-			shape: "policy", planErr: "schema: constraints[8] (predicate)"},
-		{name: "invalid metadata and pending quantity", target: "BAD", knownType: "Container",
-			shape: "policy", planErr: "schema: constraints[1] (predicate)"},
-		{name: "deferred Pod", target: "subject", chosenType: "Pod",
-			shape: "policy", applyErr: "schema: constraints[8] (predicate)"},
-		{name: "deferred Container", target: "subject", chosenType: "Container", shape: "policy"},
-		{name: "null evaluated object", shape: "direct", choice: "null-object",
-			planErr: `field "object": required but is null`},
-		{name: "missing evaluated metadata", shape: "direct", choice: "missing-metadata",
-			planErr: `field "object.metadata": required but not provided`},
-		{name: "null evaluated metadata", shape: "direct", choice: "null-metadata",
-			planErr: `field "object.metadata": required but is null`},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			api := startLimitRangePlanAPI(t)
-			work := limitRangeWorkDir(t)
-			run := limitRangeFactoryRunner(t, binary, work)
-			configureLimitRangeFactory(t, run, work, map[string]string{
-				"LIMIT_SERVER": *api.config.Server, "LIMIT_NAME": tt.target,
-				"LIMIT_KNOWN_TYPE": tt.knownType, "LIMIT_CHOSEN_TYPE": tt.chosenType,
-				"LIMIT_KNOWN_QUANTITY": tt.quantity, "LIMIT_SHAPE": tt.shape, "LIMIT_CHOICE": tt.choice,
-			})
-			out, err := run("plan", "-c", "config.ub", "-o", "plan.ubp")
-			require.Empty(t, api.requests())
-			if tt.planErr != "" {
-				require.Error(t, err)
-				require.Contains(t, out, "resource.subject: "+tt.planErr)
-				if strings.Contains(tt.planErr, "constraints[8]") {
-					require.Contains(t, out, "object.spec.limit[0]")
-				}
-				return
-			}
-			require.NoError(t, err, "%s", out)
-			saved := readLimitRangePlan(t, work)
-			require.Equal(t, runtime.DecisionCreate, limitRangeStep(t, saved).Decision)
-			require.Equal(t, map[string][]string{"object": {
-				"data-source.live.data['limit-type']",
-				"data-source.live.data[...]",
-			}}, limitRangeStep(t, saved).UnresolvedInputs)
-			out, err = run("apply", "plan.ubp")
-			want := []string{
-				"POST " + limitRangePath, "GET " + limitRangePath + "/limit-seed", limitRangeSeedRead,
-			}
-			if tt.applyErr != "" {
-				require.Error(t, err)
-				require.Contains(t, out, "resource.subject: "+tt.applyErr)
-				require.Contains(t, out, "object.spec.limit[0]")
-				require.Nil(t, api.get("subject"))
-			} else {
-				require.NoError(t, err, "%s", out)
-				want = append(want, "POST "+limitRangePath, "GET "+limitRangeSubject,
-					"GET "+limitRangePath+"/limit-seed")
-				subject := api.get("subject")
-				require.NotNil(t, subject)
-				require.Equal(t, &LimitRangeSpecOutput{Limit: []LimitRangeItemOutput{{
-					Type: "Container", Default: map[string]string{},
-					DefaultRequest: map[string]string{"cpu": "500m"}, Max: map[string]string{},
-					Min: map[string]string{}, MaxLimitRequestRatio: map[string]string{},
-				}}}, projectLimitRangeSpec(subject.Spec))
-			}
-			require.Equal(t, want, api.requests())
-		})
-	}
-
-	t.Run("deferred required field before replacement", func(t *testing.T) {
-		api := startLimitRangePlanAPI(t)
-		work := limitRangeWorkDir(t)
-		run := limitRangeFactoryRunner(t, binary, work)
-		values := map[string]string{
-			"LIMIT_SERVER": *api.config.Server, "LIMIT_NAME": "subject",
-			"LIMIT_KNOWN_TYPE": "Container", "LIMIT_CHOSEN_TYPE": "Container",
-			"LIMIT_KNOWN_QUANTITY": "1", "LIMIT_SHAPE": "policy", "LIMIT_CHOICE": "unused",
-		}
-		configureLimitRangeFactory(t, run, work, values)
-		out, err := run("plan", "-c", "config.ub", "-o", "plan.ubp")
-		require.NoError(t, err, "%s", out)
-		out, err = run("apply", "plan.ubp")
-		require.NoError(t, err, "%s", out)
-		prior := api.get("subject")
-		require.NotNil(t, prior)
-
-		values["LIMIT_NAME"] = "replacement"
-		values["LIMIT_SHAPE"] = "from-seed"
-		values["LIMIT_CHOICE"] = "missing-metadata"
-		configureLimitRangeFactory(t, run, work, values)
-		out, err = run("plan", "-c", "config.ub", "-o", "plan.ubp")
-		require.NoError(t, err, "%s", out)
-		step := limitRangeStep(t, readLimitRangePlan(t, work))
-		require.Equal(t, runtime.DecisionReplace, step.Decision)
-		require.Equal(t, map[string][]string{
-			"object": {"data-source.live.data['choice']"},
-		}, step.UnresolvedInputs)
-		before := len(api.requests())
-		out, err = run("apply", "plan.ubp")
-		require.Error(t, err)
-		require.Contains(t, out, `resource.subject: field "object.metadata": required but not provided`)
-		require.Equal(t, []string{
-			"PATCH " + limitRangePath + "/limit-seed", "GET " + limitRangePath + "/limit-seed",
-			limitRangeSeedRead,
-		}, api.requests()[before:])
-		require.Equal(t, prior, api.get("subject"))
-		require.Nil(t, api.get("replacement"))
-
-		values["LIMIT_NAME"], values["LIMIT_SHAPE"] = "subject", "policy"
-		configureLimitRangeFactory(t, run, work, values)
-		out, err = run("plan", "-c", "config.ub", "-o", "plan.ubp")
-		require.NoError(t, err, "%s", out)
-		retry := limitRangeStep(t, readLimitRangePlan(t, work))
-		require.Equal(t, runtime.DecisionNoOp, retry.Decision)
-		require.Equal(t, step.PriorInputs, retry.PriorInputs)
-		require.Equal(t, step.PriorOutputs, retry.PriorOutputs)
-	})
-}
-
 func limitRangeInput(metadata, spec map[string]any) map[string]any {
 	out := map[string]any{"metadata": metadata}
 	if spec != nil {
@@ -403,57 +275,6 @@ func limitRangeWorkDir(t *testing.T) string {
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
 	return dir
-}
-
-func compileLimitRangeFactory(t *testing.T) string {
-	t.Helper()
-	root, err := filepath.Abs("../../../..")
-	require.NoError(t, err)
-	var log bytes.Buffer
-	result, err := compile.RunResult(compile.Options{
-		FactoryPath: "testdata/ub/limit-range/native/factory.ub",
-		OutDir:      limitRangeWorkDir(t), Build: true, StackName: "limit-range", Version: "v0.0.0",
-		CLIVersion: "v0.13.1", GoVersion: "1.26.2",
-		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
-		Stdout:           &log, Stderr: &log,
-	})
-	require.NoError(t, err, "%s", log.String())
-	return result.BinaryPath
-}
-
-func configureLimitRangeFactory(
-	t *testing.T, run func(...string) (string, error), work string, values map[string]string,
-) {
-	t.Helper()
-	raw, err := os.ReadFile("testdata/ub/limit-range/native/config.ub")
-	require.NoError(t, err)
-	for k, v := range values {
-		raw = bytes.ReplaceAll(raw, []byte(k), []byte(v))
-	}
-	require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), raw, 0o600))
-	out, err := run("pin", "-c", "config.ub")
-	require.NoError(t, err, "%s", out)
-}
-
-func limitRangeFactoryRunner(t *testing.T, binary, work string) func(...string) (string, error) {
-	t.Helper()
-	return func(args ...string) (string, error) {
-		cmd := exec.CommandContext(t.Context(), binary, args...)
-		cmd.Dir = work
-		body, err := cmd.CombinedOutput()
-		return string(body), err
-	}
-}
-
-func readLimitRangePlan(t *testing.T, work string) *runtime.PlanFile {
-	t.Helper()
-	raw, err := os.ReadFile(filepath.Join(work, "plan.ubp"))
-	require.NoError(t, err)
-	plan, err := runtime.OpenPlan(raw, func(*runtime.StateRef) (encrypt.Encrypter, error) {
-		return encrypters.Noop{}, nil
-	})
-	require.NoError(t, err)
-	return plan
 }
 
 type limitRangePlanAPI struct {

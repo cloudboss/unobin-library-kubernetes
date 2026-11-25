@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { partial: true, defer-name: true } }
-  state: local {
-    path: '.unobin/deferred-name'
-  }
-  encryption: noop {}
-}

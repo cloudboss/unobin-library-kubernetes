@@ -68,7 +68,7 @@ internal/client/            Configuration loading, discovery, and dynamic client
 internal/object/            Object identity, field selection, and deletion helpers
 internal/api/<group>/<version>/
                             Typed resource, data source, and action implementations
-tests/compile/              Compiled Unobin configuration and import checks
+tests/compile/              Shared configuration compile fixture
 tests/integration/scenarios/
                             API and compiled-factory scenarios
 ```
@@ -120,8 +120,8 @@ them, and destroys the stack. The verifier can save object identities in
 Go API tests use the `integration` build tag. Unobin fixtures used by Go tests
 belong in package-local `testdata/ub/` files.
 
-Final construct validation includes build, unit and compiled-factory tests, vet,
-lint, and the focused kind scenario:
+Final construct validation includes build, unit tests, vet, lint, and the
+focused kind scenario:
 
 ```sh
 make build

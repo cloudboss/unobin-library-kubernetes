@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -10,10 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/encrypters"
 	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/lang"
@@ -24,8 +21,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/core/v1"
 )
@@ -219,91 +214,4 @@ func TestServiceInfoSavedInputs(t *testing.T) {
 	_, err = executor.ApplyPlan(t.Context(), file)
 	require.ErrorContains(t, err, "data-source.endpoint: schema: constraints[")
 	require.Empty(t, requests)
-}
-
-func TestServiceInfoScenarioFactory(t *testing.T) {
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	base := filepath.Join(root, "_output/tests/core-v1-service-info")
-	require.NoError(t, os.MkdirAll(base, 0o700))
-	work, err := os.MkdirTemp(base, "scenario-")
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
-	scenario := filepath.Join(root, "api/core/v1/testdata/ub/service-lookup-scenario")
-	var log bytes.Buffer
-	result, err := compile.RunResult(compile.Options{
-		FactoryPath: filepath.Join(scenario, "factory.ub"), OutDir: work,
-		StackName: "service-info-scenario", Version: "v0.0.0", CLIVersion: "v0.13.1",
-		GoVersion: "1.26.2", ReplaceGoModules: map[string]string{
-			"github.com/cloudboss/unobin-library-kubernetes": root,
-		}, Build: true, Stdout: &log, Stderr: &log,
-	})
-	require.NoError(t, err, "%s", log.String())
-	require.True(t, result.Built)
-	requests := map[string]int{}
-	var mu sync.Mutex
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		mu.Lock()
-		defer mu.Unlock()
-		requests[req.Method+" "+req.URL.RequestURI()]++
-		require.Equal(t, http.MethodGet, req.Method)
-		require.Empty(t, req.URL.RawQuery)
-		w.Header().Set("Content-Type", "application/json")
-		if req.URL.Path == "/api/v1/namespaces/default/services/unobin-it-service-info-absent" {
-			w.WriteHeader(http.StatusNotFound)
-			require.NoError(t, json.NewEncoder(w).Encode(&metav1.Status{
-				Status: "Failure", Reason: metav1.StatusReasonNotFound, Code: http.StatusNotFound,
-			}))
-			return
-		}
-		require.Equal(t, "/api/v1/namespaces/default/services/kubernetes", req.URL.Path)
-		require.NoError(t, json.NewEncoder(w).Encode(&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{Name: "kubernetes", Namespace: "default",
-				UID: "stable", ResourceVersion: "1"},
-			Spec: corev1.ServiceSpec{Type: corev1.ServiceTypeClusterIP, ClusterIP: "10.0.0.1"},
-		}))
-	}))
-	defer server.Close()
-	kubeconfig := filepath.Join(work, "kubeconfig")
-	require.NoError(t, clientcmd.WriteToFile(clientcmdapi.Config{
-		CurrentContext: "fixture",
-		Clusters:       map[string]*clientcmdapi.Cluster{"fixture": {Server: server.URL}},
-		Contexts: map[string]*clientcmdapi.Context{
-			"fixture": {Cluster: "fixture", Namespace: "other"},
-		},
-	}, kubeconfig))
-	t.Setenv("KUBECONFIG", kubeconfig)
-	for _, name := range []string{"config.ub", "config-update.ub"} {
-		body, err := os.ReadFile(filepath.Join(scenario, name))
-		require.NoError(t, err)
-		require.NoError(t, os.WriteFile(filepath.Join(work, name), body, 0o600))
-		for _, args := range [][]string{
-			{"pin", "-c", name}, {"validate", "-c", name},
-			{"plan", "-c", name, "-o", "plan.ubp"}, {"apply", "plan.ubp"},
-		} {
-			cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
-			cmd.Dir = work
-			out, err := cmd.CombinedOutput()
-			require.NoError(t, err, "%s", out)
-		}
-	}
-	expected := map[string]int{
-		"GET /api/v1/namespaces/default/services/kubernetes":                    4,
-		"GET /api/v1/namespaces/default/services/unobin-it-service-info-absent": 4,
-	}
-	mu.Lock()
-	require.Equal(t, expected, requests)
-	mu.Unlock()
-	for _, args := range [][]string{
-		{"plan", "--destroy", "-c", "config-update.ub", "-o", "destroy.ubp"},
-		{"apply", "destroy.ubp"},
-	} {
-		cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
-		cmd.Dir = work
-		out, err := cmd.CombinedOutput()
-		require.NoError(t, err, "%s", out)
-	}
-	mu.Lock()
-	require.Equal(t, expected, requests)
-	mu.Unlock()
 }

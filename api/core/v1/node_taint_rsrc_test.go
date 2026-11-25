@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -12,12 +11,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/encrypters"
 	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/lang"
 	"github.com/cloudboss/unobin/pkg/lang/syntax"
-	"github.com/cloudboss/unobin/pkg/libraryapi"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/cloudboss/unobin/pkg/sdk/state"
 	"github.com/cloudboss/unobin/pkg/state/local"
@@ -37,81 +34,6 @@ const (
 	nodeTaintUniqueRule  = "object.spec.taints must have unique keys"
 	nodeTaintManagerRule = "field-manager must contain a non-whitespace character"
 )
-
-func TestCompiledNodeTaintInputs(t *testing.T) {
-	for _, tc := range []struct {
-		fixture     string
-		diagnostics []string
-	}{
-		{"valid", nil},
-		{"identity", []string{
-			":7:19: type: missing required field \"name\"",
-			":18:27: type: type mismatch: expected string, got null",
-			":29:35: type: unknown field \"namespace\"",
-			":40:21: type: unknown field \"generate-name\"",
-		}},
-		{"shape", []string{
-			":5:37: resolve: missing required input \"object\"",
-			":7:15: type: missing required field \"spec\"",
-			":10:51: type: missing required field \"taints\"",
-			":13:61: type: type mismatch: expected list(object(",
-			":16:62: type: type mismatch: expected object(",
-			":21:30: type: missing required field \"key\"",
-			":25:62: type: missing required field \"value\"",
-			":28:62: type: missing required field \"effect\"",
-			":33:37: type: type mismatch: expected string, got null",
-			":39:49: type: type mismatch: expected string, got null",
-			":45:61: type: type mismatch: expected string, got null",
-			":51:37: type: type mismatch: expected string, got boolean",
-			":57:49: type: type mismatch: expected string, got integer",
-			":63:61: type: type mismatch: expected string, got boolean",
-		}},
-		{"rules", []string{nodeTaintNameRule, nodeTaintLengthRule, nodeTaintUniqueRule,
-			nodeTaintManagerRule}},
-	} {
-		t.Run(tc.fixture, func(t *testing.T) {
-			err := compileNodeTaintFixture(t, tc.fixture, nil)
-			if tc.diagnostics == nil {
-				require.NoError(t, err)
-				return
-			}
-			for _, diagnostic := range tc.diagnostics {
-				require.ErrorContains(t, err, diagnostic)
-			}
-			if tc.fixture == "rules" {
-				require.ErrorContains(t, err, "constraints[")
-			}
-		})
-	}
-}
-
-func TestNodeTaintCompilerCompatibility(t *testing.T) {
-	old := libraryapi.Descriptor{
-		FormatVersion: 1, ImplementedAPIs: []string{"1.0"}, GeneratorAPI: "1.0",
-	}
-	err := compileNodeTaintFixture(t, "valid", &old)
-	require.ErrorContains(t, err, "required library API 1.1 is newer than implemented API 1.0")
-}
-
-func compileNodeTaintFixture(
-	t *testing.T, fixture string, api *libraryapi.Descriptor,
-) error {
-	t.Helper()
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	var log bytes.Buffer
-	_, err = compile.RunResult(compile.Options{
-		FactoryPath: filepath.Join(nodeTaintFixtures, fixture, "factory.ub"),
-		OutDir:      coreCompileDirectory(t), StackName: "node-taint-test", Version: "v0.0.0",
-		CLIVersion: "v0.13.1", GoVersion: "1.26.2", LibraryAPIDescriptor: api,
-		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
-		Stdout:           &log, Stderr: &log,
-	})
-	if err != nil && log.Len() > 0 {
-		t.Log(log.String())
-	}
-	return err
-}
 
 func nodeTaintLibrary(t *testing.T) *runtime.Library {
 	t.Helper()

@@ -1,9 +1,0 @@
-stack: {
-  factory: {
-    inputs: { hostname: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }
-  }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

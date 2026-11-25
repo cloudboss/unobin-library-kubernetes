@@ -12,7 +12,6 @@ import (
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	typedappsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 
@@ -134,62 +133,41 @@ func assertReadyDaemonSet(t *testing.T, obj *appsv1.DaemonSet) {
 	require.Equal(t, obj.Status.DesiredNumberScheduled, obj.Status.NumberReady)
 }
 
-func TestDaemonSetAPIValidation(t *testing.T) {
+func TestDaemonSetOnDeleteProjection(t *testing.T) {
 	api := daemonSetAPI(t)
-	for _, value := range []string{"OnFailure", "Never", "both zero"} {
-		t.Run(value, func(t *testing.T) {
-			r := daemonSetInput(t)
-			r.WaitForRollout = new(false)
-			switch value {
-			case "OnFailure", "Never":
-				r.Spec.Template.Spec.RestartPolicy = &value
-			default:
-				r.Spec.Strategy = &svc.DaemonSetStrategy{RollingUpdate: &svc.DaemonSetRollingUpdate{
-					MaxSurge: new("0"), MaxUnavailable: new("0"),
-				}}
-			}
-			out, err := r.Create(t.Context(), nil)
-			if out != nil {
-				require.NoError(t, r.Delete(t.Context(), nil, daemonSetPrior{Inputs: *r, Outputs: out}))
-			}
-			require.True(t, apierrors.IsInvalid(err), "%v", err)
-		})
+	r := daemonSetInput(t)
+	r.WaitForRollout = new(false)
+	r.Spec.Strategy = &svc.DaemonSetStrategy{
+		Type: new("OnDelete"),
+		RollingUpdate: &svc.DaemonSetRollingUpdate{
+			MaxSurge: new("0"), MaxUnavailable: new("0"),
+		},
 	}
-	t.Run("OnDelete rolling", func(t *testing.T) {
-		r := daemonSetInput(t)
-		r.WaitForRollout = new(false)
-		r.Spec.Strategy = &svc.DaemonSetStrategy{
-			Type: new("OnDelete"),
-			RollingUpdate: &svc.DaemonSetRollingUpdate{
-				MaxSurge: new("0"), MaxUnavailable: new("0"),
-			},
+	created, err := r.Create(t.Context(), nil)
+	if created != nil {
+		p := daemonSetPrior{Inputs: *r, Outputs: created}
+		t.Cleanup(func() { require.NoError(t, r.Delete(context.Background(), nil, p)) })
+	}
+	require.NoError(t, err)
+	require.NotNil(t, created)
+	require.Equal(t, *r.Metadata.Name, created.Name)
+	require.Equal(t, "default", created.Namespace)
+	require.NotEmpty(t, created.UID)
+	live, err := api.Get(t.Context(), created.Name, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, live.Name, created.Name)
+	require.Equal(t, live.Namespace, created.Namespace)
+	require.Equal(t, string(live.UID), created.UID)
+	require.Equal(t, appsv1.OnDeleteDaemonSetStrategyType, live.Spec.UpdateStrategy.Type)
+	strategy := &svc.DaemonSetStrategy{Type: new(string(live.Spec.UpdateStrategy.Type))}
+	if rolling := live.Spec.UpdateStrategy.RollingUpdate; rolling != nil {
+		strategy.RollingUpdate = &svc.DaemonSetRollingUpdate{
+			MaxSurge:       new(rolling.MaxSurge.String()),
+			MaxUnavailable: new(rolling.MaxUnavailable.String()),
 		}
-		created, err := r.Create(t.Context(), nil)
-		if created != nil {
-			p := daemonSetPrior{Inputs: *r, Outputs: created}
-			t.Cleanup(func() { require.NoError(t, r.Delete(context.Background(), nil, p)) })
-		}
-		require.NoError(t, err)
-		require.NotNil(t, created)
-		require.Equal(t, *r.Metadata.Name, created.Name)
-		require.Equal(t, "default", created.Namespace)
-		require.NotEmpty(t, created.UID)
-		live, err := api.Get(t.Context(), created.Name, metav1.GetOptions{})
-		require.NoError(t, err)
-		require.Equal(t, live.Name, created.Name)
-		require.Equal(t, live.Namespace, created.Namespace)
-		require.Equal(t, string(live.UID), created.UID)
-		require.Equal(t, appsv1.OnDeleteDaemonSetStrategyType, live.Spec.UpdateStrategy.Type)
-		strategy := &svc.DaemonSetStrategy{Type: new(string(live.Spec.UpdateStrategy.Type))}
-		if rolling := live.Spec.UpdateStrategy.RollingUpdate; rolling != nil {
-			strategy.RollingUpdate = &svc.DaemonSetRollingUpdate{
-				MaxSurge:       new(rolling.MaxSurge.String()),
-				MaxUnavailable: new(rolling.MaxUnavailable.String()),
-			}
-		}
-		require.Equal(t, strategy, created.Spec.Strategy)
-		read, err := r.Read(t.Context(), nil, daemonSetPrior{Inputs: *r, Outputs: created})
-		require.NoError(t, err)
-		require.Equal(t, created, read)
-	})
+	}
+	require.Equal(t, strategy, created.Spec.Strategy)
+	read, err := r.Read(t.Context(), nil, daemonSetPrior{Inputs: *r, Outputs: created})
+	require.NoError(t, err)
+	require.Equal(t, created, read)
 }

@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: 'TOKEN_REQUEST_INPUTS' }
-  state: local {
-    path: 'state'
-  }
-  encryption: noop {}
-}

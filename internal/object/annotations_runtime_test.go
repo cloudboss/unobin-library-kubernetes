@@ -1,13 +1,11 @@
 package object_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -17,8 +15,6 @@ import (
 	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/lang"
 	"github.com/cloudboss/unobin/pkg/runtime"
-	"github.com/cloudboss/unobin/pkg/sdk/encrypt"
-	"github.com/cloudboss/unobin/pkg/sdk/state"
 	"github.com/cloudboss/unobin/pkg/state/local"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -295,96 +291,6 @@ func TestAnnotationsDeferredPresenceProtectsReplacement(t *testing.T) {
 	}
 }
 
-func TestAnnotationsCompiledLifecycle(t *testing.T) {
-	api := newAnnotationsRuntimeAPI(t, "")
-	api.setAdmissionRewrite(true)
-	t.Setenv("KUBECONFIG", filepath.Join(t.TempDir(), "missing"))
-	root, err := filepath.Abs("../..")
-	require.NoError(t, err)
-	source, err := filepath.Abs(filepath.Join(annotationFixtures, "known", "factory.ub"))
-	require.NoError(t, err)
-	dir := t.TempDir()
-	var log bytes.Buffer
-	result, err := compile.RunResult(compile.Options{
-		FactoryPath: source, OutDir: dir, StackName: "annotations",
-		Version: "v0.0.0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
-		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
-		Build:            true, Stdout: &log, Stderr: &log,
-	})
-	require.NoError(t, err, "%s", log.String())
-	config, err := os.ReadFile(filepath.Join(annotationFixtures, "known", "config.ub"))
-	require.NoError(t, err)
-	config = bytes.ReplaceAll(config, []byte("KUBE_SERVER"), []byte(api.server))
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "config.ub"), config, 0o600))
-
-	command := func(args ...string) *exec.Cmd {
-		cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
-		cmd.Dir = dir
-		return cmd
-	}
-	run := func(args ...string) []byte {
-		t.Helper()
-		output, err := command(args...).CombinedOutput()
-		require.NoError(t, err, "%v\n%s", args, output)
-		return output
-	}
-	run("pin", "-c", "config.ub")
-	run("plan", "-c", "config.ub", "-o", "saved.ubp")
-	require.Empty(t, api.takeCalls())
-	run("apply", "saved.ubp")
-	get := annotationGet("example")
-	require.Equal(t, []annotationCall{get,
-		annotationApply("example", "team manager", "false",
-			map[string]any{"managed": "top"}, map[string]any{"managed": "template"}), get,
-	}, api.takeCalls())
-	var snapshot state.Snapshot
-	require.NoError(t, json.Unmarshal(run("state", "pull", "-c", "config.ub"), &snapshot))
-	require.Equal(t, map[string]any{
-		"top":      map[string]any{"managed": "admitted"},
-		"template": map[string]any{"managed": "admitted template"},
-	}, snapshot.Outputs)
-
-	api.remove("example")
-	run("plan", "-c", "config.ub", "-o", "reattach.ubp")
-	require.Equal(t, []annotationCall{get}, api.takeCalls())
-	body, err := os.ReadFile(filepath.Join(dir, "reattach.ubp"))
-	require.NoError(t, err)
-	saved, err := runtime.OpenPlan(body, func(*runtime.StateRef) (encrypt.Encrypter, error) {
-		return encrypters.Noop{}, nil
-	})
-	require.NoError(t, err)
-	step := annotationStep(t, saved)
-	require.Equal(t, runtime.DecisionCreate, step.Decision)
-	require.Equal(t, "uid-example", step.PriorOutputs["uid"])
-	output, err := command("apply", "reattach.ubp").CombinedOutput()
-	require.Error(t, err)
-	require.Contains(t, string(output), "get existing Kubernetes ConfigMap example")
-	require.Equal(t, []annotationCall{get}, api.takeCalls())
-
-	const replacementUID = "uid-replacement"
-	api.setObject("example", replacementUID, nil, nil)
-	api.setAdmissionRewrite(false)
-	run("apply", "reattach.ubp")
-	top, template := map[string]any{"managed": "top"}, map[string]any{"managed": "template"}
-	require.Equal(t, []annotationCall{
-		get,
-		{
-			Method: http.MethodPatch, Path: get.Path, Manager: "team manager", Force: "false",
-			Body: annotationObject("example", replacementUID, top, template),
-		},
-		get,
-	}, api.takeCalls())
-	require.NoError(t, json.Unmarshal(run("state", "pull", "-c", "config.ub"), &snapshot))
-	entry := snapshot.Find(annotationsAddress)
-	require.NotNil(t, entry)
-	require.Equal(t, map[string]any{
-		"server": api.server, "api-version": "v1", "kind": "ConfigMap", "name": "example",
-		"namespace": "default", "uid": replacementUID,
-		"annotations": top, "template-annotations": template,
-	}, entry.Outputs)
-	require.Equal(t, map[string]any{"top": top, "template": template}, snapshot.Outputs)
-}
-
 func annotationExecutor(
 	t *testing.T, fixture string, api *annotationsRuntimeAPI,
 ) *runtime.Executor {
@@ -561,12 +467,6 @@ func (a *annotationsRuntimeAPI) setAdmissionRewrite(rewrite bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.rewrite = rewrite
-}
-
-func (a *annotationsRuntimeAPI) remove(name string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	delete(a.objects, name)
 }
 
 func annotationObject(name, uid string, top, template map[string]any) map[string]any {

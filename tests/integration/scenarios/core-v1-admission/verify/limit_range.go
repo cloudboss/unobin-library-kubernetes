@@ -15,11 +15,9 @@ import (
 	"github.com/cloudboss/unobin/pkg/sdk/encrypt"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
 )
@@ -102,9 +100,6 @@ func verifyLimitRange() error {
 	}
 	file := filepath.Join(dir, "limit-range-identities.json")
 	if stage == "applied" {
-		if err := checkAdmission(ctx, api.CoreV1().Pods("default"), wantGenerated[0]); err != nil {
-			return err
-		}
 		if err := checkNoOp(ctx, dir); err != nil {
 			return err
 		}
@@ -139,41 +134,6 @@ func initialSpecs() (generated, explicit []corev1.LimitRangeItem) {
 
 func resources(name corev1.ResourceName, quantity string) corev1.ResourceList {
 	return corev1.ResourceList{name: resource.MustParse(quantity)}
-}
-
-func checkAdmission(
-	ctx context.Context, pods typedcorev1.PodInterface, policy corev1.LimitRangeItem,
-) error {
-	memory := resource.MustParse("128Mi")
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{GenerateName: "unobin-limit-admission-"},
-		Spec: corev1.PodSpec{Containers: []corev1.Container{{
-			Name: "verify", Image: "unused",
-			Resources: corev1.ResourceRequirements{
-				Limits:   corev1.ResourceList{corev1.ResourceMemory: memory},
-				Requests: corev1.ResourceList{corev1.ResourceMemory: memory},
-			},
-		}}},
-	}
-	options := metav1.CreateOptions{DryRun: []string{metav1.DryRunAll}}
-	admitted, err := pods.Create(ctx, pod, options)
-	if err != nil {
-		return err
-	}
-	want := corev1.ResourceRequirements{
-		Limits: policy.Default.DeepCopy(), Requests: policy.DefaultRequest.DeepCopy(),
-	}
-	want.Limits[corev1.ResourceMemory] = memory
-	want.Requests[corev1.ResourceMemory] = memory
-	if !apiequality.Semantic.DeepEqual(admitted.Spec.Containers[0].Resources, want) {
-		return fmt.Errorf("unexpected admitted resources: %v", admitted.Spec.Containers[0].Resources)
-	}
-	pod.Spec.Containers[0].Resources.Limits[corev1.ResourceCPU] = resource.MustParse("3")
-	_, err = pods.Create(ctx, pod, options)
-	if !apierrors.IsForbidden(err) {
-		return fmt.Errorf("expected admission to reject CPU above maximum, got %v", err)
-	}
-	return nil
 }
 
 func checkNoOp(ctx context.Context, dir string) error {

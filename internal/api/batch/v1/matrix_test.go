@@ -3,7 +3,6 @@ package v1
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -28,122 +27,6 @@ func visitFields(
 		for i := range v.Len() {
 			visitFields(v.Index(i), fmt.Sprintf("%s[%d]", prefix, i), visit)
 		}
-	}
-}
-
-var invalidJobFields = map[string][]any{
-	"PodSpec.ActiveDeadlineSeconds":                   {int64(-1)},
-	"PodSpec.DNSPolicy":                               {"invalid", ""},
-	"PodSpec.RestartPolicy":                           {"invalid", ""},
-	"PodSpec.TerminationGracePeriodSeconds":           {int64(-1)},
-	"PodSecurityContext.FSGroupChangePolicy":          {"invalid", ""},
-	"SeccompProfile.Type":                             {"invalid", ""},
-	"PodOS.Name":                                      {"invalid", ""},
-	"Toleration.Effect":                               {"invalid", ""},
-	"Toleration.Operator":                             {"invalid", ""},
-	"TopologySpreadConstraint.MaxSkew":                {int64(-1)},
-	"TopologySpreadConstraint.MinDomains":             {int64(-1)},
-	"TopologySpreadConstraint.NodeAffinityPolicy":     {"invalid", ""},
-	"TopologySpreadConstraint.NodeTaintsPolicy":       {"invalid", ""},
-	"TopologySpreadConstraint.WhenUnsatisfiable":      {"invalid", ""},
-	"NodeExpression.Operator":                         {"invalid", ""},
-	"Container.RestartPolicy":                         {"invalid", ""},
-	"Container.TerminationMessagePolicy":              {"invalid", ""},
-	"Port.Protocol":                                   {"invalid", ""},
-	"HTTPGet.Scheme":                                  {"invalid", ""},
-	"Probe.FailureThreshold":                          {int64(-1)},
-	"Probe.PeriodSeconds":                             {int64(-1)},
-	"Probe.SuccessThreshold":                          {int64(-1)},
-	"Probe.TimeoutSeconds":                            {int64(-1)},
-	"Mount.MountPropagation":                          {"invalid", ""},
-	"EmptyDirVolume.Medium":                           {"invalid"},
-	"ProjectedVolume.Sources":                         {int64(-1)},
-	"ServiceAccountTokenProjection.ExpirationSeconds": {int64(-1)},
-	"ClaimSpec.AccessModes":                           {"invalid", ""},
-	"ClaimSpec.VolumeMode":                            {"invalid", ""},
-	"HostPathVolume.Type":                             {"invalid"},
-	"JobSpec.ActiveDeadlineSeconds":                   {int64(-1)},
-	"JobSpec.BackoffLimit":                            {int64(-1)},
-	"JobSpec.BackoffLimitPerIndex":                    {int64(-1)},
-	"JobSpec.Completions":                             {int64(-1)},
-	"JobSpec.CompletionMode":                          {"invalid", ""},
-	"JobSpec.MaxFailedIndexes":                        {int64(-1)},
-	"JobSpec.Parallelism":                             {int64(-1)},
-	"PodFailurePolicy.Rule":                           {int64(-1)},
-	"ExitCodes.Values":                                {int64(-1)},
-}
-
-func TestValidationMatrix(t *testing.T) {
-	type invalid struct {
-		path   string
-		value  any
-		parser bool
-	}
-	var cases []invalid
-	visitFields(reflect.ValueOf(fullInput(t)).Elem(), "", func(
-		field reflect.StructField, value reflect.Value, key, model string,
-	) {
-		for _, value := range invalidJobFields[model] {
-			cases = append(cases, invalid{path: key, value: value})
-		}
-		switch field.Tag.Get("format") {
-		case "int32", "int64", "mode", "threshold", "quantity", "quantities":
-			cases = append(cases, invalid{
-				path: key, value: "malformed", parser: strings.HasPrefix(field.Tag.Get("format"),
-					"quantit") || strings.HasPrefix(field.Tag.Get("format"), "int")})
-			if field.Tag.Get("format") == "mode" || field.Tag.Get("format") == "quantity" {
-				if field.Tag.Get("omit") != "true" {
-					cases = append(cases, invalid{
-						path: key, value: "", parser: field.Tag.Get("format") == "quantity"})
-				}
-			}
-		case "relative-path":
-			for _, text := range []string{"/absolute", "a/../b", "..prefix"} {
-				cases = append(cases, invalid{path: key, value: text})
-			}
-		case "ip", "ips":
-			cases = append(cases, invalid{path: key, value: "invalid-IP"})
-		case "names":
-			cases = append(cases, invalid{path: key, value: "INVALID_DNS"})
-		case "port-number":
-			cases = append(cases, invalid{path: key, value: int64(65536)}, invalid{path: key,
-				value: int64(0)})
-		case "port", "port-name":
-			cases = append(cases, invalid{path: key, value: "invalid_port"}, invalid{path: key, value: ""})
-		}
-	})
-	for _, tc := range cases {
-		t.Run(fmt.Sprintf("%s=%v", tc.path, tc.value), func(t *testing.T) {
-			r := fullInput(t)
-			visitFields(reflect.ValueOf(r).Elem(), "", func(
-				field reflect.StructField, value reflect.Value, key, model string,
-			) {
-				if key != tc.path {
-					return
-				}
-				value = indirect(value)
-				switch value.Kind() {
-				case reflect.String:
-					value.SetString(tc.value.(string))
-				case reflect.Int64:
-					value.SetInt(tc.value.(int64))
-				case reflect.Slice:
-					if value.Type().Elem().Kind() == reflect.String {
-						value.Index(0).SetString(tc.value.(string))
-					} else {
-						value.SetLen(0)
-					}
-				case reflect.Map:
-					value.SetMapIndex(reflect.ValueOf("cpu"), reflect.ValueOf(tc.value.(string)))
-				}
-			})
-			if tc.parser {
-				_, err := r.expand(nil)
-				require.Error(t, err)
-			} else {
-				require.NotEmpty(t, checkNativeJobInputs(t, r))
-			}
-		})
 	}
 }
 

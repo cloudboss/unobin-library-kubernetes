@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"math"
@@ -14,12 +13,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/encrypters"
 	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/lang"
 	"github.com/cloudboss/unobin/pkg/lang/syntax"
-	"github.com/cloudboss/unobin/pkg/libraryapi"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/cloudboss/unobin/pkg/sdk/state"
 	"github.com/cloudboss/unobin/pkg/state/local"
@@ -48,76 +45,6 @@ const (
 	endpointsAnnRule      = "constraints[4] (predicate)"
 	endpointsPortError    = `field "subset[0].port[0].port": expected integer`
 )
-
-func TestEndpointsLookupCompiledInputs(t *testing.T) {
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	for _, tc := range []struct {
-		name   string
-		path   string
-		api    *libraryapi.Descriptor
-		errors []string
-	}{
-		{name: "valid", path: "valid"},
-		{name: "opaque port expression", path: "resolved-port"},
-		{name: "incompatible", path: "valid", api: &libraryapi.Descriptor{
-			FormatVersion: 1, ImplementedAPIs: []string{"1.0"}, GeneratorAPI: "1.0",
-		}, errors: []string{"required library API 1.1 is newer than implemented API 1.0"}},
-		{name: "literal rules", path: "invalid-literals", errors: []string{
-			"schema: data-source.empty-name: constraints[0]",
-			"schema: data-source.long-name: constraints[0]",
-			"schema: data-source.uppercase-name: constraints[0]",
-			"schema: data-source.empty-prefix: constraints[1]",
-			"schema: data-source.invalid-prefix: constraints[1]",
-			"schema: data-source.invalid-label-key: constraints[2]",
-			"schema: data-source.invalid-label-value: constraints[3]",
-			"schema: data-source.invalid-annotation: constraints[4]",
-		}},
-		{name: "structural", path: "invalid-inputs", errors: []string{
-			`missing required input "metadata" on core.endpoints`,
-			":7:17: type: type mismatch: expected object",
-			":10:17: type: type mismatch: expected object",
-			":14:17: type: type mismatch: expected optional(list",
-			":18:18: type: type mismatch: expected object",
-			":22:30: type: type mismatch: expected object",
-			":26:27: type: type mismatch: expected object",
-			`missing required field "ip"`, `missing required field "port"`,
-			"type mismatch: expected integer, got number",
-			"type mismatch: expected integer, got string",
-			"type mismatch: expected integer, got null",
-			"type mismatch: expected string, got null",
-			`unknown field "uid"`, `unknown field "resource-version"`,
-			`unknown field "generateName"`, `unknown field "nodeName"`,
-			`unknown field "target-ref"`, `unknown field "status" on core.endpoints`,
-		}},
-		{name: "excluded output", path: "invalid-outputs", errors: []string{
-			`unknown field "id" on core.endpoints`,
-			`unknown field "target-ref" on object`,
-			`unknown field "app-protocol" on object`,
-		}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			var log bytes.Buffer
-			_, err := compile.RunResult(compile.Options{
-				FactoryPath: filepath.Join("testdata/ub/endpoints", tc.path, "factory.ub"),
-				OutDir:      coreCompileDirectory(t), StackName: "endpoints-lookup",
-				Version: "v0.0.0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
-				LibraryAPIDescriptor: tc.api,
-				ReplaceGoModules: map[string]string{
-					"github.com/cloudboss/unobin-library-kubernetes": root,
-				},
-				Stdout: &log, Stderr: &log,
-			})
-			if tc.errors == nil {
-				require.NoError(t, err, "%s", log.String())
-				return
-			}
-			for _, message := range tc.errors {
-				require.ErrorContains(t, err, message)
-			}
-		})
-	}
-}
 
 func endpointsLookupLibrary(t *testing.T) *runtime.Library {
 	t.Helper()

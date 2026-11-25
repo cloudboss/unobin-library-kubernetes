@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { name: 'example', threshold: '100%', port: 65536 } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { hostname: 'UPPER', pending-zone: true } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

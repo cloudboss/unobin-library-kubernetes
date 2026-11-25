@@ -219,7 +219,7 @@ func verifyNodeTaintOwnership(ctx context.Context, nodes typedcorev1.NodeInterfa
 	if err := checkNodeTaintProbe(ctx, nodes, seed, nil); err != nil {
 		return err
 	}
-	if err := verifyNodeTaintAPIDiagnostics(ctx, nodes, seed, peer); err != nil {
+	if err := verifyNodeTaintEmptyListOwnership(ctx, nodes, seed, peer); err != nil {
 		return err
 	}
 	return verifyNodeTaintUIDRace(ctx, nodes, seed, peer)
@@ -270,7 +270,7 @@ func readNodeTaintProbe(
 	return live, nil
 }
 
-func verifyNodeTaintAPIDiagnostics(
+func verifyNodeTaintEmptyListOwnership(
 	ctx context.Context, nodes typedcorev1.NodeInterface, seed *corev1.Node, r core.NodeTaintResource,
 ) error {
 	r.FieldManager, r.Force = new("probe-third"), new(false)
@@ -279,30 +279,6 @@ func verifyNodeTaintAPIDiagnostics(
 		return err
 	}
 	r.Force = new(true)
-	for _, invalid := range []struct {
-		taint core.NodeTaint
-		field string
-	}{
-		{core.NodeTaint{Key: "bad key", Effect: "NoSchedule"}, "metadata.taints[0].key"},
-		{core.NodeTaint{Key: nodeTaintKeyPrefix + "a", Value: "bad value", Effect: "NoSchedule"},
-			"metadata.taints[0].value"},
-		{core.NodeTaint{Key: nodeTaintKeyPrefix + "a", Effect: "NotAnEffect"},
-			"metadata.taints[0].effect"},
-	} {
-		r.Object.Spec.Taints = []core.NodeTaint{invalid.taint}
-		_, err := r.Create(ctx, nil)
-		var status *apierrors.StatusError
-		if !errors.As(err, &status) || !apierrors.IsInvalid(err) ||
-			status.ErrStatus.Details == nil ||
-			!slices.ContainsFunc(status.ErrStatus.Details.Causes, func(cause metav1.StatusCause) bool {
-				return cause.Field == invalid.field
-			}) {
-			return fmt.Errorf("expected API invalid status for %s, got %v", invalid.field, err)
-		}
-		if err := checkNodeTaintProbe(ctx, nodes, seed, nil); err != nil {
-			return err
-		}
-	}
 	r.Object.Spec.Taints = []core.NodeTaint{{Key: nodeTaintKeyPrefix + "empty", Effect: "NoExecute"}}
 	if _, err := r.Create(ctx, nil); err != nil {
 		return fmt.Errorf("attach valid empty taint value: %w", err)

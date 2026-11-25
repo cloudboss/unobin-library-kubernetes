@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -10,14 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
-	"github.com/cloudboss/unobin/pkg/encoding/ub"
 	"github.com/cloudboss/unobin/pkg/encrypters"
 	"github.com/cloudboss/unobin/pkg/goschema"
 	"github.com/cloudboss/unobin/pkg/lang"
 	"github.com/cloudboss/unobin/pkg/lang/syntax"
 	"github.com/cloudboss/unobin/pkg/runtime"
-	"github.com/cloudboss/unobin/pkg/sdk/encrypt"
 	"github.com/cloudboss/unobin/pkg/sdk/state"
 	"github.com/cloudboss/unobin/pkg/state/local"
 	"github.com/stretchr/testify/require"
@@ -28,78 +24,6 @@ import (
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 )
-
-func compileIngressClassFactory(t *testing.T, fixture string) string {
-	t.Helper()
-	root, err := filepath.Abs("../../../..")
-	require.NoError(t, err)
-	base := filepath.Join(root, "_output/tests/networking-v1-ingress-class")
-	require.NoError(t, os.MkdirAll(base, 0o700))
-	work, err := os.MkdirTemp(base, fixture+"-")
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
-	path, err := filepath.Abs(filepath.Join("testdata/ub/ingress-class", fixture, "factory.ub"))
-	require.NoError(t, err)
-	var log bytes.Buffer
-	result, err := compile.RunResult(compile.Options{
-		FactoryPath: path, OutDir: work, StackName: "ingress-class-" + fixture,
-		Version: "v0.0.0", CLIVersion: "v0.13.1", GoVersion: "1.26.2",
-		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
-		Build:            true, Stdout: &log, Stderr: &log,
-	})
-	require.NoError(t, err, "%s", log.String())
-	return result.BinaryPath
-}
-
-func runIngressClassFactory(t *testing.T, binary, work string, args ...string) (string, error) {
-	t.Helper()
-	cmd := exec.CommandContext(t.Context(), binary, args...)
-	cmd.Dir = work
-	out, err := cmd.CombinedOutput()
-	return string(out), err
-}
-
-func planCompiledIngressClass(
-	t *testing.T, binary, work string, inputs map[string]any,
-) (string, error) {
-	t.Helper()
-	config, err := os.ReadFile("testdata/ub/ingress-class/config.ub")
-	require.NoError(t, err)
-	payload, err := ub.Marshal(inputs)
-	require.NoError(t, err)
-	config = bytes.Replace(config, []byte("'INGRESS_CLASS_INPUTS'"), payload, 1)
-	require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), config, 0o600))
-	out, err := runIngressClassFactory(t, binary, work, "pin", "-c", "config.ub")
-	require.NoError(t, err, "%s", out)
-	return runIngressClassFactory(t, binary, work, "plan", "-c", "config.ub", "-o", "plan.ubp")
-}
-
-func compiledIngressClassStep(t *testing.T, work string) runtime.PlanStep {
-	t.Helper()
-	return ingressClassPlanStep(t, openIngressClassPlan(t, work), "resource.class")
-}
-
-func openIngressClassPlan(t *testing.T, work string) *runtime.PlanFile {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join(work, "plan.ubp"))
-	require.NoError(t, err)
-	plan, err := runtime.OpenPlan(data, func(*runtime.StateRef) (encrypt.Encrypter, error) {
-		return encrypters.Noop{}, nil
-	})
-	require.NoError(t, err)
-	return plan
-}
-
-func ingressClassPlanStep(t *testing.T, plan *runtime.PlanFile, address string) runtime.PlanStep {
-	t.Helper()
-	for _, step := range plan.Steps {
-		if step.Address == address {
-			return step
-		}
-	}
-	t.Fatalf("plan has no step for %s", address)
-	return runtime.PlanStep{}
-}
 
 func ingressClassConstraints(t *testing.T) map[string][]lang.ConstraintSpec {
 	t.Helper()
@@ -292,78 +216,6 @@ func TestIngressClassLifecyclePlans(t *testing.T) {
 	planIngressClass(t, e, runtime.DecisionCreate)
 }
 
-func TestIngressClassNativeEvaluatedInputs(t *testing.T) {
-	binary := compileIngressClassFactory(t, "inputs")
-	evaluatedInputs := func(input string, value any) map[string]any {
-		inputs := map[string]any{
-			"server":   "https://unused.invalid",
-			"metadata": map[string]any{"generate-name": "example-"},
-			"spec":     map[string]any{"controller": "example.com/controller"},
-		}
-		inputs[input] = value
-		return inputs
-	}
-	for _, tc := range []struct {
-		name  string
-		input string
-		value any
-	}{
-		{"neither identity", "metadata", map[string]any{}},
-		{"two identities", "metadata", map[string]any{"name": "explicit", "generate-name": "next-"}},
-		{"empty name", "metadata", map[string]any{"name": ""}},
-		{"DNS syntax", "metadata", map[string]any{"name": "Example"}},
-		{"long name", "metadata", map[string]any{"name": strings.Repeat("a", 254)}},
-		{"empty prefix", "metadata", map[string]any{"generate-name": ""}},
-		{"long prefix", "metadata", map[string]any{"generate-name": strings.Repeat("a", 64)}},
-		{"label key", "metadata", map[string]any{
-			"name": "valid", "labels": map[string]any{"Upper/key": "valid"},
-		}},
-		{"label value", "metadata", map[string]any{
-			"name": "valid", "labels": map[string]any{"key": "invalid value"},
-		}},
-		{"annotation key", "metadata", map[string]any{
-			"name": "valid", "annotations": map[string]any{"invalid/key/again": "valid"},
-		}},
-		{"ignore annotations", "ignore-annotations", []any{"["}},
-		{"ignore labels", "ignore-labels", []any{"["}},
-		{"empty scope", "spec", ingressClassScopeInput("")},
-		{"lowercase scope", "spec", ingressClassScopeInput("namespace")},
-		{"unsupported scope", "spec", ingressClassScopeInput("Global")},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			inputs := evaluatedInputs(tc.input, tc.value)
-			out, err := planCompiledIngressClass(t, binary, t.TempDir(), inputs)
-			require.Error(t, err, "%s", out)
-			require.Contains(t, out, "resource.class: schema: constraints[")
-		})
-	}
-	for _, tc := range []struct {
-		name string
-		spec map[string]any
-	}{
-		{"omitted parameters", map[string]any{"controller": "example.com/controller"}},
-		{"omitted scope", map[string]any{
-			"parameters": map[string]any{"kind": "ConfigMap", "name": "settings"},
-		}},
-		{"Cluster scope", ingressClassScopeInput("Cluster")},
-		{"Namespace scope", ingressClassScopeInput("Namespace")},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			work := t.TempDir()
-			out, err := planCompiledIngressClass(t, binary, work, evaluatedInputs("spec", tc.spec))
-			require.NoError(t, err, "%s", out)
-			step := compiledIngressClassStep(t, work)
-			require.Equal(t, runtime.DecisionCreate, step.Decision)
-		})
-	}
-}
-
-func ingressClassScopeInput(scope string) map[string]any {
-	return map[string]any{"parameters": map[string]any{
-		"kind": "ConfigMap", "name": "settings", "scope": scope,
-	}}
-}
-
 func TestIngressClassSavedPlanConstraintsAndHistoricalDelete(t *testing.T) {
 	constraints := ingressClassConstraints(t)
 	var stored *networkingv1.IngressClass
@@ -423,57 +275,4 @@ func TestIngressClassSavedPlanConstraintsAndHistoricalDelete(t *testing.T) {
 	require.NoError(t, applyIngressClassPlan(t, e, p))
 	require.Equal(t, []string{"GET", "DELETE", "GET"}, methods[before:])
 	require.Nil(t, stored)
-}
-
-func TestIngressClassDeferredConstraints(t *testing.T) {
-	binary := compileIngressClassFactory(t, "pending")
-	t.Run("reject known scope beside pending name", func(t *testing.T) {
-		out, err := planCompiledIngressClass(t, binary, t.TempDir(), map[string]any{
-			"server": "https://unused.invalid", "seed-prefix": "seed-", "scope": "cluster",
-		})
-		require.Error(t, err, "%s", out)
-		require.Contains(t, out, "resource.class: schema: constraints[")
-		require.Contains(t, out, "spec.parameters.scope must be Cluster or Namespace")
-	})
-	for _, tc := range []struct {
-		name       string
-		seedPrefix string
-		want       []string
-	}{
-		{"valid", "seed-", []string{
-			"POST " + ingressClassPath, "POST " + ingressClassPath,
-			"GET " + ingressClassPath + "/seed-actual",
-		}},
-		{"invalid", "invalid-", []string{
-			"POST " + ingressClassPath,
-		}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			api := newIngressClassPlanAPI(t)
-			work := t.TempDir()
-			out, err := planCompiledIngressClass(t, binary, work,
-				map[string]any{"server": api.server, "seed-prefix": tc.seedPrefix})
-			require.NoError(t, err, "%s", out)
-			require.Empty(t, api.requests())
-			step := compiledIngressClassStep(t, work)
-			require.Equal(t, map[string][]string{
-				"spec": {"resource.seed.name"},
-			}, step.UnresolvedInputs)
-			out, err = runIngressClassFactory(t, binary, work, "apply", "plan.ubp")
-			if tc.name == "valid" {
-				require.NoError(t, err, "%s", out)
-				created := api.class("deferred")
-				require.NotNil(t, created)
-				require.Equal(t, &networkingv1.IngressClassParametersReference{
-					Kind: "ConfigMap", Name: "settings", Scope: new("Cluster"),
-				}, created.Spec.Parameters)
-			} else {
-				require.Error(t, err, "%s", out)
-				require.Contains(t, out, "resource.class: schema: constraints[")
-				require.Contains(t, out, "spec.parameters.scope must be Cluster or Namespace")
-				require.Nil(t, api.class("deferred"))
-			}
-			require.Equal(t, tc.want, api.requests())
-		})
-	}
 }

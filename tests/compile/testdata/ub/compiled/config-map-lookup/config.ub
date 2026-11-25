@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { value: 'first', binary-value: 'AAE=' } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

@@ -1,9 +1,0 @@
-factory: {
-  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
-  library-configs: { core: {} }
-  data-sources: {
-    claim: core.persistent-volume-claim {
-      metadata: { name: 1 }
-    }
-  }
-}

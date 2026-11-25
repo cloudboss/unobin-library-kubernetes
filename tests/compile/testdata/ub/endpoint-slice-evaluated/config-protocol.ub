@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { protocol: 'udp' } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

@@ -2,11 +2,9 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
 	"maps"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/cloudboss/unobin/pkg/encoding/ub"
@@ -288,81 +286,6 @@ func TestStatefulSetFullConversion(t *testing.T) {
 	require.NoError(t, err)
 	require.NotContains(t, string(encoded), "resourceVersion")
 	require.NotContains(t, string(encoded), "observedGeneration")
-}
-
-func TestStatefulSetValidationMatrix(t *testing.T) {
-	type invalid struct {
-		path  string
-		value any
-	}
-	var cases []invalid
-	visitFields(reflect.ValueOf(fullStatefulSet(t)).Elem(), "", func(
-		field reflect.StructField, value reflect.Value, key string,
-	) {
-		if !indirect(value).IsValid() {
-			return
-		}
-		if choices := field.Tag.Get("enum"); choices != "" {
-			cases = append(cases, invalid{key, "invalid"})
-			if !strings.HasPrefix(choices, ",") {
-				cases = append(cases, invalid{key, ""})
-			}
-		}
-		if field.Tag.Get("min") != "" {
-			cases = append(cases, invalid{key, int64(-1)})
-		}
-		switch field.Tag.Get("format") {
-		case "int32", "int64", "mode", "threshold", "quantity", "quantities":
-			cases = append(cases, invalid{key, "malformed"})
-			if field.Tag.Get("format") == "mode" || field.Tag.Get("format") == "quantity" {
-				if field.Tag.Get("omit") != "true" {
-					cases = append(cases, invalid{key, ""})
-				}
-			}
-		case "relative-path":
-			for _, text := range []string{"/absolute", "a/../b", "..prefix"} {
-				cases = append(cases, invalid{key, text})
-			}
-		case "ip", "ips":
-			cases = append(cases, invalid{key, "invalid-IP"})
-		case "names":
-			cases = append(cases, invalid{key, "INVALID_DNS"})
-		case "port-number":
-			cases = append(cases, invalid{key, int64(65536)}, invalid{key, int64(0)})
-		case "port", "port-name":
-			cases = append(cases, invalid{key, "invalid_port"}, invalid{key, ""})
-		}
-	})
-	for _, tc := range cases {
-		t.Run(fmt.Sprintf("%s=%v", tc.path, tc.value), func(t *testing.T) {
-			r := fullStatefulSet(t)
-			visitFields(reflect.ValueOf(r).Elem(), "", func(
-				field reflect.StructField, value reflect.Value, key string,
-			) {
-				if key != tc.path {
-					return
-				}
-				value = indirect(value)
-				switch value.Kind() {
-				case reflect.String:
-					value.SetString(tc.value.(string))
-				case reflect.Int64:
-					value.SetInt(tc.value.(int64))
-				case reflect.Slice:
-					if value.Type().Elem().Kind() == reflect.String {
-						value.Index(0).SetString(tc.value.(string))
-					} else {
-						value.SetLen(0)
-					}
-				case reflect.Map:
-					value.SetMapIndex(reflect.ValueOf("cpu"), reflect.ValueOf(tc.value.(string)))
-				}
-			})
-			_, err := r.expand(nil)
-			require.True(t, err != nil || len(checkNativeStatefulSetInputs(t, r)) > 0,
-				"input must fail native constraints or request parsing")
-		})
-	}
 }
 
 func TestStatefulSetTokenNormalization(t *testing.T) {

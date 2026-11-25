@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { defer-label: true } }
-  state: local {
-    path: '.unobin/STATE_CASE'
-  }
-  encryption: noop {}
-}

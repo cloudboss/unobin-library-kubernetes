@@ -299,7 +299,7 @@ func TestServerVersionSavedPlan(t *testing.T) {
 	var wantRequests []string
 	for range 2 {
 		file := serverVersionSavedPlan(t, executor)
-		observed := namespacesStep(t, file, "data-source.cluster")
+		observed := serverVersionStep(t, file, "data-source.cluster")
 		require.Equal(t, runtime.DecisionRead, observed.Decision)
 		require.Equal(t, serverVersionOutputs(), observed.ObservedOutputs)
 		wantRequests = append(wantRequests, serverVersionGET)
@@ -356,8 +356,8 @@ func TestServerVersionDeferredThenUnchanged(t *testing.T) {
 	executor := serverVersionExecutor(t, c, "deferred")
 
 	file := serverVersionSavedPlan(t, executor)
-	require.Equal(t, runtime.DecisionCreate, namespacesStep(t, file, "resource.managed").Decision)
-	step := namespacesStep(t, file, "data-source.cluster")
+	require.Equal(t, runtime.DecisionCreate, serverVersionStep(t, file, "resource.managed").Decision)
+	step := serverVersionStep(t, file, "data-source.cluster")
 	require.Equal(t, runtime.DecisionRead, step.Decision)
 	require.Empty(t, step.Inputs)
 	require.Nil(t, step.ObservedOutputs)
@@ -368,8 +368,8 @@ func TestServerVersionDeferredThenUnchanged(t *testing.T) {
 	requireAppliedServerVersion(t, executor)
 
 	file = serverVersionSavedPlan(t, executor)
-	require.Equal(t, runtime.DecisionNoOp, namespacesStep(t, file, "resource.managed").Decision)
-	step = namespacesStep(t, file, "data-source.cluster")
+	require.Equal(t, runtime.DecisionNoOp, serverVersionStep(t, file, "resource.managed").Decision)
+	step = serverVersionStep(t, file, "data-source.cluster")
 	require.Equal(t, runtime.DecisionRead, step.Decision)
 	require.Equal(t, serverVersionOutputs(), step.ObservedOutputs)
 	want := []string{
@@ -395,7 +395,7 @@ func TestServerVersionRejectsDeferredArgument(t *testing.T) {
 	c, requests := serverVersionWithNamespace(t)
 	executor := serverVersionExecutor(t, c, "deferred-unknown")
 	file := serverVersionSavedPlan(t, executor)
-	step := namespacesStep(t, file, "data-source.cluster")
+	step := serverVersionStep(t, file, "data-source.cluster")
 	require.Equal(t, map[string][]string{
 		"version": {"resource.managed.object.metadata.uid"},
 	}, step.UnresolvedInputs)
@@ -404,4 +404,15 @@ func TestServerVersionRejectsDeferredArgument(t *testing.T) {
 	_, err := executor.ApplyPlan(t.Context(), file)
 	require.ErrorContains(t, err, "has invalid keys: version")
 	require.Equal(t, []string{serverVersionNamespaceCreate}, requests())
+}
+
+func serverVersionStep(t *testing.T, plan *runtime.PlanFile, address string) runtime.PlanStep {
+	t.Helper()
+	for _, step := range plan.Steps {
+		if step.Address == address {
+			return step
+		}
+	}
+	t.Fatalf("plan lacks %s", address)
+	return runtime.PlanStep{}
 }

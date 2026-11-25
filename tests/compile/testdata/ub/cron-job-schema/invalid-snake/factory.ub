@@ -1,1 +1,0 @@
-factory: { imports: { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' } library-configs: { batch: {} } resources: { workload: batch.cron-job { metadata: {} spec: { schedule: '* * * * *' job-template: { metadata: {} spec: { template: { metadata: {} } }} } wait_for_completion: false } } }

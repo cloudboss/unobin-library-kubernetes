@@ -1,13 +1,8 @@
 package v1
 
 import (
-	"bytes"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/stretchr/testify/require"
 
@@ -73,55 +68,4 @@ func TestNamespacePlanning(t *testing.T) {
 	}
 	require.Empty(t, replacementReasons(t, reg, before, before, nil, nil,
 		map[string]any{"namespace": "old"}, &config.Configuration{Namespace: new("new")}))
-}
-
-func TestCompiledNamespaceFixtures(t *testing.T) {
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	base := filepath.Join(root, "_output/tests/core-v1-namespace")
-	require.NoError(t, os.MkdirAll(base, 0o700))
-	for _, name := range []string{
-		"valid", "missing-metadata", "list-metadata", "namespace", "spec", "status",
-		"metadata-finalizers", "spec-finalizers", "null-annotation", "null-label", "adoption",
-	} {
-		t.Run(name, func(t *testing.T) {
-			work, err := os.MkdirTemp(base, name+"-")
-			require.NoError(t, err)
-			t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
-			fixture, err := filepath.Abs(filepath.Join("testdata/ub/namespace", name))
-			require.NoError(t, err)
-			var log bytes.Buffer
-			result, err := compile.RunResult(compile.Options{
-				FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-				StackName: "namespace-test", Version: "v0.0.0",
-				CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
-				GoVersion: "1.26.2",
-				ReplaceGoModules: map[string]string{
-					"github.com/cloudboss/unobin-library-kubernetes": root,
-				}, Build: name == "valid", Stdout: &log, Stderr: &log,
-			})
-			if name != "valid" {
-				require.Error(t, err)
-				field := map[string]string{
-					"missing-metadata": "metadata", "list-metadata": "metadata",
-					"namespace": "namespace", "spec": "spec", "status": "status",
-					"metadata-finalizers": "finalizers", "spec-finalizers": "spec",
-					"null-annotation": "string", "null-label": "string", "adoption": "adopt",
-				}[name]
-				require.Contains(t, err.Error(), field)
-				return
-			}
-			require.NoError(t, err, "%s", log.String())
-			require.True(t, result.Built)
-			body, err := os.ReadFile(filepath.Join(fixture, "config.ub"))
-			require.NoError(t, err)
-			require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), body, 0o600))
-			for _, args := range [][]string{{"pin", "-c", "config.ub"}, {"validate", "-c", "config.ub"}} {
-				cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
-				cmd.Dir = work
-				out, err := cmd.CombinedOutput()
-				require.NoError(t, err, "%s", out)
-			}
-		})
-	}
 }

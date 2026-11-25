@@ -91,22 +91,6 @@ func TestConfigMapLifecycle(t *testing.T) {
 	require.ErrorIs(t, err, runtime.ErrNotFound)
 }
 
-func TestConfigMapAPIValidation(t *testing.T) {
-	_, namespace := configMapAPI(t)
-	for _, key := range []string{"overlap", "invalid/key"} {
-		t.Run(key, func(t *testing.T) {
-			r := generatedConfigMap(namespace)
-			r.Object.Data = &map[string]string{key: "value"}
-			r.Object.BinaryData = &map[string]string{}
-			if key == "overlap" {
-				r.Object.BinaryData = &map[string]string{key: "AAE="}
-			}
-			_, err := r.Create(t.Context(), nil)
-			require.True(t, apierrors.IsInvalid(err), "%v", err)
-		})
-	}
-}
-
 func TestConfigMapDeleteWithFinalizer(t *testing.T) {
 	api, namespace := configMapAPI(t)
 	r := generatedConfigMap(namespace)

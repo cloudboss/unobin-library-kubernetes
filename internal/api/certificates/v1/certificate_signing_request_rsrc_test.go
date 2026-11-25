@@ -34,7 +34,7 @@ import (
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 	svc "github.com/cloudboss/unobin-library-kubernetes/internal/api/certificates/v1"
-	"github.com/cloudboss/unobin-library-kubernetes/tests/compile/token"
+	"github.com/cloudboss/unobin-library-kubernetes/internal/api/certificates/v1/testdata/ub/token"
 )
 
 const (

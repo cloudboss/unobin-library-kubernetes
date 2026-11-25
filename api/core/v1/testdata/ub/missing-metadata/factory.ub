@@ -1,8 +1,0 @@
-factory: {
-  imports: { kubernetes: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
-  resources: {
-    settings: kubernetes.config-map {
-      object: { data: { key: 'value' } }
-    }
-  }
-}

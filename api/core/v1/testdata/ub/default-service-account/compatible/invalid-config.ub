@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { account-name: 'other' } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

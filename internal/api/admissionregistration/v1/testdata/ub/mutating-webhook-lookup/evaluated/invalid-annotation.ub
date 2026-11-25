@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { annotations: { 'prefix/-bad': 'any value' } } }
-  state: local {
-    path: '.unobin/STATE_CASE'
-  }
-  encryption: noop {}
-}

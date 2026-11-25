@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { seed: 'missing-app', defer-ports: true, address-type: 'IPv6' } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { comprehension: true } }
-  state: local {
-    path: '.unobin/partial-label-comprehension'
-  }
-  encryption: noop {}
-}

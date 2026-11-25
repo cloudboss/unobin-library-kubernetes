@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/stretchr/testify/require"
 
@@ -24,48 +22,6 @@ func TestConfigMapStableID(t *testing.T) {
 		}})
 	require.NoError(t, err)
 	require.Equal(t, "https://cluster/uid", *id)
-}
-
-func TestCompiledConfigMapFixtures(t *testing.T) {
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	base := filepath.Join(root, "_output/tests/core-v1-config-map")
-	require.NoError(t, os.MkdirAll(base, 0o700))
-	for _, name := range []string{"valid", "missing-metadata", "list-metadata"} {
-		t.Run(name, func(t *testing.T) {
-			work, err := os.MkdirTemp(base, name+"-")
-			require.NoError(t, err)
-			t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
-			fixture, err := filepath.Abs(filepath.Join("testdata/ub", name))
-			require.NoError(t, err)
-			var log bytes.Buffer
-			result, err := compile.RunResult(compile.Options{
-				FactoryPath: filepath.Join(fixture, "factory.ub"), OutDir: work,
-				StackName: "config-map-test", Version: "v0.0.0",
-				CLIVersion: "dev", ReplaceUnobin: unobinSource(t),
-				GoVersion: "1.26.2",
-				ReplaceGoModules: map[string]string{
-					"github.com/cloudboss/unobin-library-kubernetes": root,
-				}, Build: name == "valid", Stdout: &log, Stderr: &log,
-			})
-			if name != "valid" {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "metadata")
-				return
-			}
-			require.NoError(t, err, "%s", log.String())
-			require.True(t, result.Built)
-			body, err := os.ReadFile(filepath.Join(fixture, "config.ub"))
-			require.NoError(t, err)
-			require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), body, 0o600))
-			for _, args := range [][]string{{"pin", "-c", "config.ub"}, {"validate", "-c", "config.ub"}} {
-				cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
-				cmd.Dir = work
-				out, err := cmd.CombinedOutput()
-				require.NoError(t, err, "%s", out)
-			}
-		})
-	}
 }
 
 func replacementReasons(
@@ -196,24 +152,4 @@ func coreCompileDirectory(t *testing.T) string {
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
 	return work
-}
-
-func compileCoreInputFixture(t *testing.T, fixture string) error {
-	t.Helper()
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	factory, err := filepath.Abs(filepath.Join("testdata/ub", fixture, "factory.ub"))
-	require.NoError(t, err)
-	var log bytes.Buffer
-	_, err = compile.RunResult(compile.Options{
-		FactoryPath: factory, OutDir: coreCompileDirectory(t),
-		StackName: "constraints", Version: "v0.0.0", CLIVersion: "v0.13.1",
-		GoVersion: "1.26.2", ReplaceUnobin: unobinSource(t),
-		ReplaceGoModules: map[string]string{"github.com/cloudboss/unobin-library-kubernetes": root},
-		Stdout:           &log, Stderr: &log,
-	})
-	if err != nil {
-		t.Log(log.String())
-	}
-	return err
 }

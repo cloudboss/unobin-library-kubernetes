@@ -1,15 +1,9 @@
 package v1
 
 import (
-	"bytes"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
-	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/runtime"
 	"github.com/stretchr/testify/require"
 
@@ -22,64 +16,6 @@ func TestRoleStableID(t *testing.T) {
 		map[string]any{"server": "https://saved", "uid": "uid"})
 	require.NoError(t, err)
 	require.Equal(t, "https://saved/uid", *id)
-}
-
-func TestCompiledRoleFixtures(t *testing.T) {
-	root, err := filepath.Abs("../../..")
-	require.NoError(t, err)
-	base := filepath.Join(root, "_output/tests/rbac-v1-role")
-	require.NoError(t, os.MkdirAll(base, 0o700))
-	for _, name := range []string{"valid", "missing-metadata", "list-metadata", "missing-rule",
-		"missing-members", "missing-api-groups", "missing-resources", "missing-verbs",
-		"null-member", "null-map", "unsupported-rule", "server-metadata"} {
-		t.Run(name, func(t *testing.T) {
-			work, err := os.MkdirTemp(base, name+"-")
-			require.NoError(t, err)
-			t.Cleanup(func() { require.NoError(t, os.RemoveAll(work)) })
-			fixture, err := filepath.Abs(filepath.Join("testdata/ub", name))
-			require.NoError(t, err)
-			var log bytes.Buffer
-			sdk, err := exec.CommandContext(t.Context(), "go", "list", "-m", "-f", "{{.Dir}}",
-				"github.com/cloudboss/unobin").Output()
-			require.NoError(t, err)
-			result, err := compile.RunResult(compile.Options{
-				ReplaceUnobin: strings.TrimSpace(string(sdk)),
-				FactoryPath:   filepath.Join(fixture, "factory.ub"), OutDir: work,
-				StackName: "role-test", Version: "v0.0.0", CLIVersion: "dev",
-				GoVersion: "1.26.2",
-				ReplaceGoModules: map[string]string{
-					"github.com/cloudboss/unobin-library-kubernetes": root,
-				}, Build: name == "valid", Stdout: &log, Stderr: &log,
-			})
-			if name != "valid" {
-				require.Error(t, err, "%s", log.String())
-				field := map[string]string{
-					"missing-metadata": "metadata", "list-metadata": "metadata",
-					"missing-rule": "rule", "missing-members": "api-groups",
-					"missing-api-groups": "api-groups", "missing-resources": "resources",
-					"missing-verbs":    "verbs",
-					"null-member":      "expected string, got null",
-					"null-map":         "expected string, got null",
-					"unsupported-rule": "non-resource-urls", "server-metadata": "uid",
-				}[name]
-				require.Contains(t, err.Error(), field)
-				return
-			}
-			require.NoError(t, err, "%s", log.String())
-			require.True(t, result.Built)
-			body, err := os.ReadFile(filepath.Join(fixture, "config.ub"))
-			require.NoError(t, err)
-			require.NoError(t, os.WriteFile(filepath.Join(work, "config.ub"), body, 0o600))
-			for _, args := range [][]string{
-				{"pin", "-c", "config.ub"}, {"validate", "-c", "config.ub"},
-			} {
-				cmd := exec.CommandContext(t.Context(), result.BinaryPath, args...)
-				cmd.Dir = work
-				out, err := cmd.CombinedOutput()
-				require.NoError(t, err, "%s", out)
-			}
-		})
-	}
 }
 
 func replacementReasons(

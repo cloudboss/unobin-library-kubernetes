@@ -151,7 +151,7 @@ func verifySecretDataApplied(
 		return err
 	}
 	for _, verify := range []func(context.Context, typedcorev1.SecretInterface) error{
-		verifySecretDataManagerChange, verifySecretDataAdmission, verifySecretDataUIDGuard,
+		verifySecretDataManagerChange, verifySecretDataUIDGuard,
 	} {
 		if err := verify(ctx, api); err != nil {
 			return err
@@ -399,37 +399,6 @@ func verifySecretDataManagerChange(
 		return err
 	}
 	return checkSecretDataOwners(live, "survives", oldManager)
-}
-
-func verifySecretDataAdmission(
-	ctx context.Context, api typedcorev1.SecretInterface,
-) (result error) {
-	for _, tc := range []struct {
-		name, key string
-		manager   *string
-		immutable bool
-	}{
-		{"empty manager", "data", new(""), false},
-		{"invalid manager", "data", new("bad\x01manager"), false},
-		{"invalid key", "bad/key", nil, false},
-		{"immutable", "data", nil, true},
-	} {
-		seed, err := createSecretDataFixture(ctx, api, tc.immutable)
-		if err != nil {
-			return err
-		}
-		defer deleteSecretDataFixture(api, seed, &result)
-		value := secretDataAttachment(seed, map[string]string{tc.key: "value"})
-		value.FieldManager = tc.manager
-		_, err = value.Create(ctx, nil)
-		if !apierrors.IsInvalid(err) && (tc.manager == nil || !apierrors.IsBadRequest(err)) {
-			return fmt.Errorf("expected Secret data rejection for %s: %v", tc.name, err)
-		}
-		if err := checkSecretDataTarget(ctx, api, seed, secretDataBase()); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func verifySecretDataUIDGuard(ctx context.Context, api typedcorev1.SecretInterface) error {

@@ -1,9 +1,0 @@
-stack: {
-  factory: {
-    inputs: { revision: 'updated', spec: { attach-required: true, pod-info-on-mount: true } }
-  }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

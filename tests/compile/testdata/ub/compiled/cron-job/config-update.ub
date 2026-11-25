@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { stage: 'updated', ttl: '600', suspend: true, image: 'busybox:1.36' } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

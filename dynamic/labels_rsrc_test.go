@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -14,8 +13,6 @@ import (
 	"github.com/cloudboss/unobin/pkg/compile"
 	"github.com/cloudboss/unobin/pkg/encrypters"
 	"github.com/cloudboss/unobin/pkg/runtime"
-	"github.com/cloudboss/unobin/pkg/sdk/encrypt"
-	"github.com/cloudboss/unobin/pkg/sdk/state"
 	"github.com/cloudboss/unobin/pkg/state/local"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,204 +24,8 @@ const (
 	labelsFixtures   = "testdata/ub/labels"
 	labelsAddress    = "resource.selection"
 	labelsConstraint = labelsAddress + ": schema: constraints["
-	labelsLiteral    = labelsAddress + ": constraints["
 	labelsCollection = "/api/v1/namespaces/default/configmaps"
 )
-
-func TestCompiledLabelsLiterals(t *testing.T) {
-	for _, tc := range []struct{ fixture, diagnostic string }{
-		{"valid-core", ""}, {"valid-leading-slash", ""}, {"valid-group", ""},
-		{"missing-version", `missing required input "api-version"`},
-		{"null-version", "expected string, got null"},
-		{"missing-kind", `missing required input "kind"`},
-		{"null-kind", "expected string, got null"},
-		{"missing-metadata", `missing required input "metadata"`},
-		{"null-metadata", "got null"},
-		{"missing-name", `missing required field "name"`},
-		{"null-name", "expected string, got null"},
-		{"missing-labels", `missing required input "labels"`},
-		{"null-labels", "got null"},
-		{"wrong-label", "expected string, got integer"},
-		{"invalid-version", labelsLiteral + "0]"},
-		{"empty-version", labelsLiteral + "0]"},
-		{"empty-kind", labelsLiteral + "1]"},
-		{"empty-name", labelsLiteral + "2]"},
-		{"dot-name", labelsLiteral + "2]"},
-		{"dot-dot-name", labelsLiteral + "2]"},
-		{"slash-name", labelsLiteral + "2]"},
-		{"percent-name", labelsLiteral + "2]"},
-		{"empty-manager", labelsLiteral + "3]"},
-		{"ascii-space-manager", labelsLiteral + "3]"},
-		{"unicode-space-manager", labelsLiteral + "3]"},
-	} {
-		t.Run(tc.fixture, func(t *testing.T) {
-			_, err := compileLabels(t, filepath.Join("literals", tc.fixture), false)
-			if tc.diagnostic == "" {
-				require.NoError(t, err)
-			} else {
-				require.ErrorContains(t, err, tc.diagnostic)
-			}
-		})
-	}
-}
-
-func TestCompiledLabelsPlans(t *testing.T) {
-	binary, err := compileLabels(t, "known", true)
-	require.NoError(t, err)
-	api := newLabelsPlanAPI(t, "")
-	run := labelsRun(t, binary, "known", api.server,
-		"LOOKUP_VERSION", "v1", "LOOKUP_KIND", "ConfigMap", "LOOKUP_NAME", "example",
-		"FIELD_MANAGER", "team manager", "'FORCE'", "false", "CONFIGURED_NAMESPACE", "other")
-	plan := func(want runtime.Decision) *runtime.PlanStep {
-		run.ok("plan", "-c", "config.ub", "-o", "saved.ubp")
-		step := labelsPlanStep(t, run.plan("saved.ubp"))
-		require.Equal(t, want, step.Decision)
-		return step
-	}
-	plan(runtime.DecisionCreate)
-	require.Empty(t, api.take())
-	run.ok("apply", "saved.ubp")
-	require.Equal(t, labelApplyCalls("example", "team+manager", false), api.take())
-	entry := run.state().Find(labelsAddress)
-	require.NotNil(t, entry)
-	require.Equal(t, map[string]any{
-		"server": api.server, "api-version": "v1", "kind": "ConfigMap", "name": "example",
-		"namespace": "default", "uid": "uid-example",
-		"labels": map[string]any{"managed": "desired"},
-	}, entry.Outputs)
-	require.Equal(t, map[string]any{"observed": map[string]any{"managed": "desired"}},
-		run.state().Outputs)
-
-	plan(runtime.DecisionNoOp)
-	require.Equal(t, []string{labelGet("example")}, api.take())
-	run.ok("apply", "saved.ubp")
-	require.Empty(t, api.take())
-	for _, tc := range []struct{ version, kind, name, manager, rule string }{
-		{"v1/extra/version", "ConfigMap", "example", "team manager", "0"},
-		{"v1", "", "example", "team manager", "1"},
-		{"v1", "ConfigMap", "bad/name", "team manager", "2"},
-		{"v1", "ConfigMap", ".", "team manager", "2"},
-		{"v1", "ConfigMap", "..", "team manager", "2"},
-		{"v1", "ConfigMap", "example", " ", "3"},
-	} {
-		labelsConfigure(run, "known", api.server,
-			"LOOKUP_VERSION", tc.version, "LOOKUP_KIND", tc.kind, "LOOKUP_NAME", tc.name,
-			"FIELD_MANAGER", tc.manager, "'FORCE'", "false", "CONFIGURED_NAMESPACE", "other")
-		out := run.fail("plan", "-c", "config.ub", "-o", "invalid.ubp")
-		require.Contains(t, out, labelsConstraint+tc.rule+"]")
-		require.Equal(t, []string{labelGet("example")}, api.take())
-	}
-
-	labelsConfigure(run, "known", api.server,
-		"LOOKUP_VERSION", "v1", "LOOKUP_KIND", "ConfigMap", "LOOKUP_NAME", "example",
-		"FIELD_MANAGER", "team manager", "'FORCE'", "false", "CONFIGURED_NAMESPACE", "changed")
-	api.setLabels("example", map[string]string{"managed": "desired", "external": "changed"})
-	plan(runtime.DecisionNoOp)
-	require.Equal(t, []string{labelGet("example")}, api.take())
-	api.setLabels("example", map[string]string{"external": "changed"})
-	require.True(t, plan(runtime.DecisionUpdate).Drift())
-	require.Equal(t, []string{labelGet("example")}, api.take())
-	run.ok("apply", "saved.ubp")
-	require.Equal(t, labelApplyCalls("example", "team+manager", false), api.take())
-	plan(runtime.DecisionNoOp)
-	require.Equal(t, []string{labelGet("example")}, api.take())
-
-	api.setLabels("example", map[string]string{"managed": "drifted"})
-	require.True(t, plan(runtime.DecisionUpdate).Drift())
-	require.Equal(t, []string{labelGet("example")}, api.take())
-	run.ok("refresh", "-c", "config.ub")
-	require.Equal(t, []string{labelGet("example")}, api.take())
-	require.Equal(t, map[string]any{"managed": "drifted"},
-		run.state().Find(labelsAddress).Outputs["labels"])
-	plan(runtime.DecisionNoOp)
-	require.Equal(t, []string{labelGet("example")}, api.take())
-
-	labelsConfigure(run, "known", api.server,
-		"LOOKUP_VERSION", "v1", "LOOKUP_KIND", "ConfigMap", "LOOKUP_NAME", "example",
-		"FIELD_MANAGER", "new manager", "'FORCE'", "false", "CONFIGURED_NAMESPACE", "other")
-	plan(runtime.DecisionUpdate)
-	require.Equal(t, []string{labelGet("example")}, api.take())
-	run.ok("apply", "saved.ubp")
-	require.Equal(t, labelApplyCalls("example", "new+manager", false), api.take())
-	labelsConfigure(run, "known", api.server,
-		"LOOKUP_VERSION", "v1", "LOOKUP_KIND", "ConfigMap", "LOOKUP_NAME", "example",
-		"FIELD_MANAGER", "new manager", "'FORCE'", "true", "CONFIGURED_NAMESPACE", "other")
-	plan(runtime.DecisionUpdate)
-	require.Equal(t, []string{labelGet("example")}, api.take())
-	api.setAdmissionRewrite(true)
-	run.ok("apply", "saved.ubp")
-	require.Equal(t, labelApplyCalls("example", "new+manager", true), api.take())
-	api.setAdmissionRewrite(false)
-	entry = run.state().Find(labelsAddress)
-	require.Equal(t, map[string]any{"managed": "desired"}, entry.Inputs["labels"])
-	require.Equal(t, map[string]any{"managed": "admitted"}, entry.Outputs["labels"])
-	plan(runtime.DecisionNoOp)
-	require.Equal(t, []string{labelGet("example")}, api.take())
-
-	labelsConfigure(run, "known", api.server,
-		"LOOKUP_VERSION", "v1", "LOOKUP_KIND", "ConfigMap", "LOOKUP_NAME", "next",
-		"FIELD_MANAGER", "new manager", "'FORCE'", "true", "CONFIGURED_NAMESPACE", "other")
-	plan(runtime.DecisionReplace)
-	require.Equal(t, []string{labelGet("example")}, api.take())
-	run.ok("apply", "saved.ubp")
-	want := []string{labelGet("example"), labelGet("example"),
-		labelPatch("example", "new+manager", true)}
-	want = append(want, labelApplyCalls("next", "new+manager", true)...)
-	require.Equal(t, want, api.take())
-	require.Equal(t, map[string]string{}, api.labelsFor("example"))
-	require.Equal(t, map[string]string{"managed": "desired"}, api.labelsFor("next"))
-	require.Equal(t, "uid-next", run.state().Find(labelsAddress).Outputs["uid"])
-
-	api.remove("next")
-	plan(runtime.DecisionCreate)
-	require.Equal(t, []string{labelGet("next")}, api.take())
-	out := run.fail("apply", "saved.ubp")
-	require.Contains(t, out, "get existing Kubernetes ConfigMap next")
-	require.Equal(t, []string{labelGet("next")}, api.take())
-}
-
-func TestCompiledLabelsDeferredReplacement(t *testing.T) {
-	binary, err := compileLabels(t, "pending", true)
-	require.NoError(t, err)
-	for _, target := range []string{"bad/name", "next"} {
-		t.Run(target, func(t *testing.T) {
-			api := newLabelsPlanAPI(t, target)
-			run := labelsRun(t, binary, "pending", api.server, "'DEFER_NAME'", "false")
-			run.ok("plan", "-c", "config.ub", "-o", "initial.ubp")
-			run.ok("apply", "initial.ubp")
-			initialCalls := []string{"POST " + labelsCollection, labelGet("seed")}
-			initialCalls = append(initialCalls, labelApplyCalls("example", "Terraform", false)...)
-			require.Equal(t, append(initialCalls, labelGet("seed")), api.take())
-			entry := run.state().Find(labelsAddress)
-			require.Equal(t, "Terraform", entry.Inputs["field-manager"])
-			require.Equal(t, false, entry.Inputs["force-conflicts"])
-			run.ok("state", "remove", "-c", "config.ub", "resource.seed")
-			labelsConfigure(run, "pending", api.server, "'DEFER_NAME'", "true")
-			run.ok("plan", "-c", "config.ub", "-o", "pending.ubp")
-			step := labelsPlanStep(t, run.plan("pending.ubp"))
-			require.Equal(t, map[string][]string{
-				"metadata": {"resource.seed.object.metadata.uid"},
-			}, step.UnresolvedInputs)
-			require.Equal(t, []string{"metadata.name", "metadata.namespace"},
-				step.PendingReplacementReasons)
-			require.Contains(t, step.AllowedDecisions, runtime.DecisionReplace)
-			require.Equal(t, []string{labelGet("example")}, api.take())
-			want := []string{"POST " + labelsCollection, labelGet("seed")}
-			if target == "next" {
-				run.ok("apply", "pending.ubp")
-				want = append(want, labelGet("example"), labelGet("example"),
-					labelPatch("example", "Terraform", false))
-				want = append(want, labelApplyCalls("next", "Terraform", false)...)
-				want = append(want, labelGet("seed"))
-				require.Equal(t, "uid-next", run.state().Find(labelsAddress).Outputs["uid"])
-			} else {
-				require.Contains(t, run.fail("apply", "pending.ubp"), labelsConstraint+"2]")
-				require.Equal(t, map[string]string{"managed": "desired"}, api.labelsFor("example"))
-			}
-			require.Equal(t, want, api.take())
-		})
-	}
-}
 
 func TestLabelsSavedNoOpAndHistoricalDestroyWithTightenedRule(t *testing.T) {
 	path := filepath.Join(labelsFixtures, "known", "factory.ub")
@@ -279,30 +80,6 @@ func TestLabelsSavedNoOpAndHistoricalDestroyWithTightenedRule(t *testing.T) {
 	require.Equal(t, []string{labelGet("example"), labelGet("example"),
 		labelPatch("example", "team+manager", false)}, api.take())
 	require.Equal(t, map[string]string{}, api.labelsFor("example"))
-}
-
-func compileLabels(t *testing.T, fixture string, build bool) (string, error) {
-	t.Helper()
-	return compileDynamicFixture(t, filepath.Join(labelsFixtures, fixture, "factory.ub"),
-		"dynamic-labels", build, nil)
-}
-
-func labelsRun(t *testing.T, binary, fixture, server string, pairs ...string) labelsFactoryRun {
-	t.Helper()
-	run := labelsFactoryRun{t: t, binary: binary, work: dynamicCompileDirectory(t)}
-	t.Setenv("KUBECONFIG", filepath.Join(run.work, "missing"))
-	labelsConfigure(run, fixture, server, pairs...)
-	return run
-}
-
-func labelsConfigure(run labelsFactoryRun, fixture, server string, pairs ...string) {
-	run.t.Helper()
-	body, err := os.ReadFile(filepath.Join(labelsFixtures, fixture, "config.ub"))
-	require.NoError(run.t, err)
-	input := strings.NewReplacer(append([]string{"KUBE_SERVER", server}, pairs...)...).
-		Replace(string(body))
-	require.NoError(run.t, os.WriteFile(filepath.Join(run.work, "config.ub"), []byte(input), 0o600))
-	run.ok("pin", "-c", "config.ub")
 }
 
 func labelsPlanStep(t *testing.T, plan *runtime.PlanFile) *runtime.PlanStep {
@@ -386,28 +163,10 @@ func newLabelsPlanAPI(t *testing.T, seedUID string) *labelsPlanAPI {
 	return api
 }
 
-func (a *labelsPlanAPI) setLabels(name string, labels map[string]string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.objects[name] = labels
-}
-
 func (a *labelsPlanAPI) labelsFor(name string) map[string]string {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.objects[name]
-}
-
-func (a *labelsPlanAPI) setAdmissionRewrite(rewrite bool) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.rewrite = rewrite
-}
-
-func (a *labelsPlanAPI) remove(name string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	delete(a.objects, name)
 }
 
 func labelGet(name string) string { return "GET " + labelsCollection + "/" + name }
@@ -423,51 +182,6 @@ func labelPatch(name, manager string, force bool) string {
 
 func labelApplyCalls(name, manager string, force bool) []string {
 	return []string{labelGet(name), labelPatch(name, manager, force), labelGet(name)}
-}
-
-type labelsFactoryRun struct {
-	t            *testing.T
-	binary, work string
-}
-
-func (r labelsFactoryRun) command(args ...string) ([]byte, error) {
-	cmd := exec.CommandContext(r.t.Context(), r.binary, args...)
-	cmd.Dir = r.work
-	return cmd.CombinedOutput()
-}
-
-func (r labelsFactoryRun) ok(args ...string) []byte {
-	r.t.Helper()
-	out, err := r.command(args...)
-	require.NoError(r.t, err, "%s %v\n%s", r.binary, args, out)
-	return out
-}
-
-func (r labelsFactoryRun) fail(args ...string) string {
-	r.t.Helper()
-	out, err := r.command(args...)
-	require.Error(r.t, err, "%s %v\n%s", r.binary, args, out)
-	return string(out)
-}
-
-func (r labelsFactoryRun) plan(path string) *runtime.PlanFile {
-	r.t.Helper()
-	body, err := os.ReadFile(filepath.Join(r.work, path))
-	require.NoError(r.t, err)
-	plan, err := runtime.OpenPlan(body, func(ref *runtime.StateRef) (encrypt.Encrypter, error) {
-		require.NotNil(r.t, ref)
-		require.Equal(r.t, "noop", ref.Name)
-		return encrypters.Noop{}, nil
-	})
-	require.NoError(r.t, err)
-	return plan
-}
-
-func (r labelsFactoryRun) state() *state.Snapshot {
-	r.t.Helper()
-	snapshot, err := state.DecodeSnapshot(r.ok("state", "pull", "-c", "config.ub"))
-	require.NoError(r.t, err)
-	return snapshot
 }
 
 func newLabelsHTTP(

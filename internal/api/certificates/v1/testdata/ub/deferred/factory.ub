@@ -1,7 +1,7 @@
 factory: {
   imports: {
     certificates: 'github.com/cloudboss/unobin-library-kubernetes//api/certificates/v1'
-    tokens:       'github.com/cloudboss/unobin-library-kubernetes//tests/compile/token'
+    tokens:       'github.com/cloudboss/unobin-library-kubernetes//internal/api/certificates/v1/testdata/ub/token'
   }
   library-configs: { certificates: { server: input.server, insecure-skip-tls-verify: true } }
   inputs: {

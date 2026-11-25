@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { labels: { good: 'bad value' } } }
-  state: local {
-    path: '.unobin/steady'
-  }
-  encryption: noop {}
-}

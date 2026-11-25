@@ -47,7 +47,7 @@ func verifyConfigMapData() error {
 	maps := api.CoreV1().ConfigMaps("default")
 	for _, verify := range []func(context.Context, typedcorev1.ConfigMapInterface) error{
 		verifyConfigMapDataOwnership, verifyConfigMapDataManagerChange,
-		verifyConfigMapDataAdmission, verifyConfigMapDataUIDGuard,
+		verifyConfigMapDataUIDGuard,
 	} {
 		if err := verify(ctx, maps); err != nil {
 			return err
@@ -318,39 +318,6 @@ func verifyConfigMapDataManagerChange(
 		return err
 	}
 	return checkConfigMapDataOwners(live, "survives", "existing-manager")
-}
-
-func verifyConfigMapDataAdmission(
-	ctx context.Context, api typedcorev1.ConfigMapInterface,
-) (result error) {
-	for _, test := range []struct {
-		name      string
-		manager   *string
-		key       string
-		immutable bool
-	}{
-		{"empty manager", new(""), "data", false},
-		{"invalid manager", new("bad\x01manager"), "data", false},
-		{"invalid key", nil, "bad/key", false},
-		{"binary key collision", nil, "bytes", false},
-		{"immutable", nil, "data", true},
-	} {
-		seed, err := configMapDataSeed(ctx, api, test.immutable)
-		if err != nil {
-			return err
-		}
-		defer deleteConfigMapDataFixture(api, seed, &result)
-		value := configMapDataAttachment(seed, map[string]string{test.key: "value"})
-		value.FieldManager = test.manager
-		_, err = value.Create(ctx, nil)
-		if !apierrors.IsInvalid(err) && (test.manager == nil || !apierrors.IsBadRequest(err)) {
-			return fmt.Errorf("expected ConfigMap rejection for %s: %v", test.name, err)
-		}
-		if _, err := checkConfigMapDataTarget(ctx, api, seed, seed.Data); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func verifyConfigMapDataUIDGuard(

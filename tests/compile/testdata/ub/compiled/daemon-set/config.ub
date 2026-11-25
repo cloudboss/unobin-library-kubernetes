@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { image: 'registry.k8s.io/pause:3.9', epoch: 'first', memory: '1024Ki' } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

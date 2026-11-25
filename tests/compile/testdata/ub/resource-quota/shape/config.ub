@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { server: 'QUOTA_SERVER', name: 'QUOTA_NAME', choice: 'QUOTA_CHOICE' } }
-  state: local {
-    path: 'state'
-  }
-  encryption: noop {}
-}

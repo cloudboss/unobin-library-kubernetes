@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { value: 'updated', automount: true } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

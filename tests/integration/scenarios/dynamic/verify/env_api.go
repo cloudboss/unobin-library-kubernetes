@@ -53,23 +53,6 @@ func verifyEnvAdmission(
 	if out != nil || !apierrors.IsConflict(err) || !strings.Contains(err.Error(), "force-conflicts") {
 		return fmt.Errorf("expected unforced env ownership conflict, got %v, %v", out, err)
 	}
-	duplicate := envInput("apps/v1", "Deployment", deployment.Name,
-		object.EnvVar{Name: "DUPLICATE"}, object.EnvVar{Name: "DUPLICATE"})
-	out, err = duplicate.Create(ctx, nil)
-	if out != nil || err == nil || !strings.Contains(err.Error(), "duplicate entries") {
-		return fmt.Errorf("expected duplicate-name SSA error, got %v, %v", out, err)
-	}
-	incompatible := envInput("apps/v1", "Deployment", deployment.Name, object.EnvVar{
-		Name: "INVALID", Value: new("nonempty"),
-		ValueFrom: &object.EnvValueFrom{
-			FieldRef: &object.EnvFieldRef{FieldPath: new("metadata.name")},
-		},
-	})
-	out, err = incompatible.Create(ctx, nil)
-	if out != nil || !apierrors.IsInvalid(err) {
-		return fmt.Errorf("expected incompatible value and value-from rejection, got %v, %v",
-			out, err)
-	}
 	workloads := api.AppsV1().Deployments(envNamespace)
 	if err := verifyEnvManagers(ctx, workloads, deployment); err != nil {
 		return err

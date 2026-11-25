@@ -68,7 +68,6 @@ func TestCompiledObjectsOnKubernetes(t *testing.T) {
 		"spec":     spec,
 	}}, metav1.CreateOptions{})
 	require.NoError(t, err)
-	require.Equal(t, spec, mouse.Object["spec"])
 
 	api, err := client.NewDynamicContext(ctx, nil)
 	require.NoError(t, err)
@@ -79,10 +78,6 @@ func TestCompiledObjectsOnKubernetes(t *testing.T) {
 	require.NoError(t, err)
 	second, err := configMaps.Get(ctx, "edge-second", metav1.GetOptions{})
 	require.NoError(t, err)
-	page, err := configMaps.List(ctx, metav1.ListOptions{LabelSelector: "tier=edge", Limit: 1})
-	require.NoError(t, err)
-	require.NotEmpty(t, page.GetContinue())
-	require.Equal(t, []unstructured.Unstructured{*first}, page.Items)
 
 	run := compileObjectsFactory(t, namespace, group)
 	run("pin", "-c", "config.ub")

@@ -1,0 +1,29 @@
+factory: {
+  inputs: {
+    cluster: {
+      type:    library-config('github.com/cloudboss/unobin-library-kubernetes//config')
+      default: {}
+    }
+  }
+  imports: {
+    core:    'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+  }
+  library-configs: {
+    core:    input.cluster
+    dynamic: input.cluster
+  }
+  resources: {
+    namespace: core.namespace {
+      object: { metadata: { name: 'compile-typed' } }
+    }
+    object: dynamic.object {
+      manifest: '''|-
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: compile-unstructured
+        '''
+    }
+  }
+}

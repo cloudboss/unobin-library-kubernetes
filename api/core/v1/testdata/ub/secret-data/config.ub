@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: 'SECRET_DATA_INPUTS' }
-  state: local {
-    path: 'state'
-  }
-  encryption: noop {}
-}

@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { seed: 'bad-enum', defer-type: true } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}

@@ -1,7 +1,0 @@
-stack: {
-  factory: { inputs: { endpoint-kind: 'missing-addresses' } }
-  state: local {
-    path: '.unobin/state'
-  }
-  encryption: noop {}
-}
