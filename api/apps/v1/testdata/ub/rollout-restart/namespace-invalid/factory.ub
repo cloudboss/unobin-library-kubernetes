@@ -1,0 +1,13 @@
+factory: {
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: {} }
+  actions: {
+    restart: apps.rollout-restart {
+      namespace:    'bad.namespace'
+      kind:         'Deployment'
+      name:         'example.test'
+      expected-uid: 'opaque-uid'
+      restart-at:   '2026-11-26T12:00:00Z'
+    }
+  }
+}

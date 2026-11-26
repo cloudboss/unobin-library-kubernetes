@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Config
+current-context: selected
+contexts:
+- name: selected
+  context: {cluster: example, user: example, namespace: context-space}
+clusters:
+- name: example
+  cluster: {server: 'https://unused.example'}
+users:
+- name: example
+  user: {}

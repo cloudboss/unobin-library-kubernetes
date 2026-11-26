@@ -19,6 +19,11 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.1",
 		},
 		Configuration: config.LibraryConfiguration(),
+		Actions: map[string]runtime.ActionRegistration{
+			"rollout-restart": runtime.MakeAction[
+				svc.RolloutRestartAction, *svc.RolloutRestartActionOutput, *config.Configuration,
+			](),
+		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"stateful-set": svc.StatefulSetRegistration[
 				svc.StatefulSetResource, *svc.StatefulSetResourceOutput,

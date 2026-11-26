@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { outer-label: 'verified', restart-at: '2026-11-27T12:00:00Z' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

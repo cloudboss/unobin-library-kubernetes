@@ -1,0 +1,173 @@
+factory: {
+  imports: {
+    apps:    'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1'
+    core:    'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    objects: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+  }
+  library-configs: { apps: {}, core: {}, objects: {} }
+  inputs: {
+    restart-at:   { type: string }
+    rollout-wait: { type: boolean, default: true }
+    outer-label:  { type: string, default: 'base' }
+  }
+  resources: {
+    scope: core.namespace {
+      object: { metadata: { name: 'unobin-it-restart' } }
+    }
+    headless: objects.object {
+      manifest: @core.to-json(
+        {
+          apiVersion: 'v1'
+          kind:       'Service'
+          metadata:   { name: 'restart-headless', namespace: resource.scope.object.metadata.name }
+          spec:       { clusterIP: 'None', selector: { suite: 'restart' }, ports: [{ port: 80 }] }
+        },
+      )
+    }
+    deployment: apps.deployment {
+      metadata: {
+        name:      'restart-deployment'
+        namespace: resource.scope.object.metadata.name
+        labels:    { check: input.outer-label }
+      }
+      spec: {
+        replicas: '1'
+        selector: { match-labels: { app: 'restart-deployment' } }
+        template: {
+          metadata: { labels: { app: 'restart-deployment', suite: 'restart' } }
+          spec:     { container: [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }] }
+        }
+      }
+      wait-for-rollout: input.rollout-wait
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+    }
+    daemon: apps.daemon-set {
+      metadata: {
+        name:      'restart-daemonset'
+        namespace: resource.scope.object.metadata.name
+        labels:    { check: input.outer-label }
+      }
+      spec: {
+        selector: { match-labels: { app: 'restart-daemonset' } }
+        template: {
+          metadata: { labels: { app: 'restart-daemonset', suite: 'restart' } }
+          spec:     { container: [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }] }
+        }
+      }
+      wait-for-rollout: input.rollout-wait
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+    }
+    stateful: apps.stateful-set {
+      metadata: {
+        name:      'restart-statefulset'
+        namespace: resource.scope.object.metadata.name
+        labels:    { check: input.outer-label }
+      }
+      spec: {
+        replicas:     '1'
+        service-name: resource.headless.name
+        selector:     { match-labels: { app: 'restart-statefulset' } }
+        template: {
+          metadata: { labels: { app: 'restart-statefulset', suite: 'restart' } }
+          spec:     { container: [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }] }
+        }
+      }
+      wait-for-rollout: input.rollout-wait
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+    }
+    partition: apps.stateful-set {
+      metadata: {
+        name:      'restart-partition'
+        namespace: resource.scope.object.metadata.name
+        labels:    { check: input.outer-label }
+      }
+      spec: {
+        replicas:        '2'
+        service-name:    resource.headless.name
+        update-strategy: { type: 'RollingUpdate', rolling-update: { partition: 1 } }
+        selector:        { match-labels: { app: 'restart-partition' } }
+        template: {
+          metadata: { labels: { app: 'restart-partition', suite: 'restart' } }
+          spec:     { container: [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }] }
+        }
+      }
+      wait-for-rollout: input.rollout-wait
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+    }
+    staged: apps.stateful-set {
+      metadata: {
+        name:      'restart-ondelete'
+        namespace: resource.scope.object.metadata.name
+        labels:    { check: input.outer-label }
+      }
+      spec: {
+        replicas:        '1'
+        service-name:    resource.headless.name
+        update-strategy: { type: 'OnDelete' }
+        selector:        { match-labels: { app: 'restart-ondelete' } }
+        template: {
+          metadata: { labels: { app: 'restart-ondelete', suite: 'restart' } }
+          spec:     { container: [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }] }
+        }
+      }
+      wait-for-rollout: false
+      create-timeout:   '3m'
+      update-timeout:   '3m'
+    }
+  }
+  actions: {
+    deployment: apps.rollout-restart {
+      kind:             'Deployment'
+      name:             resource.deployment.name
+      namespace:        resource.deployment.namespace
+      expected-uid:     resource.deployment.uid
+      restart-at:       input.restart-at
+      wait-for-rollout: input.rollout-wait
+      timeout:          '3m'
+    }
+    daemon: apps.rollout-restart {
+      kind:             'DaemonSet'
+      name:             resource.daemon.name
+      namespace:        resource.daemon.namespace
+      expected-uid:     resource.daemon.uid
+      restart-at:       input.restart-at
+      wait-for-rollout: input.rollout-wait
+      timeout:          '3m'
+    }
+    stateful: apps.rollout-restart {
+      kind:             'StatefulSet'
+      name:             resource.stateful.name
+      namespace:        resource.stateful.namespace
+      expected-uid:     resource.stateful.uid
+      restart-at:       input.restart-at
+      wait-for-rollout: input.rollout-wait
+      timeout:          '3m'
+    }
+    partition: apps.rollout-restart {
+      kind:             'StatefulSet'
+      name:             resource.partition.name
+      namespace:        resource.partition.namespace
+      expected-uid:     resource.partition.uid
+      restart-at:       input.restart-at
+      wait-for-rollout: input.rollout-wait
+      timeout:          '3m'
+    }
+    staged: apps.rollout-restart {
+      kind:             'StatefulSet'
+      name:             resource.staged.name
+      namespace:        resource.staged.namespace
+      expected-uid:     resource.staged.uid
+      restart-at:       input.restart-at
+      wait-for-rollout: false
+    }
+  }
+  outputs: {
+    partition-selected: { value: action.partition.selected-replicas }
+    partition:          { value: action.partition.partition }
+    staged-waited:      { value: action.staged.waited }
+  }
+}
