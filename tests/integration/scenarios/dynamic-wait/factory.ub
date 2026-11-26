@@ -1,0 +1,46 @@
+factory: {
+  imports: {
+    core:    'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+  }
+  library-configs: { core: {}, dynamic: {} }
+  inputs:          { revision: { type: string } }
+  resources: {
+    scope: core.namespace {
+      object: { metadata: { name: 'unobin-it-dynamic-wait' } }
+    }
+    settings: core.config-map {
+      object: {
+        metadata: { name: 'settings', namespace: resource.scope.object.metadata.name }
+        data:     { revision: input.revision }
+      }
+    }
+  }
+  actions: {
+    ready: dynamic.wait {
+      @trigger:    input.revision
+      api-version: 'v1'
+      kind:        'ConfigMap'
+      metadata: {
+        name:      resource.settings.object.metadata.name
+        namespace: resource.settings.object.metadata.namespace
+      }
+      expected-uid: resource.settings.object.metadata.uid
+      field:        { path: ['data', 'revision'], string-equals: input.revision }
+      timeout:      '10s'
+    }
+    scope: dynamic.wait {
+      api-version:  'v1'
+      kind:         'Namespace'
+      metadata:     { name: resource.scope.object.metadata.name }
+      expected-uid: resource.scope.object.metadata.uid
+      exists:       true
+      timeout:      '10s'
+    }
+  }
+  outputs: {
+    wait-uid:    { value: action.ready.uid }
+    cluster-uid: { value: action.scope.uid }
+    predicate:   { value: action.ready.predicate }
+  }
+}

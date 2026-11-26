@@ -1,0 +1,32 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: { server: input.server } }
+  actions: {
+    target: dynamic.wait {
+      api-version:  input.api-version
+      kind:         input.kind
+      metadata:     input.metadata
+      expected-uid: input.expected-uid
+      timeout:      input.timeout
+      exists:       input.exists
+      deleted:      input.deleted
+      condition:    input.condition
+      field:        input.field
+      @trigger:     input.trigger
+    }
+  }
+  outputs: {
+    result: {
+      value: {
+        server:           action.target.server
+        api-version:      action.target.api-version
+        kind:             action.target.kind
+        name:             action.target.name
+        namespace:        action.target.namespace
+        predicate:        action.target.predicate
+        uid:              action.target.uid
+        resource-version: action.target.resource-version
+      }
+    }
+  }
+}

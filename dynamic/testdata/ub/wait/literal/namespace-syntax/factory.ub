@@ -1,0 +1,12 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: {} }
+  actions: {
+    target: dynamic.wait {
+      api-version: 'v1'
+      kind:        'ConfigMap'
+      metadata:    { name: 'example', namespace: 'UPPER' }
+      exists:      true
+    }
+  }
+}

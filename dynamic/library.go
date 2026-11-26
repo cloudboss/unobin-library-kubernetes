@@ -19,6 +19,11 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.1",
 		},
 		Configuration: config.LibraryConfiguration(),
+		Actions: map[string]runtime.ActionRegistration{
+			"wait": runtime.MakeAction[
+				svc.WaitAction, *svc.WaitActionOutput, *config.Configuration,
+			](),
+		},
 		DataSources: map[string]runtime.DataSourceRegistration{
 			"objects": runtime.MakeDataSource[
 				svc.ObjectsDataSource, *svc.ObjectsDataSourceOutput, *config.Configuration,
