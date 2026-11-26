@@ -26,6 +26,8 @@
   Unobin source in Go test strings.
 - Extend integration scenarios by Kubernetes API group and version. Add a
   separate scenario when its setup or lifecycle needs isolation.
+- Use `verify/` executables for integration checks. Do not add a separate Go
+  test runner or unit tests of the verifiers.
 - Test this library's behavior. Do not test Unobin or Kubernetes behavior, or
   add tests that inspect documentation or tooling text.
 - Keep one shared-configuration fixture under `tests/compile/`. Compile

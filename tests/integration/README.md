@@ -39,7 +39,7 @@ SCENARIO=apps-v1 make test-integration-kind
 ```
 
 This target uses the local Linux Docker socket to create a uniquely named kind
-cluster. The Go test container joins kind's network and uses its internal
+cluster. The Go container joins kind's network and uses its internal
 kubeconfig. The cluster is deleted after the tests, including failed runs.
 Failed runs retain diagnostics under `_output/integration/kind-*/`.
 
@@ -86,10 +86,11 @@ UNOBIN_KUBERNETES_LIVE=1 KUBECONFIG="${HOME}/.kube/test" ./tests/integration/run
 
 Put new coverage in the existing group/version directory under
 `tests/integration/scenarios/`. Use a separate scenario when its setup,
-admission policy, or lifecycle needs isolation. Put fixtures for Go tests in
-`testdata/ub/` within their package. API tests use the `integration` build tag.
-The driver runs Go tests with a five-minute timeout and disables test-result
-caching, then runs the factory when present.
+admission policy, or lifecycle needs isolation. Put verifier fixtures in
+`verify/testdata/ub/`. Every scenario uses a `verify/` executable. API checks
+return errors, use bounded contexts, and clean up temporary objects before
+returning. They run once after the initial apply. The configuration scenario
+runs its verifier without a factory.
 
 A factory scenario uses these files.
 

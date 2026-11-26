@@ -117,8 +117,9 @@ the factory with the local library, pins both configurations, plans and applies
 them, and destroys the stack. The verifier can save object identities in
 `VERIFY_BUILD_DIR` to check whether an update preserved or replaced an object.
 
-Go API tests use the `integration` build tag. Unobin fixtures used by Go tests
-belong in package-local `testdata/ub/` files.
+Integration checks run through each scenario's `verify/` executable. API checks
+and compiled fixture checks return errors and clean up temporary objects.
+Verifier fixtures belong in package-local `testdata/ub/` files.
 
 Final construct validation includes build, unit tests, vet, lint, and the
 focused kind scenario:

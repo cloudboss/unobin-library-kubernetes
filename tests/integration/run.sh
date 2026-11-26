@@ -45,7 +45,11 @@ run_scenario() (
         initial_config=config-api.ub
         updated_config=config-api-update.ub
     fi
-    for file in "${initial_config}" "${updated_config}" verify/main.go; do
+    set -- verify/main.go
+    if [ -f "${source_dir}/factory.ub" ]; then
+        set -- "${@}" "${initial_config}" "${updated_config}"
+    fi
+    for file in "${@}"; do
         [ -f "${source_dir}/${file}" ] || {
             echo "missing scenario file: ${source_dir}/${file}" >&2
             exit 2
@@ -64,8 +68,9 @@ run_scenario() (
                 "./${name}" plan --destroy -c "${destroy_config}" -o destroy.ubp &&
                 "./${name}" apply destroy.ubp); then
                 if [ "${status}" = 0 ]; then
-                    VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=destroyed \
-                        "${work}/verify" || status=1
+                    (cd "${source_dir}/verify" &&
+                        VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=destroyed \
+                        "${work}/verify") || status=1
                 fi
             else
                 echo "destroy failed: ${name}" >&2
@@ -83,6 +88,11 @@ run_scenario() (
     trap 'exit 130' INT
     trap 'exit 143' TERM
 
+    if [ ! -f "${source_dir}/factory.ub" ]; then
+        go build -o "${work}/verify" "./tests/integration/scenarios/${name}/verify"
+        (cd "${source_dir}/verify" && VERIFY_PHASE=applied "${work}/verify")
+        exit
+    fi
     "${unobin}" compile -p "${source_dir}" -o "${work}" --name "${name}" \
         --replace-go-module "github.com/cloudboss/unobin-library-kubernetes=${root}" --build
     go build -o "${work}/verify" "./tests/integration/scenarios/${name}/verify"
@@ -93,21 +103,16 @@ run_scenario() (
     (cd "${work}" && "./${name}" plan -c config.ub -o plan.ubp)
     applied=1
     (cd "${work}" && "./${name}" apply plan.ubp)
-    VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=applied "${work}/verify"
+    (cd "${source_dir}/verify" &&
+        VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=applied "${work}/verify")
     (cd "${work}" && "./${name}" plan -c update/config.ub -o plan-update.ubp)
     destroy_config=update/config.ub
     (cd "${work}" && "./${name}" apply plan-update.ubp)
-    VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=updated "${work}/verify"
+    (cd "${source_dir}/verify" &&
+        VERIFY_BUILD_DIR="${work}" VERIFY_PHASE=updated "${work}/verify")
 )
 
 for name in "${@}"; do
     echo "==> ${name}"
-    for test_file in "${scenarios}/${name}/"*_test.go; do
-        [ -f "${test_file}" ] || continue
-        go test -tags integration -timeout 5m -count=1 -v "./tests/integration/scenarios/${name}"
-        break
-    done
-    if [ -f "${scenarios}/${name}/factory.ub" ]; then
-        run_scenario "${name}"
-    fi
+    run_scenario "${name}"
 done

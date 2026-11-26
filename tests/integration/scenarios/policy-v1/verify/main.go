@@ -16,6 +16,9 @@ import (
 )
 
 func main() {
+	if err := verifyAPI(); err != nil {
+		log.Fatal(err)
+	}
 	if err := verify(); err != nil {
 		log.Fatal(err)
 	}
