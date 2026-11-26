@@ -2,6 +2,7 @@ package dynamic
 
 import (
 	"context"
+	"maps"
 	"net/http"
 	"os"
 	"os/exec"
@@ -256,9 +257,7 @@ func TestWaitTriggersAndDeferredExecution(t *testing.T) {
 				"metadata": map[string]any{"name": "example"}, "exists": true,
 				"expected-uid": nil, "timeout": nil, "deleted": nil, "condition": nil, "field": nil}
 			executor.Inputs = map[string]any{"server": api, "trigger": "first"}
-			for key, value := range settings {
-				executor.Inputs[key] = value
-			}
+			maps.Copy(executor.Inputs, settings)
 			executor.Inputs["settings"] = settings
 			apply := func() {
 				t.Helper()

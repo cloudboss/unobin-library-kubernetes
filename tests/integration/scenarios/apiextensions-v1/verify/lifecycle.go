@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/ptr"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 	crd "github.com/cloudboss/unobin-library-kubernetes/internal/api/apiextensions/v1"
@@ -107,7 +106,7 @@ func verifyNativeLifecycle(ctx context.Context, cfg *rest.Config) (result error)
 		return fmt.Errorf("stored-version removal must remain an API error, got %v", err)
 	}
 	// Teardown uses saved identity even when desired schema is invalid.
-	p.Inputs.Spec.Versions[0].Schema = ptr.To(map[string]any{"invalid-schema": true})
+	p.Inputs.Spec.Versions[0].Schema = new(map[string]any{"invalid-schema": true})
 	if err := r.Delete(ctx, nil, p); err != nil {
 		return fmt.Errorf("delete CRD and associated instances: %w", err)
 	}

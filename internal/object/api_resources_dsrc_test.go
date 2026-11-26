@@ -189,7 +189,7 @@ func TestAPIResourcesFreshAndDeterministic(t *testing.T) {
 		return true
 	})
 	query := APIResourcesDataSource{APIGroup: new("")}
-	for invocation := int32(0); invocation < 3; invocation++ {
+	for invocation := range int32(3) {
 		current.Store(invocation)
 		want := discoveryRows()[:2]
 		if invocation > 1 {
