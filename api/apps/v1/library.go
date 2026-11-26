@@ -20,6 +20,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Actions: map[string]runtime.ActionRegistration{
+			"rollout-status": runtime.MakeAction[
+				svc.RolloutStatusAction, *svc.RolloutStatusActionOutput, *config.Configuration,
+			](),
 			"rollout-restart": runtime.MakeAction[
 				svc.RolloutRestartAction, *svc.RolloutRestartActionOutput, *config.Configuration,
 			](),

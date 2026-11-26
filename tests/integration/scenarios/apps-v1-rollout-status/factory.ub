@@ -1,0 +1,87 @@
+factory: {
+  imports: {
+    apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1'
+    core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+  }
+  library-configs: { apps: {}, core: {} }
+  inputs: {
+    observe:   { type: boolean, default: false }
+    instances: { type: map(boolean), default: {} }
+    revision:  { type: string, default: 'initial' }
+  }
+  resources: {
+    scope: core.namespace {
+      object: { metadata: { name: 'unobin-it-rollout-status' } }
+    }
+  }
+  actions: {
+    deployment: apps.rollout-status {
+      @for-each: input.instances
+      @trigger:  input.revision
+      kind:      'Deployment'
+      name:      'status-deployment'
+      namespace: resource.scope.object.metadata.name
+      timeout:   '3m'
+    }
+    daemon: apps.rollout-status {
+      @for-each: input.instances
+      @trigger:  input.revision
+      kind:      'DaemonSet'
+      name:      'status-daemonset'
+      namespace: resource.scope.object.metadata.name
+      timeout:   '3m'
+    }
+    stateful: apps.rollout-status {
+      @for-each: input.instances
+      @trigger:  input.revision
+      kind:      'StatefulSet'
+      name:      'status-statefulset'
+      namespace: resource.scope.object.metadata.name
+      timeout:   '3m'
+    }
+  }
+  outputs: {
+    deployment: {
+      value: if input.observe
+        then {
+          server:              action.deployment['now'].server
+          api-version:         action.deployment['now'].api-version
+          kind:                action.deployment['now'].kind
+          name:                action.deployment['now'].name
+          namespace:           action.deployment['now'].namespace
+          uid:                 action.deployment['now'].uid
+          generation:          action.deployment['now'].generation
+          observed-generation: action.deployment['now'].observed-generation
+        }
+        else null
+    }
+    daemon: {
+      value: if input.observe
+        then {
+          server:              action.daemon['now'].server
+          api-version:         action.daemon['now'].api-version
+          kind:                action.daemon['now'].kind
+          name:                action.daemon['now'].name
+          namespace:           action.daemon['now'].namespace
+          uid:                 action.daemon['now'].uid
+          generation:          action.daemon['now'].generation
+          observed-generation: action.daemon['now'].observed-generation
+        }
+        else null
+    }
+    stateful: {
+      value: if input.observe
+        then {
+          server:              action.stateful['now'].server
+          api-version:         action.stateful['now'].api-version
+          kind:                action.stateful['now'].kind
+          name:                action.stateful['now'].name
+          namespace:           action.stateful['now'].namespace
+          uid:                 action.stateful['now'].uid
+          generation:          action.stateful['now'].generation
+          observed-generation: action.stateful['now'].observed-generation
+        }
+        else null
+    }
+  }
+}
