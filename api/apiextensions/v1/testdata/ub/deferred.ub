@@ -1,0 +1,31 @@
+factory: {
+  imports: {
+    crd: 'github.com/cloudboss/unobin-library-kubernetes//api/apiextensions/v1'
+  }
+  library-configs: { crd: { server: input.server } }
+  inputs:          { server: { type: string }, valid: { type: boolean } }
+  resources: {
+    seed: crd.custom-resource-definition {
+      metadata: { name: 'seeds.example.test' }
+      spec: {
+        group:    'example.test'
+        names:    { plural: 'seeds', kind: 'Seed' }
+        scope:    'Cluster'
+        versions: [{ name: 'v1', served: false, storage: true }]
+      }
+      wait-for-established: false
+    }
+    subject: crd.custom-resource-definition {
+      metadata: { name: 'widgets.example.test' }
+      spec: {
+        group: 'example.test'
+        names: { plural: 'widgets', kind: 'Widget' }
+        scope: if resource.seed.uid != ''
+          then if input.valid then 'Namespaced' else 'Wrong'
+          else 'Namespaced'
+        versions: [{ name: 'v1', served: true, storage: true }]
+      }
+      wait-for-established: false
+    }
+  }
+}

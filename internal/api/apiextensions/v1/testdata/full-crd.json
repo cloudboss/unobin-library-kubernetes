@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "name": "widgets.example.test",
+    "labels": {"team": "platform"},
+    "annotations": {"example.test/note": "test"}
+  },
+  "spec": {
+    "group": "example.test",
+    "names": {
+      "plural": "widgets", "singular": "widget", "kind": "Widget", "listKind": "WidgetList",
+      "shortNames": ["wdg", "wd"], "categories": ["all", "example"]
+    },
+    "scope": "Namespaced",
+    "versions": [
+      {
+        "name": "v1", "served": true, "storage": true,
+        "schema": {"openAPIV3Schema": {
+          "type": "object",
+          "properties": {
+            "spec": {
+              "type": "object",
+              "required": ["replicas"],
+              "properties": {
+                "replicas": {"type": "integer", "minimum": 0, "maximum": 100, "default": 1},
+                "selector": {"type": "string", "pattern": "^[a-z]+$", "maxLength": 63},
+                "items": {
+                  "type": "array", "x-kubernetes-list-type": "map",
+                  "x-kubernetes-list-map-keys": ["name"],
+                  "items": {"type": "object", "required": ["name"],
+                    "properties": {"name": {"type": "string"}}}
+                },
+                "config": {"type": "object", "additionalProperties": {"type": "string"}},
+                "arbitrary": {"type": "object", "x-kubernetes-preserve-unknown-fields": true},
+                "port": {"x-kubernetes-int-or-string": true, "anyOf": [
+                  {"type": "integer"}, {"type": "string"}
+                ]}
+              },
+              "x-kubernetes-validations": [
+                {"rule": "self.replicas >= oldSelf.replicas", "message": "cannot decrease",
+                 "messageExpression": "'cannot decrease'", "reason": "FieldValueInvalid",
+                 "fieldPath": ".replicas", "optionalOldSelf": true}
+              ]
+            },
+            "status": {"type": "object", "properties": {"replicas": {"type": "integer"}}}
+          }
+        }},
+        "subresources": {
+          "status": {},
+          "scale": {"specReplicasPath": ".spec.replicas", "statusReplicasPath": ".status.replicas",
+                    "labelSelectorPath": ".status.selector"}
+        },
+        "additionalPrinterColumns": [
+          {"name": "Replicas", "type": "integer", "format": "int64",
+           "description": "desired replicas", "priority": 1, "jsonPath": ".spec.replicas"}
+        ],
+        "selectableFields": [{"jsonPath": ".spec.selector"}]
+      },
+      {
+        "name": "v2beta1", "served": false, "storage": false, "deprecated": true,
+        "deprecationWarning": "use v1",
+        "schema": {"openAPIV3Schema": {
+          "type": "object", "properties": {"spec": {"type": "object",
+             "x-kubernetes-map-type": "atomic", "x-kubernetes-preserve-unknown-fields": true}}
+        }}
+      }
+    ],
+    "conversion": {
+      "strategy": "Webhook",
+      "webhook": {
+        "conversionReviewVersions": ["v1", "v1beta1"],
+        "clientConfig": {
+          "caBundle": "Y2E=",
+          "service": {"namespace": "system", "name": "convert", "path": "/convert", "port": 9443}
+        }
+      }
+    }
+  }
+}

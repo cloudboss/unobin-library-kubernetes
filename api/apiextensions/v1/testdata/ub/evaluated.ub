@@ -1,0 +1,22 @@
+factory: {
+  imports: {
+    crd: 'github.com/cloudboss/unobin-library-kubernetes//api/apiextensions/v1'
+  }
+  library-configs: {
+    crd: { server: input.server }
+  }
+  inputs: {
+    server:         { type: string }
+    metadata:       { type: opaque }
+    spec:           { type: opaque }
+    create-timeout: { type: optional(string), default: null }
+  }
+  resources: {
+    subject: crd.custom-resource-definition {
+      metadata:             input.metadata
+      spec:                 input.spec
+      wait-for-established: false
+      create-timeout:       input.create-timeout
+    }
+  }
+}

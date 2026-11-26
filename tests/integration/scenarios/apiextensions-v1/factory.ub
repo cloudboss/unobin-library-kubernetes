@@ -1,0 +1,62 @@
+factory: {
+  imports: {
+    core:    'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    crd:     'github.com/cloudboss/unobin-library-kubernetes//api/apiextensions/v1'
+    dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+  }
+  library-configs: { core: {}, crd: { namespace: 'ignored' }, dynamic: {} }
+  inputs: {
+    updated: { type: boolean, default: false }
+  }
+  locals: {
+    schema: {
+      type: 'object'
+      properties: {
+        spec: {
+          type:     'object'
+          required: ['message']
+          properties: {
+            message: { type: 'string' }
+            count:   { type: 'integer', minimum: 0, maximum: if input.updated then 100 else 10 }
+          }
+          x-kubernetes-validations: [{ rule: 'self.message != ""', message: 'message is required' }]
+        }
+      }
+    }
+    v1: { name: 'v1', served: true, storage: true, schema: local.schema }
+    v2: { name: 'v2', served: true, storage: false, schema: local.schema }
+  }
+  resources: {
+    namespace: core.namespace {
+      object:                           { metadata: { name: 'unobin-it-apiextensions' } }
+      wait-for-default-service-account: false
+    }
+    definition: crd.custom-resource-definition {
+      metadata: {
+        name: 'widgets.unobin-it.example.test'
+        annotations: {
+          'test.unobin.cloudboss.io/revision': if input.updated then 'updated' else 'initial'
+        }
+      }
+      spec: {
+        group:    'unobin-it.example.test'
+        names:    { plural: 'widgets', kind: 'Widget', short-names: ['wdg'] }
+        scope:    'Namespaced'
+        versions: if input.updated then [local.v1, local.v2] else [local.v1]
+      }
+    }
+    widget: dynamic.object {
+      manifest: @core.to-json(
+        {
+          apiVersion: resource.definition.spec.group + '/v1'
+          kind:       resource.definition.spec.names.kind
+          metadata:   { name: 'example', namespace: resource.namespace.object.metadata.name }
+          spec: {
+            message: if input.updated then 'updated' else 'initial'
+            count:   if input.updated then 2 else 1
+          }
+        },
+      )
+    }
+  }
+}

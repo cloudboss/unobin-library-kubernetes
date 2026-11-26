@@ -9,6 +9,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	gopkg.in/evanphx/json-patch.v4 v4.12.0
 	k8s.io/api v0.33.4
+	k8s.io/apiextensions-apiserver v0.33.4
 	k8s.io/apimachinery v0.33.4
 	k8s.io/client-go v0.33.4
 	k8s.io/kube-aggregator v0.33.4
