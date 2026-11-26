@@ -1,0 +1,13 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: {} }
+  data-sources: {
+    target: dynamic.api-resources {
+      api-group:               ''
+      namespaced:              false
+      verbs:                   ['custom', 'custom']
+      include-subresources:    true
+      preferred-versions-only: false
+    }
+  }
+}

@@ -25,6 +25,9 @@ func Library() *runtime.Library {
 			](),
 		},
 		DataSources: map[string]runtime.DataSourceRegistration{
+			"api-resources": runtime.MakeDataSource[
+				svc.APIResourcesDataSource, *svc.APIResourcesDataSourceOutput, *config.Configuration,
+			](),
 			"objects": runtime.MakeDataSource[
 				svc.ObjectsDataSource, *svc.ObjectsDataSourceOutput, *config.Configuration,
 			](),

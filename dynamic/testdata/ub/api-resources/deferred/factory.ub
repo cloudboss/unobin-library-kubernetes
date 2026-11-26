@@ -1,0 +1,16 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  library-configs: { dynamic: { server: input.server } }
+  actions: {
+    seed: dynamic.seed {
+      settings: input.settings
+    }
+  }
+  data-sources: {
+    target: dynamic.api-resources {
+      api-group: 'missing.example'
+      verbs:     action.seed.value.verbs
+    }
+  }
+  outputs: { resources: { value: data-source.target.resources } }
+}

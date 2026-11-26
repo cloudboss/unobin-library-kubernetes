@@ -1,0 +1,36 @@
+factory: {
+  imports:         { dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic' }
+  inputs:          { group: { type: string, default: 'absent-discovery.unobin.cloudboss.io' } }
+  library-configs: { dynamic: {} }
+  data-sources: {
+    inventory: dynamic.api-resources {}
+    core: dynamic.api-resources {
+      api-group: ''
+    }
+    preferred: dynamic.api-resources {
+      api-group:  input.group
+      namespaced: true
+      verbs:      ['get', 'list']
+    }
+    all: dynamic.api-resources {
+      api-group:               input.group
+      preferred-versions-only: false
+    }
+    cluster: dynamic.api-resources {
+      api-group:  input.group
+      namespaced: false
+    }
+    subresources: dynamic.api-resources {
+      api-group:            input.group
+      include-subresources: true
+    }
+  }
+  outputs: {
+    inventory:    { value: data-source.inventory.resources }
+    core:         { value: data-source.core.resources }
+    preferred:    { value: data-source.preferred.resources }
+    all:          { value: data-source.all.resources }
+    cluster:      { value: data-source.cluster.resources }
+    subresources: { value: data-source.subresources.resources }
+  }
+}
