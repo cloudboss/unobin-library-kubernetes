@@ -1,0 +1,112 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+    core:      'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+  }
+  library-configs: { admission: { namespace: 'unused-binding-client-namespace' }, core: {} }
+  inputs:          { initial: { type: boolean } }
+  resources: {
+    namespace: core.namespace {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-binding-'
+          labels:        { 'test.unobin.cloudboss.io/scenario': 'admissionregistration-v1-binding' }
+        }
+      }
+    }
+    parameter: core.config-map {
+      object: {
+        metadata: {
+          name:      'binding-parameters'
+          namespace: resource.namespace.object.metadata.name
+          labels:    { 'test.unobin.cloudboss.io/parameter': 'binding-parameters' }
+        }
+        data: { allowed: 'false' }
+      }
+    }
+    policy: admission.validating-admission-policy {
+      metadata: {
+        generate-name: 'unobin-it-binding-policy-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'admissionregistration-v1-binding' }
+      }
+      spec: {
+        audit-annotations: []
+        failure-policy:    'Fail'
+        param-kind:        { api-version: 'v1', kind: 'ConfigMap' }
+        match-constraints: {
+          namespace-selector: {
+            match-labels: { 'kubernetes.io/metadata.name': resource.namespace.object.metadata.name }
+          }
+          resource-rules: [
+            {
+              api-groups:   ['']
+              api-versions: ['v1']
+              operations:   ['CREATE', 'UPDATE']
+              resources:    ['configmaps']
+              scope:        'Namespaced'
+            },
+          ]
+        }
+        validations: [
+          {
+            expression: 'params.data.allowed == "true"'
+            message:    'unobin-binding-parameter-check'
+          },
+        ]
+      }
+    }
+    binding: admission.validating-admission-policy-binding {
+      metadata: {
+        generate-name: 'unobin-it-binding-'
+        labels:        { 'test.unobin.cloudboss.io/scenario': 'admissionregistration-v1-binding' }
+        annotations:   if input.initial then { revision: 'initial' } else null
+      }
+      spec: {
+        policy-name:        resource.policy.name
+        validation-actions: if input.initial then ['Warn', 'Audit'] else ['Warn']
+        param-ref: {
+          name: if input.initial then null else resource.parameter.object.metadata.name
+          selector: if input.initial
+            then {
+              match-labels: {
+                'test.unobin.cloudboss.io/parameter': resource.parameter.object.metadata.name
+              }
+            }
+            else null
+          namespace: if input.initial then resource.namespace.object.metadata.name else null
+          parameter-not-found-action: 'Deny'
+        }
+        match-resources: {
+          match-policy: if input.initial then null else 'Exact'
+          namespace-selector: {
+            match-labels: { 'kubernetes.io/metadata.name': resource.namespace.object.metadata.name }
+          }
+          object-selector: if input.initial then {} else null
+          resource-rules: [
+            {
+              api-groups:     ['']
+              api-versions:   ['v1']
+              operations:     ['CREATE', 'UPDATE']
+              resources:      ['configmaps']
+              resource-names: ['unobin-binding-probe', 'unobin-binding-excluded']
+              scope:          if input.initial then null else 'Namespaced'
+            },
+          ]
+          exclude-resource-rules: [
+            {
+              api-groups:     ['']
+              api-versions:   ['v1']
+              operations:     ['CREATE', 'UPDATE']
+              resources:      ['configmaps']
+              resource-names: ['unobin-binding-excluded']
+            },
+          ]
+        }
+      }
+    }
+  }
+  outputs: {
+    binding:   { value: resource.binding }
+    namespace: { value: resource.namespace.object.metadata.name }
+  }
+}

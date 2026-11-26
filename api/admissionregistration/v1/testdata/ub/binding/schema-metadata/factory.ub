@@ -1,0 +1,11 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: {} }
+  resources: {
+    subject: admission.validating-admission-policy-binding {
+      spec: { policy-name: 'policy', validation-actions: ['Warn', 'Audit'] }
+    }
+  }
+}

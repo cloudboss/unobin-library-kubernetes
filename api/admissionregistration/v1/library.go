@@ -28,6 +28,11 @@ func Library() *runtime.Library {
 			](),
 		},
 		Resources: map[string]runtime.ResourceRegistration{
+			"validating-admission-policy-binding": runtime.MakeResource[
+				svc.ValidatingAdmissionPolicyBindingResource,
+				*svc.ValidatingAdmissionPolicyBindingResourceOutput,
+				*config.Configuration,
+			]((&svc.ValidatingAdmissionPolicyBindingResource{}).ResourceDefinition()),
 			"validating-admission-policy": svc.ValidatingAdmissionPolicyRegistration[
 				svc.ValidatingAdmissionPolicyResource, *svc.ValidatingAdmissionPolicyResourceOutput,
 			](policy, policy.Read, policy.KnownReplacementReasons),

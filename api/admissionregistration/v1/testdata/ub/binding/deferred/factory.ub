@@ -1,0 +1,18 @@
+factory: {
+  imports: {
+    admission: 'github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1'
+  }
+  library-configs: { admission: { server: input.server, insecure-skip-tls-verify: true } }
+  actions: {
+    seed: admission.seed {
+      metadata: input.metadata
+      spec:     input.spec
+    }
+  }
+  resources: {
+    subject: admission.validating-admission-policy-binding {
+      metadata: action.seed.result.metadata
+      spec:     action.seed.result.spec
+    }
+  }
+}
