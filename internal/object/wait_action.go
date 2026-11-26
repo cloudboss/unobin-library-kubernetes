@@ -174,7 +174,7 @@ func (a WaitAction) Constraints() []constraint.Constraint {
 			constraint.OneOf(a.Condition.Status, "True", "False", "Unknown"),
 		),
 		constraint.When(constraint.Present(a.Field)).Require(
-			constraint.MinItems(a.Field.Path, 1),
+			constraint.NotEmpty(a.Field.Path),
 		),
 		constraint.AtMostOneOf(
 			a.Field.StringEquals, a.Field.BooleanEquals, a.Field.IntegerEquals, a.Field.Exists,
