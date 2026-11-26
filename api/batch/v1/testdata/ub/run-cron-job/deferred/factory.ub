@@ -1,0 +1,18 @@
+factory: {
+  imports:         { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' }
+  library-configs: { batch: { server: input.server, insecure-skip-tls-verify: true } }
+  inputs:          { server: { type: string }, values: { type: opaque } }
+  actions: {
+    seed: batch.seed {
+      values: input.values
+    }
+    run: batch.run-cron-job {
+      cron-job-name:         action.seed.resolved.cron-job-name
+      job-name:              action.seed.resolved.job-name
+      namespace:             action.seed.resolved.namespace
+      expected-cron-job-uid: action.seed.resolved.expected-cron-job-uid
+      wait-for-completion:   action.seed.resolved.wait-for-completion
+      timeout:               action.seed.resolved.timeout
+    }
+  }
+}

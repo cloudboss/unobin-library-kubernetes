@@ -1,0 +1,15 @@
+factory: {
+  imports:         { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' }
+  library-configs: { batch: { server: input.server } }
+  inputs: {
+    server:        { type: string }
+    cron-job-name: { type: string }
+    job-name:      { type: string }
+  }
+  actions: {
+    run: batch.run-cron-job {
+      cron-job-name: input.cron-job-name
+      job-name:      input.job-name
+    }
+  }
+}

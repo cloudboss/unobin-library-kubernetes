@@ -1,0 +1,57 @@
+factory: {
+  imports:         { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' }
+  library-configs: { batch: {} }
+  inputs: {
+    job-name: { type: string }
+    wait:     { type: boolean }
+  }
+  resources: {
+    source: batch.cron-job {
+      metadata: { name: 'unobin-it-run-cron-job', namespace: 'default' }
+      spec: {
+        schedule:                      '@hourly'
+        suspend:                       true
+        concurrency-policy:            'Forbid'
+        successful-jobs-history-limit: 10
+        failed-jobs-history-limit:     10
+        job-template: {
+          metadata: { labels: { unobin-test: 'run-cron-job' }, annotations: { purpose: 'manual' } }
+          spec: {
+            backoff-limit: 0
+            template: {
+              metadata: {}
+              spec: {
+                restart-policy: 'Never'
+                container:      [{ name: 'app', image: 'busybox:1.37', command: ['true'] }]
+              }
+            }
+          }
+        }
+      }
+      delete-timeout: '30s'
+    }
+  }
+  actions: {
+    run: batch.run-cron-job {
+      cron-job-name:         resource.source.name
+      namespace:             resource.source.namespace
+      expected-cron-job-uid: resource.source.uid
+      job-name:              input.job-name
+      wait-for-completion:   input.wait
+      timeout:               '3m'
+    }
+  }
+  outputs: {
+    invocation: {
+      value: {
+        server:        action.run.server
+        namespace:     action.run.namespace
+        cron-job-name: action.run.cron-job-name
+        cron-job-uid:  action.run.cron-job-uid
+        job-name:      action.run.job-name
+        job-uid:       action.run.job-uid
+        completed:     action.run.completed
+      }
+    }
+  }
+}

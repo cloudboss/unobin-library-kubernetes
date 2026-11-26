@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { job-name: 'unobin-it-run-cron-job-second', wait: false } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
