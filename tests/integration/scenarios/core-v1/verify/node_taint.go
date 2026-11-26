@@ -21,6 +21,7 @@ import (
 	"github.com/cloudboss/unobin/pkg/state/local"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
@@ -153,7 +154,8 @@ func verifyNodeTaintOwnership(ctx context.Context, nodes typedcorev1.NodeInterfa
 			GenerateName: "unobin-it-node-taint-probe-",
 			Labels:       map[string]string{nodeTaintLabel: "ownership-probe"},
 		},
-		Spec: corev1.NodeSpec{Unschedulable: true, ProviderID: "unobin://ownership-probe"},
+		Spec:   corev1.NodeSpec{ProviderID: "unobin://ownership-probe"},
+		Status: nodeTaintProbeStatus(),
 	}, metav1.CreateOptions{FieldManager: "probe-node"})
 	if err != nil {
 		return err
@@ -225,6 +227,19 @@ func verifyNodeTaintOwnership(ctx context.Context, nodes typedcorev1.NodeInterfa
 	return verifyNodeTaintUIDRace(ctx, nodes, seed, peer)
 }
 
+func nodeTaintProbeStatus() corev1.NodeStatus {
+	now := metav1.Now()
+	zero := resource.MustParse("0")
+	return corev1.NodeStatus{
+		Capacity:    corev1.ResourceList{corev1.ResourcePods: zero},
+		Allocatable: corev1.ResourceList{corev1.ResourcePods: zero},
+		Conditions: []corev1.NodeCondition{{
+			Type: corev1.NodeReady, Status: corev1.ConditionTrue,
+			LastHeartbeatTime: now, LastTransitionTime: now,
+		}},
+	}
+}
+
 func checkNodeTaintConflict(err error, operation, manager string) error {
 	if !apierrors.IsConflict(err) {
 		return fmt.Errorf("%s: expected API conflict, got %v", operation, err)
@@ -249,8 +264,8 @@ func checkNodeTaintProbe(
 	if !slices.Equal(got, want) {
 		return fmt.Errorf("atomic Node taints = %v, want %v", got, want)
 	}
-	if os.Getenv("UNOBIN_KUBERNETES_API_ONLY") == "1" && len(live.Spec.Taints) != len(got) {
-		return fmt.Errorf("unexpected unrelated taints in the API-only probe: %v", live.Spec.Taints)
+	if len(live.Spec.Taints) != len(got) {
+		return fmt.Errorf("unexpected unrelated taints in the ownership probe: %v", live.Spec.Taints)
 	}
 	return nil
 }
@@ -262,9 +277,10 @@ func readNodeTaintProbe(
 	if err != nil {
 		return nil, err
 	}
-	if live.UID != seed.UID || !live.Spec.Unschedulable ||
+	if live.UID != seed.UID || live.Spec.Unschedulable != seed.Spec.Unschedulable ||
 		live.Spec.ProviderID != seed.Spec.ProviderID ||
-		live.Labels[nodeTaintLabel] != "ownership-probe" {
+		live.Labels[nodeTaintLabel] != "ownership-probe" ||
+		live.Status.Capacity.Pods().Value() != 0 || live.Status.Allocatable.Pods().Value() != 0 {
 		return nil, fmt.Errorf("atomic list operation changed unrelated Node fields: %v", live)
 	}
 	return live, nil
@@ -326,8 +342,13 @@ func verifyNodeTaintUIDRace(
 		replacement, raceErr = nodes.Create(ctx, &corev1.Node{
 			ObjectMeta: metav1.ObjectMeta{Name: seed.Name, Labels: seed.Labels},
 			Spec: corev1.NodeSpec{
-				Unschedulable: true, ProviderID: seed.Spec.ProviderID,
+				ProviderID: seed.Spec.ProviderID,
+				Taints: []corev1.Taint{{
+					Key: nodeTaintKeyPrefix + "replacement", Value: "preserved",
+					Effect: corev1.TaintEffectNoSchedule,
+				}},
 			},
+			Status: nodeTaintProbeStatus(),
 		}, metav1.CreateOptions{})
 	})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -365,9 +386,7 @@ func verifyNodeTaintUIDRace(
 	if err != nil {
 		return err
 	}
-	if !slices.Equal(scopedNodeTaints(live), scopedNodeTaints(replacement)) ||
-		os.Getenv("UNOBIN_KUBERNETES_API_ONLY") == "1" &&
-			!reflect.DeepEqual(live.Spec.Taints, replacement.Spec.Taints) {
+	if !slices.Equal(scopedNodeTaints(live), scopedNodeTaints(replacement)) {
 		return fmt.Errorf("stale apply changed recreated Node taints from %v to %v",
 			replacement.Spec.Taints, live.Spec.Taints)
 	}
