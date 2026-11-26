@@ -1,0 +1,43 @@
+factory: {
+  description: 'Queries the configured identity for resource and non-resource access.'
+  imports: {
+    authorization: 'github.com/cloudboss/unobin-library-kubernetes//api/authorization/v1'
+  }
+  library-configs: { authorization: { namespace: 'must-not-inherit' } }
+  inputs: {
+    namespace: { type: string }
+    path:      { type: string }
+  }
+  data-sources: {
+    resource: authorization.self-subject-access-review {
+      resource-attributes: {
+        namespace: input.namespace
+        verb:      'list'
+        group:     ''
+        version:   'v1'
+        resource:  'configmaps'
+      }
+    }
+    non-resource: authorization.self-subject-access-review {
+      non-resource-attributes: { verb: 'get', path: input.path }
+    }
+  }
+  outputs: {
+    resource: {
+      value: {
+        allowed:          data-source.resource.allowed
+        denied:           data-source.resource.denied
+        reason:           data-source.resource.reason
+        evaluation-error: data-source.resource.evaluation-error
+      }
+    }
+    non-resource: {
+      value: {
+        allowed:          data-source.non-resource.allowed
+        denied:           data-source.non-resource.denied
+        reason:           data-source.non-resource.reason
+        evaluation-error: data-source.non-resource.evaluation-error
+      }
+    }
+  }
+}

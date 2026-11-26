@@ -1,0 +1,9 @@
+factory: {
+  imports: { authorization: 'github.com/cloudboss/unobin-library-kubernetes//api/authorization/v1' }
+  library-configs: { authorization: { server: 'http://localhost' } }
+  data-sources: {
+    query: authorization.self-subject-access-review {
+      resource-attributes: { verb: 'list', resource: 'pods', namespace: '', group: '', version: '' }
+    }
+  }
+}

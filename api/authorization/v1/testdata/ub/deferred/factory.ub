@@ -1,0 +1,21 @@
+factory: {
+  imports: { authorization: 'github.com/cloudboss/unobin-library-kubernetes//api/authorization/v1' }
+  library-configs: { authorization: { server: input.server } }
+  actions: {
+    seed: authorization.seed {
+      query: input.query
+    }
+  }
+  data-sources: {
+    query: authorization.self-subject-access-review {
+      resource-attributes:     action.seed.value.resource-attributes
+      non-resource-attributes: action.seed.value.non-resource-attributes
+    }
+  }
+  outputs: {
+    allowed:          { value: data-source.query.allowed }
+    denied:           { value: data-source.query.denied }
+    reason:           { value: data-source.query.reason }
+    evaluation-error: { value: data-source.query.evaluation-error }
+  }
+}
