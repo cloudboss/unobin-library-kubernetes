@@ -11,8 +11,10 @@ import (
 	"github.com/cloudboss/unobin/pkg/sdk/cfg"
 	"github.com/stretchr/testify/require"
 
+	admissionregistration "github.com/cloudboss/unobin-library-kubernetes/api/admissionregistration/v1"
 	apiextensions "github.com/cloudboss/unobin-library-kubernetes/api/apiextensions/v1"
 	apps "github.com/cloudboss/unobin-library-kubernetes/api/apps/v1"
+	authorization "github.com/cloudboss/unobin-library-kubernetes/api/authorization/v1"
 	autoscaling "github.com/cloudboss/unobin-library-kubernetes/api/autoscaling/v2"
 	batch "github.com/cloudboss/unobin-library-kubernetes/api/batch/v1"
 	core "github.com/cloudboss/unobin-library-kubernetes/api/core/v1"
@@ -44,6 +46,8 @@ func TestLibraryConfiguration(t *testing.T) {
 		{path: "autoscaling/v2", new: autoscaling.Library},
 		{path: "policy/v1", new: policy.Library},
 		{path: "apiextensions/v1", new: apiextensions.Library},
+		{path: "admissionregistration/v1", new: admissionregistration.Library},
+		{path: "authorization/v1", new: authorization.Library},
 	} {
 		t.Run(entry.path, func(t *testing.T) {
 			lib := entry.new()

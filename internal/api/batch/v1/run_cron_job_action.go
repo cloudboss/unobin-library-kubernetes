@@ -25,15 +25,22 @@ import (
 // An unchanged action skips. Change job-name to request another Job, or @trigger
 // to observe the same Job again. Removal never deletes the Job. CronJob ownership,
 // history limits and inherited TTL can later remove it; disappearance cannot prove completion.
-// Manual creation does not enforce the CronJob controller's concurrency policy.
+// Manual creation bypasses the source schedule, suspension and concurrency policy.
+// Reusing a name requires the same source UID and template fingerprint. A deleted
+// Job can later be created under the same name; this is not durable execution history.
+// Failure, deletion or replacement while waiting returns an error. Failed Jobs remain
+// available for inspection. The complete Job template is copied with CronJob ownership.
 type RunCronJobAction struct {
-	CronJobName        string
-	JobName            string
-	Namespace          *string
+	CronJobName string
+	JobName     string
+	// Namespace defaults to the configured kubeconfig or library namespace.
+	Namespace *string
+	// ExpectedCronJobUID optionally guards the source identity.
 	ExpectedCronJobUID *string
 	// WaitForCompletion defaults true. False returns a verified Job without checking completion.
 	WaitForCompletion *bool
-	// Timeout defaults to 10m for source lookup, creation and completion together.
+	// Timeout bounds Kubernetes HTTP requests and polling; defaults to 10m
+	// for source lookup, creation and completion together.
 	Timeout *string
 }
 

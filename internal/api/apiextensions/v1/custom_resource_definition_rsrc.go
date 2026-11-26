@@ -19,16 +19,32 @@ import (
 	"github.com/cloudboss/unobin/pkg/runtime"
 )
 
+// CustomResourceDefinitionResource manages a cluster-scoped custom API definition.
+// It owns the complete desired specification, labels and annotations. Dependent
+// instances can use dynamic.object after establishment and discovery complete.
+// Establishment does not verify a conversion webhook or install an operator.
+//
+// Deleting or replacing a CRD also deletes its instances. This resource does not
+// migrate stored data, remove stored versions or force past finalizers.
 type CustomResourceDefinitionResource struct {
-	Metadata           CRDMetadata
-	Spec               CRDSpec
+	// Metadata.name must equal spec.names.plural plus a dot plus spec.group.
+	Metadata CRDMetadata
+	// Spec defines the custom API. Version schemas are raw OpenAPI data and
+	// retain Kubernetes JSON keys inside their maps.
+	Spec CRDSpec
+	// WaitForEstablished defaults true and waits for establishment plus fresh
+	// discovery of every served version after create or update.
 	WaitForEstablished *bool
-	CreateTimeout      *string
-	UpdateTimeout      *string
-	DeleteTimeout      *string
+	// CreateTimeout bounds create HTTP requests and readiness polling; defaults to 5m.
+	CreateTimeout *string
+	// UpdateTimeout bounds update HTTP requests and readiness polling; defaults to 5m.
+	UpdateTimeout *string
+	// DeleteTimeout bounds UID-protected deletion and disappearance waiting; defaults to 5m.
+	DeleteTimeout *string
 }
 
 type CRDMetadata struct {
+	// Name must equal spec.names.plural plus a dot plus spec.group.
 	Name        string
 	Labels      *map[string]string
 	Annotations *map[string]string
@@ -53,11 +69,12 @@ type CRDNames struct {
 }
 
 type CRDVersion struct {
-	Name                     string
-	Served                   bool
-	Storage                  bool
-	Deprecated               *bool
-	DeprecationWarning       *string
+	Name               string
+	Served             bool
+	Storage            bool
+	Deprecated         *bool
+	DeprecationWarning *string
+	// Schema is raw OpenAPI data. Preserve Kubernetes JSON keys inside this map.
 	Schema                   *map[string]any
 	Subresources             *CRDSubresources
 	AdditionalPrinterColumns *[]CRDPrinterColumn

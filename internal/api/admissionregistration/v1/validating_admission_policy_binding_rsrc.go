@@ -20,13 +20,18 @@ import (
 	"github.com/cloudboss/unobin/pkg/runtime"
 )
 
+// ValidatingAdmissionPolicyBindingResource connects an admission policy
+// to matching requests and optional parameter objects. It is cluster-scoped and
+// does not create its policy or parameter objects. Validation actions are Deny,
+// Warn and Audit; Deny and Warn cannot be combined.
 type ValidatingAdmissionPolicyBindingResource struct {
 	Metadata PolicyMetadata
 	Spec     BindingSpec
 }
 
 type BindingSpec struct {
-	PolicyName        string
+	PolicyName string
+	// ValidationActions selects Deny, Warn or Audit. Deny and Warn cannot be combined.
 	ValidationActions []string
 	MatchResources    *BindingMatchResources
 	ParamRef          *BindingParamRef

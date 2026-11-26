@@ -16,29 +16,64 @@ import (
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 )
 
+// WaitAction observes one named Kubernetes object without changing it.
+// Select exactly one of exists, deleted, condition or field. A terminating object
+// cannot satisfy a positive predicate. Replacement after the first observation
+// fails the invocation. Initial absence satisfies deleted without proving that
+// an expected UID previously existed.
+//
+// Unchanged actions can skip; their outputs describe the last successful invocation.
+// An explicit or always trigger requests another observation. Planning does not wait.
 type WaitAction struct {
-	APIVersion  string
-	Kind        string
-	Metadata    ObjectLookupMetadata
+	// APIVersion selects the exact served version, including the API group when present.
+	APIVersion string
+	Kind       string
+	// Metadata selects the name and optional namespace. Namespaced lookups use
+	// the configured namespace when omitted.
+	Metadata ObjectLookupMetadata
+	// ExpectedUID constrains identity instead of adopting the first observed UID.
 	ExpectedUID *string
-	Timeout     *string
-	Exists      *bool
-	Deleted     *bool
-	Condition   *WaitCondition
-	Field       *WaitField `ub:",sensitive"`
+	// Timeout bounds Kubernetes HTTP requests and polling; defaults to 5m.
+	Timeout *string
+	// Exists must be true when selected and waits for the object to appear.
+	Exists *bool
+	// Deleted must be true when selected and waits for absence.
+	Deleted *bool
+	// Condition matches status.conditions by case-sensitive type. Status defaults
+	// to True; explicit statuses are True, False or Unknown. Missing conditions stay
+	// pending. Reported observed generations must cover metadata.generation.
+	Condition *WaitCondition
+	// Field traverses a nonempty path of literal map keys; array indices and
+	// JSONPath are unsupported. Select one scalar equality or presence predicate.
+	// Null counts as absence; false, zero and empty strings count as present.
+	// Equality rejects incompatible types. Compared values are sensitive.
+	Field *WaitField `ub:",sensitive"`
 }
 
+// WaitCondition matches status.conditions case-sensitively. Missing conditions
+// remain pending. Reported observed generations must cover metadata.generation;
+// absence of generation reporting permits a matching condition.
 type WaitCondition struct {
-	Type   string
+	Type string
+	// Status defaults to True; explicit values are True, False or Unknown.
 	Status *string
 }
 
+// WaitField selects exactly one scalar comparison or presence predicate.
+// Equality remains pending for absent or null values and rejects incompatible types.
 type WaitField struct {
-	Path          []string
-	StringEquals  *string
+	// Path is a nonempty list of literal map keys, including empty keys.
+	// Array indices, JSONPath expressions and wildcards are unsupported.
+	Path []string
+	// StringEquals permits an empty comparison string.
+	StringEquals *string
+	// BooleanEquals permits false as a comparison value.
 	BooleanEquals *bool
+	// IntegerEquals uses exact integer observations and JSON-safe desired integers.
 	IntegerEquals *int64
-	Exists        *bool
+	// Exists tests non-null presence. False matches missing or null values while
+	// the object exists; empty collections, empty strings, false and zero are present.
+	Exists *bool
 }
 
 type WaitActionOutput struct {

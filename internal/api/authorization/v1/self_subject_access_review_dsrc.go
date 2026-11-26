@@ -15,14 +15,19 @@ import (
 )
 
 // SelfSubjectAccessReviewDataSource observes access for the configured identity.
-// A negative decision is a query result and does not grant or revoke permissions.
+// A negative decision and any evaluation error are returned as data. The query
+// does not create a permission grant. Choose exactly one resource or non-resource
+// attribute object; subject identity comes from shared client configuration.
 type SelfSubjectAccessReviewDataSource struct {
+	// ResourceAttributes selects a resource request. An omitted or empty namespace
+	// queries all namespaces and does not inherit the configured namespace.
 	ResourceAttributes    *AccessReviewResourceAttributes
 	NonResourceAttributes *AccessReviewNonResourceAttributes
 }
 
 type AccessReviewResourceAttributes struct {
-	// An empty namespace queries all namespaces, independent of client configuration.
+	// An omitted or empty namespace queries all namespaces; it does not inherit
+	// the library or kubeconfig namespace.
 	Namespace   *string
 	Verb        string
 	Group       *string

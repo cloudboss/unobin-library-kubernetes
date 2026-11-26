@@ -20,11 +20,24 @@ import (
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
 )
 
+// APIResourcesDataSource queries fresh API discovery with the configured identity.
+// Results are sorted by group, version and resource name; list attributes are
+// sorted and deduplicated. A successful query with no matches returns an empty list.
+//
+// Any discovery failure rejects the whole query, including a partial failure in
+// a group excluded by filters. Discovered verbs describe API capabilities and do
+// not establish that the configured identity has permission to use them.
 type APIResourcesDataSource struct {
-	APIGroup              *string
-	Namespaced            *bool
-	Verbs                 *[]string
-	IncludeSubresources   *bool
+	// APIGroup is an exact filter. Empty selects core; omission selects all groups.
+	APIGroup *string
+	// Namespaced filters scope when provided, including an explicit false value.
+	Namespaced *bool
+	// Verbs requires every listed verb. An empty list selects all capabilities;
+	// duplicate verbs have the same meaning as one occurrence.
+	Verbs *[]string
+	// IncludeSubresources includes slash-separated names such as pods/status; defaults false.
+	IncludeSubresources *bool
+	// PreferredVersionsOnly defaults true; false returns all served versions separately.
 	PreferredVersionsOnly *bool
 }
 

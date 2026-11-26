@@ -8,6 +8,20 @@
       "alias": "kubernetes-core-v1"
     },
     {
+      "title": "Admission registration v1",
+      "slug": "admissionregistration-v1",
+      "package": "api/admissionregistration/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1",
+      "alias": "kubernetes-admissionregistration-v1"
+    },
+    {
+      "title": "Authorization v1",
+      "slug": "authorization-v1",
+      "package": "api/authorization/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/authorization/v1",
+      "alias": "kubernetes-authorization-v1"
+    },
+    {
       "title": "Apps v1",
       "slug": "apps-v1",
       "package": "api/apps/v1",

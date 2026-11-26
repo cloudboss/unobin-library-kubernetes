@@ -6,12 +6,14 @@ factory: {
     }
   }
   imports: {
-    core:    'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
-    dynamic: 'github.com/cloudboss/unobin-library-kubernetes//dynamic'
+    authorization: 'github.com/cloudboss/unobin-library-kubernetes//api/authorization/v1'
+    core:          'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    dynamic:       'github.com/cloudboss/unobin-library-kubernetes//dynamic'
   }
   library-configs: {
-    core:    input.cluster
-    dynamic: input.cluster
+    authorization: input.cluster
+    core:          input.cluster
+    dynamic:       input.cluster
   }
   resources: {
     namespace: core.namespace {

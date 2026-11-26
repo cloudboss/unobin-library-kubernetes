@@ -13,13 +13,29 @@ import (
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
 )
 
+// RolloutStatusAction observes one Deployment, StatefulSet or DaemonSet without
+// changing it. It pins the first UID and generation; deletion, replacement,
+// termination or a newer generation fails instead of following another rollout.
+// Paused Deployments and OnDelete strategies are rejected.
+//
+// StatefulSet partition and starting ordinal limit which replicas must update.
+// Zero eligible replicas or zero DaemonSet nodes can complete without running Pods.
+// This action does not replace the waits of resource create or update operations.
+//
+// Unchanged actions can skip and retain historical outputs. Use @trigger or an
+// always trigger to request another observation. Planning does not wait.
 type RolloutStatusAction struct {
-	Kind               string
-	Name               string
-	Namespace          *string
-	ExpectedUID        *string
+	Kind string
+	Name string
+	// Namespace defaults to the configured kubeconfig or library namespace.
+	Namespace *string
+	// ExpectedUID optionally constrains the first observed object.
+	ExpectedUID *string
+	// ExpectedGeneration optionally constrains the first generation; accepts
+	// positive integers through 9007199254740991 for exact JSON decoding.
 	ExpectedGeneration *int64
-	Timeout            *string
+	// Timeout bounds Kubernetes HTTP requests and polling; defaults to 10m.
+	Timeout *string
 }
 
 type RolloutStatusActionOutput struct {

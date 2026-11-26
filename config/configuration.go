@@ -22,11 +22,14 @@ type Configuration struct {
 	ClientKeyData            *string `ub:",sensitive"`
 	Token                    *string `ub:",sensitive"`
 	TokenFile                *string
-	Exec                     *Exec
-	As                       *string
-	AsUID                    *string
-	AsGroups                 *[]string
-	AsUserExtra              *map[string][]string
+	// Exec configures standard client-go credential commands. They run synchronously
+	// and do not inherit Kubernetes request contexts; operation timeouts do not
+	// interrupt them. Credential commands must terminate independently.
+	Exec        *Exec
+	As          *string
+	AsUID       *string
+	AsGroups    *[]string
+	AsUserExtra *map[string][]string
 }
 
 type Exec struct {

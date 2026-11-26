@@ -68,7 +68,7 @@ plans and state as sensitive too, and configure Unobin state encryption.
 | `github.com/cloudboss/unobin-library-kubernetes//api/policy/v1` | `pod-disruption-budget` |
 
 Typed resources use Kubernetes API operations with resource-specific update and
-replacement behavior. Desired resource metadata requires exactly one of `name`
+replacement behavior. Most typed resource metadata requires exactly one of `name`
 or `generate-name`. Embedded workload template metadata can omit both, but cannot
 set both. Namespaced resources default to `default`; set metadata namespace to
 use another namespace.
@@ -122,9 +122,9 @@ read-only lookups:
 
 | Data source | Result |
 | --- | --- |
-| `config-map-info` | Live metadata, string data, base64 binary data, and immutable flag. |
-| `namespace-info` | Live metadata and ordered namespace finalizers. |
-| `service-info` | Live metadata, service specification, and status. |
+| `config-map` | Live metadata, string data, base64 binary data, and immutable flag. |
+| `namespace` | Live metadata and ordered namespace finalizers. |
+| `service` | Live metadata, service specification, and status. |
 
 Set `metadata.name` to select an object. ConfigMap and Service lookups default
 `metadata.namespace` to `default`. Namespace lookup is cluster-scoped. Metadata

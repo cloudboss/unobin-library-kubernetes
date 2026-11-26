@@ -14,14 +14,33 @@ import (
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
 )
 
+// RolloutRestartAction changes the standard pod-template restart annotation on
+// one Deployment, StatefulSet or DaemonSet. Repeating the same timestamp does not
+// make another change; a newer live timestamp supersedes an older request.
+// A conflicting write fails the attempt. Retrying the same timestamp can recognize
+// an accepted change and resume observation. Removing the action does not undo it.
+//
+// Leave kubectl.kubernetes.io/restartedAt unconfigured in the typed resource so
+// its updates preserve the marker. Explicit resource configuration retains authority
+// over that value. Changing only @trigger does not request a new restart.
+//
+// StatefulSet partitions and starting ordinals limit which replicas update.
+// Completion can cover zero replicas or a subset, without claiming that every Pod
+// restarted. Outputs describe the last successful invocation on Skip.
 type RolloutRestartAction struct {
-	Kind           string
-	Name           string
-	Namespace      *string
-	ExpectedUID    string
-	RestartAt      string
+	Kind string
+	Name string
+	// Namespace defaults to the configured kubeconfig or library namespace.
+	Namespace *string
+	// ExpectedUID guards against restarting a replacement object.
+	ExpectedUID string
+	// RestartAt is an explicit RFC3339 invocation timestamp, normalized to UTC.
+	RestartAt string
+	// WaitForRollout defaults true. False returns after the template change and
+	// permits OnDelete staging. Paused Deployments are rejected in either mode.
 	WaitForRollout *bool
-	Timeout        *string
+	// Timeout bounds Kubernetes HTTP requests and polling; defaults to 10m.
+	Timeout *string
 }
 
 type RolloutRestartActionOutput struct {
