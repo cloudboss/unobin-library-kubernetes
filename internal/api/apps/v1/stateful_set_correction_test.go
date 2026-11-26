@@ -69,10 +69,14 @@ func TestStatefulSetWidePartitionHTTPRejection(t *testing.T) {
 				if insert {
 					obj.Spec.UpdateStrategy.RollingUpdate = nil
 				}
-				calls := 0
+				var calls []string
 				c := statefulSetAPI(t, func(w http.ResponseWriter, req *http.Request) {
+					calls = append(calls, req.Method)
+					if req.Method == http.MethodGet {
+						require.NoError(t, json.NewEncoder(w).Encode(obj))
+						return
+					}
 					require.Equal(t, "PATCH", req.Method)
-					calls++
 					body, err := io.ReadAll(req.Body)
 					require.NoError(t, err)
 					var operations []struct {
@@ -92,7 +96,7 @@ func TestStatefulSetWidePartitionHTTPRejection(t *testing.T) {
 					Partition: new(value)}}
 				_, err = next.Update(t.Context(), c, statefulSetPrior{Inputs: *before, Outputs: observed})
 				require.Error(t, err)
-				require.Equal(t, 1, calls)
+				require.Equal(t, []string{"GET", "PATCH"}, calls)
 			})
 		}
 	}

@@ -22,8 +22,12 @@ import (
 func TestStatefulSetStateBackedPlanApply(t *testing.T) {
 	var stored *appsv1.StatefulSet
 	var credentials []string
+	mutations := 0
 	c := statefulSetAPI(t, func(w http.ResponseWriter, req *http.Request) {
 		credentials = append(credentials, req.Header.Get("Authorization"))
+		if req.Method != http.MethodGet {
+			mutations++
+		}
 		switch req.Method {
 		case "POST":
 			stored = &appsv1.StatefulSet{}
@@ -104,6 +108,26 @@ func TestStatefulSetStateBackedPlanApply(t *testing.T) {
 	input := statefulSet()
 	exec, p := plan(input, runtime.DecisionCreate, nil)
 	apply(exec, p)
+	plan(input, runtime.DecisionNoOp, nil)
+	stored.Spec.Template.Annotations = map[string]string{testRestartAnnotation: "first"}
+	beforeRestart := mutations
+	exec, p = plan(input, runtime.DecisionNoOp, nil)
+	apply(exec, p)
+	require.Equal(t, beforeRestart, mutations)
+	input.Spec.Template.Metadata.Annotations = new(map[string]string{"example.com/managed": "new"})
+	exec, p = plan(input, runtime.DecisionUpdate, nil)
+	stored.Spec.Template.Annotations[testRestartAnnotation] = "second"
+	apply(exec, p)
+	require.Equal(t, map[string]string{
+		testRestartAnnotation: "second", "example.com/managed": "new",
+	}, stored.Spec.Template.Annotations)
+	plan(input, runtime.DecisionNoOp, nil)
+	input.Spec.Template.Metadata.Annotations = nil
+	exec, p = plan(input, runtime.DecisionUpdate, nil)
+	stored.Spec.Template.Annotations[testRestartAnnotation] = "third"
+	apply(exec, p)
+	require.Equal(t, map[string]string{testRestartAnnotation: "third"},
+		stored.Spec.Template.Annotations)
 	plan(input, runtime.DecisionNoOp, nil)
 	stored.Generation = 99
 	stored.ResourceVersion = "changed"

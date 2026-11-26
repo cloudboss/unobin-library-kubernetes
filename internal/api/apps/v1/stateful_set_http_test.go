@@ -439,9 +439,18 @@ func TestStatefulSetSavedServerWithCurrentCredentials(t *testing.T) {
 }
 
 func TestStatefulSetOversizedUpdateReplicas(t *testing.T) {
-	calls := 0
+	r := statefulSet()
+	r.Spec.Replicas = new("1")
+	obj, err := r.expand(nil)
+	require.NoError(t, err)
+	defaultStatefulSet(obj)
+	var calls []string
 	c := statefulSetAPI(t, func(w http.ResponseWriter, req *http.Request) {
-		calls++
+		calls = append(calls, req.Method)
+		if req.Method == http.MethodGet {
+			require.NoError(t, json.NewEncoder(w).Encode(obj))
+			return
+		}
 		require.Equal(t, "PATCH", req.Method)
 		var operations []patchOperation
 		decoder := json.NewDecoder(req.Body)
@@ -451,18 +460,13 @@ func TestStatefulSetOversizedUpdateReplicas(t *testing.T) {
 			Value: json.Number("2147483648")})
 		apiError(t, w, 422)
 	})
-	r := statefulSet()
-	r.Spec.Replicas = new("1")
-	obj, err := r.expand(nil)
-	require.NoError(t, err)
-	defaultStatefulSet(obj)
 	out, err := r.statefulSetOutput(obj, *c.Server, nil)
 	require.NoError(t, err)
 	p := statefulSetPrior{Inputs: *r, Outputs: out}
 	r.Spec.Replicas = new("2147483648")
 	_, err = r.Update(t.Context(), c, p)
 	require.ErrorContains(t, err, "API diagnostic")
-	require.Equal(t, 1, calls)
+	require.Equal(t, []string{"GET", "PATCH"}, calls)
 }
 
 func TestStatefulSetMetadataOnlyUpdateWaits(t *testing.T) {
@@ -472,8 +476,9 @@ func TestStatefulSetMetadataOnlyUpdateWaits(t *testing.T) {
 	defaultStatefulSet(obj)
 	obj.Generation = 1
 	obj.Status = appsv1.StatefulSetStatus{ObservedGeneration: 1, ReadyReplicas: 1, UpdatedReplicas: 1}
-	gets := 0
+	var calls []string
 	c := statefulSetAPI(t, func(w http.ResponseWriter, req *http.Request) {
+		calls = append(calls, req.Method)
 		if req.Method == "PATCH" {
 			var operations []patchOperation
 			require.NoError(t, json.NewDecoder(req.Body).Decode(&operations))
@@ -481,8 +486,6 @@ func TestStatefulSetMetadataOnlyUpdateWaits(t *testing.T) {
 				require.NotContains(t, op.Path, "/spec")
 			}
 			obj = applyStatefulSetPatch(t, obj, operations)
-		} else {
-			gets++
 		}
 		require.NoError(t, json.NewEncoder(w).Encode(obj))
 	})
@@ -493,7 +496,7 @@ func TestStatefulSetMetadataOnlyUpdateWaits(t *testing.T) {
 	r.WaitForRollout = nil
 	_, err = r.Update(t.Context(), c, p)
 	require.NoError(t, err)
-	require.Equal(t, 2, gets)
+	require.Equal(t, []string{"GET", "PATCH", "GET", "GET"}, calls)
 }
 
 func TestStatefulSetPollingCancellationAndDeadline(t *testing.T) {

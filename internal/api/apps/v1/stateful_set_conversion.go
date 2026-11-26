@@ -109,6 +109,7 @@ func (r *StatefulSetResource) statefulSetOutput(
 	}
 	filterStatefulSetMetadata(obj.Labels, baseline.Labels, r.IgnoreLabels)
 	filterStatefulSetMetadata(obj.Annotations, baseline.Annotations, r.IgnoreAnnotations)
+	projectRolloutAnnotation(obj.Spec.Template.Annotations, r.Spec.Template.Metadata.Annotations)
 	for _, containers := range [][]corev1.Container{
 		obj.Spec.Template.Spec.Containers, obj.Spec.Template.Spec.InitContainers,
 	} {

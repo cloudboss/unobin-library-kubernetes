@@ -13,6 +13,7 @@ import (
 	"github.com/cloudboss/unobin/pkg/runtime"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	typedappsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
@@ -77,6 +78,13 @@ func checkDaemonSetAPILifecycle(ctx context.Context) (result error) {
 			return nil
 		}())
 	}()
+	_, err = api.Patch(ctx, created.Name, types.MergePatchType,
+		[]byte(`{"spec":{"template":{"metadata":{"annotations":`+
+			`{"kubectl.kubernetes.io/restartedAt":"2026-11-26T00:00:00Z"}}}}}`),
+		metav1.PatchOptions{})
+	if err != nil {
+		return fmt.Errorf("add external restart annotation: %w", err)
+	}
 	read, err := r.Read(ctx, nil, p)
 	if err != nil {
 		return fmt.Errorf("API check: %w", err)
@@ -101,6 +109,10 @@ func checkDaemonSetAPILifecycle(ctx context.Context) (result error) {
 	if !reflect.DeepEqual("registry.k8s.io/pause:3.10", live.Spec.Template.Spec.Containers[0].Image) {
 		return fmt.Errorf("unexpected live.Spec.Template.Spec.Containers[0].Image")
 	}
+	if live.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] !=
+		"2026-11-26T00:00:00Z" {
+		return fmt.Errorf("daemon-set update lost the external restart annotation")
+	}
 	p = daemonSetPrior{Inputs: *r, Outputs: updated}
 	read, err = r.Read(ctx, nil, p)
 	if err != nil {
@@ -108,6 +120,22 @@ func checkDaemonSetAPILifecycle(ctx context.Context) (result error) {
 	}
 	if !reflect.DeepEqual(updated, read) {
 		return fmt.Errorf("unexpected read")
+	}
+	generation := live.Generation
+	r.Metadata.Labels = new(map[string]string{"example.com/managed": "new"})
+	updated, err = r.Update(ctx, nil, p)
+	if err != nil {
+		return fmt.Errorf("update DaemonSet metadata with restart annotation: %w", err)
+	}
+	p = daemonSetPrior{Inputs: *r, Outputs: updated}
+	live, err = api.Get(ctx, created.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if live.Generation != generation ||
+		live.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] !=
+			"2026-11-26T00:00:00Z" {
+		return fmt.Errorf("daemon-set metadata update changed its template")
 	}
 	if err := r.Delete(ctx, nil, p); err != nil {
 		return fmt.Errorf("API check: %w", err)

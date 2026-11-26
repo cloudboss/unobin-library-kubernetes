@@ -61,6 +61,7 @@ func TestDaemonSetStateBackedPlanApply(t *testing.T) {
 			require.NoError(t, err)
 			after, err := operations.Apply(before)
 			require.NoError(t, err)
+			stored = &appsv1.DaemonSet{}
 			require.NoError(t, json.Unmarshal(after, stored))
 		case "GET":
 			if stored == nil {
@@ -144,6 +145,25 @@ func TestDaemonSetStateBackedPlanApply(t *testing.T) {
 	apply(exec, p)
 	exec, p = plan(input, runtime.DecisionNoOp, nil)
 	apply(exec, p)
+	stored.Spec.Template.Annotations = map[string]string{testRestartAnnotation: "first"}
+	beforeRestart := mutations
+	exec, p = plan(input, runtime.DecisionNoOp, nil)
+	apply(exec, p)
+	require.Equal(t, beforeRestart, mutations)
+	input.Spec.Template.Metadata.Annotations = new(map[string]string{"example.com/managed": "new"})
+	exec, p = plan(input, runtime.DecisionUpdate, nil)
+	stored.Spec.Template.Annotations[testRestartAnnotation] = "second"
+	apply(exec, p)
+	require.Equal(t, map[string]string{
+		testRestartAnnotation: "second", "example.com/managed": "new",
+	}, stored.Spec.Template.Annotations)
+	plan(input, runtime.DecisionNoOp, nil)
+	input.Spec.Template.Metadata.Annotations = nil
+	exec, p = plan(input, runtime.DecisionUpdate, nil)
+	stored.Spec.Template.Annotations[testRestartAnnotation] = "third"
+	apply(exec, p)
+	require.Equal(t, map[string]string{testRestartAnnotation: "third"},
+		stored.Spec.Template.Annotations)
 	exec, p = plan(input, runtime.DecisionNoOp, nil)
 	t.Run("invalid evaluated unchanged input", func(t *testing.T) {
 		before := mutations

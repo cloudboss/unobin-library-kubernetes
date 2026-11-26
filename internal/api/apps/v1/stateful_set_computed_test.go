@@ -26,9 +26,9 @@ func TestStatefulSetComputedDirectUpdate(t *testing.T) {
 			obj, err := before.expand(nil)
 			require.NoError(t, err)
 			defaultStatefulSet(obj)
-			calls := 0
+			var calls []string
 			c := statefulSetAPI(t, func(w http.ResponseWriter, req *http.Request) {
-				calls++
+				calls = append(calls, req.Method)
 				if req.Method == "PATCH" {
 					var operations []patchOperation
 					require.NoError(t, json.NewDecoder(req.Body).Decode(&operations))
@@ -53,7 +53,7 @@ func TestStatefulSetComputedDirectUpdate(t *testing.T) {
 			out, err = after.Update(t.Context(), c, statefulSetPrior{Inputs: *before, Outputs: out})
 			require.NoError(t, err)
 			require.Equal(t, "uid", out.UID)
-			require.Equal(t, 2, calls)
+			require.Equal(t, []string{"GET", "PATCH", "GET"}, calls)
 			switch field {
 			case "policy":
 				after.Spec.PodManagementPolicy = new("OrderedReady")
@@ -69,7 +69,7 @@ func TestStatefulSetComputedDirectUpdate(t *testing.T) {
 			}
 			_, err = after.Update(t.Context(), c, statefulSetPrior{Inputs: *before, Outputs: out})
 			require.ErrorContains(t, err, "replacement is required")
-			require.Equal(t, 2, calls)
+			require.Equal(t, []string{"GET", "PATCH", "GET"}, calls)
 		})
 	}
 }

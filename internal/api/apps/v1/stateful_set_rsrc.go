@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/cloudboss/unobin/pkg/constraint"
@@ -70,7 +71,7 @@ type StatefulSetResource struct {
 	CreateTimeout *string
 	// ReadTimeout is a positive Go duration, default 10m, for standalone reads.
 	ReadTimeout *string
-	// UpdateTimeout is a positive Go duration, default 10m, shared by PATCH, wait and final GET.
+	// UpdateTimeout bounds the live read, PATCH, rollout wait and final GET; default 10m.
 	UpdateTimeout *string
 	// DeleteTimeout is a positive Go duration, default 10m, read from prior input on deletion.
 	DeleteTimeout *string
@@ -174,9 +175,13 @@ func (r *StatefulSetResource) Update(
 		return nil, err
 	}
 	target := p.Outputs.target()
-	observed := p.Outputs
-	if p.Observed != nil {
-		observed = p.Observed
+	live, err := readStatefulSet(ctx, api, target)
+	if err != nil {
+		return nil, err
+	}
+	observed, err := p.Inputs.statefulSetOutput(live, target.Server, &p.Outputs.Metadata)
+	if err != nil {
+		return nil, err
 	}
 	desired, err := r.statefulSetSpecMap(&observed.Spec)
 	if err != nil {
@@ -187,11 +192,29 @@ func (r *StatefulSetResource) Update(
 		return nil, err
 	}
 	operations := []patchOperation{{Op: "test", Path: "/metadata/uid", Value: target.UID}}
+	if live.ResourceVersion != "" {
+		operations = append(operations, patchOperation{
+			Op: "test", Path: "/metadata/resourceVersion", Value: live.ResourceVersion,
+		})
+	}
 	operations = append(operations,
 		mapPatch("/metadata/labels", observed.Metadata.Labels, r.Metadata.Labels)...)
 	operations = append(operations,
 		mapPatch("/metadata/annotations", observed.Metadata.Annotations, r.Metadata.Annotations)...)
-	operations = append(operations, patch...)
+	for _, operation := range patch {
+		if operation.Path == "/spec/template" {
+			template := operation.Value.(map[string]any)
+			metadata := template["metadata"].(map[string]any)
+			annotations := preserveRolloutAnnotation(
+				maps.Clone(metadataMap(r.Spec.Template.Metadata.Annotations)),
+				live.Spec.Template.Annotations, p.Inputs.Spec.Template.Metadata.Annotations,
+				r.Spec.Template.Metadata.Annotations)
+			if annotations != nil {
+				metadata["annotations"] = annotations
+			}
+		}
+		operations = append(operations, operation)
+	}
 	body, err := json.Marshal(operations)
 	if err != nil {
 		return nil, err

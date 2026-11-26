@@ -23,6 +23,7 @@ func (r *DeploymentResource) output(obj *appsv1.Deployment, server string) (
 	obj = obj.DeepCopy()
 	filterMetadata(obj.Labels, r.Metadata.Labels, r.IgnoreLabels)
 	filterMetadata(obj.Annotations, r.Metadata.Annotations, r.IgnoreAnnotations)
+	projectRolloutAnnotation(obj.Spec.Template.Annotations, r.Spec.Template.Metadata.Annotations)
 	data, err := nativeMap(obj.ObjectMeta)
 	if err != nil {
 		return nil, err
