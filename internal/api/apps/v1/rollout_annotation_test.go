@@ -25,13 +25,14 @@ type rolloutAnnotationObject interface {
 }
 
 type rolloutAnnotationFixture struct {
-	object      rolloutAnnotationObject
-	template    *corev1.PodTemplateSpec
-	metadata    *Metadata
-	annotations **map[string]string
-	containers  **[]Container
-	project     func() any
-	update      func(*config.Configuration) error
+	object             rolloutAnnotationObject
+	template           *corev1.PodTemplateSpec
+	metadata           *Metadata
+	annotations        **map[string]string
+	containers         **[]Container
+	observedGeneration *int64
+	project            func() any
+	update             func(*config.Configuration) error
 }
 
 func rolloutAnnotationWorkload(
@@ -52,8 +53,9 @@ func rolloutAnnotationWorkload(
 		require.NoError(t, err)
 		return rolloutAnnotationFixture{
 			object: obj, template: &obj.Spec.Template, metadata: &r.Metadata,
-			annotations: &r.Spec.Template.Metadata.Annotations,
-			containers:  &r.Spec.Template.Spec.Container,
+			annotations:        &r.Spec.Template.Metadata.Annotations,
+			containers:         &r.Spec.Template.Spec.Container,
+			observedGeneration: &obj.Status.ObservedGeneration,
 			project: func() any {
 				out, err := previous.output(obj, "")
 				require.NoError(t, err)
@@ -78,8 +80,9 @@ func rolloutAnnotationWorkload(
 		require.NoError(t, err)
 		return rolloutAnnotationFixture{
 			object: obj, template: &obj.Spec.Template, metadata: &r.Metadata,
-			annotations: &r.Spec.Template.Metadata.Annotations,
-			containers:  &r.Spec.Template.Spec.Container,
+			annotations:        &r.Spec.Template.Metadata.Annotations,
+			containers:         &r.Spec.Template.Spec.Container,
+			observedGeneration: &obj.Status.ObservedGeneration,
 			project: func() any {
 				out, err := previous.output(obj, "")
 				require.NoError(t, err)
@@ -105,8 +108,9 @@ func rolloutAnnotationWorkload(
 		require.NoError(t, err)
 		return rolloutAnnotationFixture{
 			object: obj, template: &obj.Spec.Template, metadata: &r.Metadata,
-			annotations: &r.Spec.Template.Metadata.Annotations,
-			containers:  &r.Spec.Template.Spec.Container,
+			annotations:        &r.Spec.Template.Metadata.Annotations,
+			containers:         &r.Spec.Template.Spec.Container,
+			observedGeneration: &obj.Status.ObservedGeneration,
 			project: func() any {
 				out, err := previous.statefulSetOutput(obj, "", nil)
 				require.NoError(t, err)
@@ -173,6 +177,7 @@ func TestRolloutAnnotationUpdates(t *testing.T) {
 				if change == "metadata" {
 					for _, operation := range operations {
 						require.NotContains(t, operation.Path, "/spec")
+						require.NotEqual(t, "/metadata/resourceVersion", operation.Path)
 					}
 				}
 				if change == "spec" {
@@ -274,9 +279,9 @@ func TestRolloutAnnotationUpdateRaces(t *testing.T) {
 				if race == "uid before get" {
 					require.Nil(t, operations)
 				} else {
-					require.Contains(t, operations, patchOperation{
-						Op: "test", Path: "/metadata/resourceVersion", Value: "10",
-					})
+					for _, operation := range operations {
+						require.NotEqual(t, "/metadata/resourceVersion", operation.Path)
+					}
 				}
 				require.Equal(t, initialImage, f.template.Spec.Containers[0].Image)
 				if race == "marker added" || race == "marker changed" {
@@ -284,6 +289,48 @@ func TestRolloutAnnotationUpdateRaces(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestRolloutAnnotationStatusUpdateRace(t *testing.T) {
+	for _, kind := range []string{"deployment", "daemon-set", "stateful-set"} {
+		for _, change := range []string{"spec", "metadata"} {
+			t.Run(kind+" "+change, func(t *testing.T) {
+				f := rolloutAnnotationWorkload(t, kind, nil)
+				f.template.Annotations = map[string]string{testRestartAnnotation: "latest"}
+				if change == "spec" {
+					*f.containers = new([]Container{{Name: "app", Image: new("nginx:updated")}})
+				} else {
+					f.metadata.Labels = new(map[string]string{"example.com/label": "new"})
+				}
+				runRolloutAnnotationUpdate(t, &f, func() {
+					f.object.SetResourceVersion("11")
+					*f.observedGeneration = 7
+				}, false)
+				require.Equal(t, "latest", f.template.Annotations[testRestartAnnotation])
+				require.Equal(t, int64(7), *f.observedGeneration)
+				if change == "spec" {
+					require.Equal(t, "nginx:updated", f.template.Spec.Containers[0].Image)
+				} else {
+					require.Equal(t, "new", f.object.GetLabels()["example.com/label"])
+				}
+			})
+		}
+	}
+}
+
+func TestRolloutAnnotationMetadataUpdateRace(t *testing.T) {
+	for _, kind := range []string{"deployment", "daemon-set", "stateful-set"} {
+		t.Run(kind, func(t *testing.T) {
+			f := rolloutAnnotationWorkload(t, kind, nil)
+			f.metadata.Labels = new(map[string]string{"example.com/label": "new"})
+			runRolloutAnnotationUpdate(t, &f, func() {
+				f.object.SetResourceVersion("11")
+				f.template.Annotations = map[string]string{testRestartAnnotation: "latest"}
+			}, false)
+			require.Equal(t, "latest", f.template.Annotations[testRestartAnnotation])
+			require.Equal(t, "new", f.object.GetLabels()["example.com/label"])
+		})
 	}
 }
 
@@ -311,7 +358,7 @@ func runRolloutAnnotationUpdate(
 			require.NoError(t, err)
 			after, err := patch.Apply(before)
 			if err != nil {
-				apiError(t, w, http.StatusConflict)
+				apiError(t, w, http.StatusUnprocessableEntity)
 				return
 			}
 			reflect.ValueOf(f.object).Elem().SetZero()

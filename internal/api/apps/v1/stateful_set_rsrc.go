@@ -192,17 +192,15 @@ func (r *StatefulSetResource) Update(
 		return nil, err
 	}
 	operations := []patchOperation{{Op: "test", Path: "/metadata/uid", Value: target.UID}}
-	if live.ResourceVersion != "" {
-		operations = append(operations, patchOperation{
-			Op: "test", Path: "/metadata/resourceVersion", Value: live.ResourceVersion,
-		})
-	}
 	operations = append(operations,
 		mapPatch("/metadata/labels", observed.Metadata.Labels, r.Metadata.Labels)...)
 	operations = append(operations,
 		mapPatch("/metadata/annotations", observed.Metadata.Annotations, r.Metadata.Annotations)...)
 	for _, operation := range patch {
 		if operation.Path == "/spec/template" {
+			operations = append(operations, patchOperation{
+				Op: "test", Path: "/spec/template/metadata", Value: live.Spec.Template.ObjectMeta,
+			})
 			template := operation.Value.(map[string]any)
 			metadata := template["metadata"].(map[string]any)
 			annotations := preserveRolloutAnnotation(

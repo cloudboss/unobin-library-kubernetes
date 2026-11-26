@@ -178,11 +178,6 @@ func (r *DaemonSetResource) Update(
 		return nil, err
 	}
 	patch := []patchOperation{{Op: "test", Path: "/metadata/uid", Value: target.UID}}
-	if live.ResourceVersion != "" {
-		patch = append(patch, patchOperation{
-			Op: "test", Path: "/metadata/resourceVersion", Value: live.ResourceVersion,
-		})
-	}
 	patch = append(patch, daemonSetMapPatch("/metadata/labels",
 		observed.Metadata.Labels, r.Metadata.Labels, live.Labels)...)
 	patch = append(patch,
@@ -197,7 +192,11 @@ func (r *DaemonSetResource) Update(
 		desired.Spec.Template.Annotations = preserveRolloutAnnotation(
 			desired.Spec.Template.Annotations, live.Spec.Template.Annotations,
 			p.Inputs.Spec.Template.Metadata.Annotations, r.Spec.Template.Metadata.Annotations)
-		patch = append(patch, patchOperation{Op: "replace", Path: "/spec", Value: desired.Spec})
+		patch = append(patch,
+			patchOperation{
+				Op: "test", Path: "/spec/template/metadata", Value: live.Spec.Template.ObjectMeta,
+			},
+			patchOperation{Op: "replace", Path: "/spec", Value: desired.Spec})
 	}
 	body, err := json.Marshal(patch)
 	if err != nil {
