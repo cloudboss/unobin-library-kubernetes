@@ -27,7 +27,6 @@ factory: {
       value: {
         allowed:          data-source.resource.allowed
         denied:           data-source.resource.denied
-        reason:           data-source.resource.reason
         evaluation-error: data-source.resource.evaluation-error
       }
     }
@@ -35,7 +34,6 @@ factory: {
       value: {
         allowed:          data-source.non-resource.allowed
         denied:           data-source.non-resource.denied
-        reason:           data-source.non-resource.reason
         evaluation-error: data-source.non-resource.evaluation-error
       }
     }

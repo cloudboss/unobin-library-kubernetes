@@ -148,7 +148,7 @@ func TestSelfSubjectAccessReviewEvaluatedInputs(t *testing.T) {
 			result, err := executor.ApplyPlan(t.Context(), reviewSavedPlan(t, plan))
 			require.NoError(t, err)
 			require.Equal(t, map[string]any{
-				"allowed": true, "denied": false, "reason": "permitted",
+				"allowed": true, "denied": false,
 				"evaluation-error": "partial evaluation",
 			}, result.Outputs)
 			*calls = nil
@@ -162,6 +162,62 @@ func TestSelfSubjectAccessReviewEvaluatedInputs(t *testing.T) {
 			_, err = executor.Plan(t.Context())
 			require.ErrorContains(t, err, "data-source.query: schema: constraints[")
 			require.Empty(t, *calls)
+		})
+	}
+}
+
+func TestSelfSubjectAccessReviewSavedDecision(t *testing.T) {
+	lib := reviewLibrary(t)
+	for _, tc := range []struct {
+		name   string
+		status authorizationv1.SubjectAccessReviewStatus
+		field  string
+	}{
+		{"different explanation", authorizationv1.SubjectAccessReviewStatus{
+			Allowed: true, Reason: "another matching binding",
+		}, ""},
+		{"access revoked", authorizationv1.SubjectAccessReviewStatus{}, "allowed"},
+		{"explicit denial", authorizationv1.SubjectAccessReviewStatus{
+			Denied: true,
+		}, "denied"},
+		{"evaluation error", authorizationv1.SubjectAccessReviewStatus{
+			Allowed: true, EvaluationError: "role lookup failed",
+		}, "evaluation-error"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("KUBECONFIG", filepath.Join(t.TempDir(), "missing"))
+			calls := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, reviewPOST, r.Method+" "+r.URL.RequestURI())
+				calls++
+				status := authorizationv1.SubjectAccessReviewStatus{Allowed: true, Reason: "binding"}
+				if calls > 1 {
+					status = tc.status
+				}
+				w.Header().Set("Content-Type", "application/json")
+				assert.NoError(t, json.NewEncoder(w).Encode(authorizationv1.SelfSubjectAccessReview{
+					Status: status,
+				}))
+			}))
+			t.Cleanup(server.Close)
+			executor := reviewExecutor(t, lib, "evaluated")
+			executor.Inputs = map[string]any{
+				"server": server.URL, "resource": nil,
+				"non-resource": map[string]any{"verb": "get", "path": "/version"},
+			}
+			plan, err := executor.Plan(t.Context())
+			require.NoError(t, err)
+			result, err := executor.ApplyPlan(t.Context(), reviewSavedPlan(t, plan))
+			if tc.field != "" {
+				require.ErrorContains(t, err, "changed since the plan was computed")
+				require.ErrorContains(t, err, tc.field+":")
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, map[string]any{
+					"allowed": true, "denied": false, "evaluation-error": "",
+				}, result.Outputs)
+			}
+			require.Equal(t, 2, calls)
 		})
 	}
 }

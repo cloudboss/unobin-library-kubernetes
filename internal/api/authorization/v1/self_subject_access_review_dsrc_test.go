@@ -92,7 +92,7 @@ func TestSelfSubjectAccessReviewRead(t *testing.T) {
 				server.Close()
 				require.NoError(t, err)
 				require.Equal(t, &SelfSubjectAccessReviewDataSourceOutput{
-					Allowed: status.Allowed, Denied: status.Denied, Reason: status.Reason,
+					Allowed: status.Allowed, Denied: status.Denied,
 					EvaluationError: status.EvaluationError,
 				}, out)
 				require.Equal(t, []string{"POST " + reviewPath}, calls)

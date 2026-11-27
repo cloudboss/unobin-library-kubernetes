@@ -18,6 +18,8 @@ import (
 // A negative decision and any evaluation error are returned as data. The query
 // does not create a permission grant. Choose exactly one resource or non-resource
 // attribute object; subject identity comes from shared client configuration.
+// Outputs omit the API reason: equivalent authorization decisions can name
+// different matching RBAC bindings on consecutive reads, invalidating saved plans.
 type SelfSubjectAccessReviewDataSource struct {
 	// ResourceAttributes selects a resource request. An omitted or empty namespace
 	// queries all namespaces and does not inherit the configured namespace.
@@ -45,7 +47,6 @@ type AccessReviewNonResourceAttributes struct {
 type SelfSubjectAccessReviewDataSourceOutput struct {
 	Allowed         bool
 	Denied          bool
-	Reason          string
 	EvaluationError string
 }
 
@@ -86,7 +87,7 @@ func (r *SelfSubjectAccessReviewDataSource) Read(
 	}
 	return &SelfSubjectAccessReviewDataSourceOutput{
 		Allowed: review.Status.Allowed, Denied: review.Status.Denied,
-		Reason: review.Status.Reason, EvaluationError: review.Status.EvaluationError,
+		EvaluationError: review.Status.EvaluationError,
 	}, nil
 }
 

@@ -69,7 +69,7 @@ func verify() error {
 			return fmt.Errorf("expected administrator query %s to be allowed: %+v", name, out)
 		}
 		want[name] = map[string]any{
-			"allowed": out.Allowed, "denied": out.Denied, "reason": out.Reason,
+			"allowed": out.Allowed, "denied": out.Denied,
 			"evaluation-error": out.EvaluationError,
 		}
 	}

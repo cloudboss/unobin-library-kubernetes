@@ -15,7 +15,6 @@ factory: {
   outputs: {
     allowed:          { value: data-source.query.allowed }
     denied:           { value: data-source.query.denied }
-    reason:           { value: data-source.query.reason }
     evaluation-error: { value: data-source.query.evaluation-error }
   }
 }
