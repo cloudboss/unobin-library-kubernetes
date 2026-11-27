@@ -11,6 +11,9 @@ func Library() *runtime.Library {
 	env := runtime.MakeResource[
 		svc.EnvResource, *svc.EnvResourceOutput, *config.Configuration,
 	]((&svc.EnvResource{}).ResourceDefinition())
+	object := runtime.MakeResource[
+		svc.ObjectResource, *svc.ObjectResourceOutput, *config.Configuration,
+	]((&svc.ObjectResource{}).ResourceDefinition())
 	return &runtime.Library{
 		Name:        "kubernetes-dynamic",
 		Description: "Kubernetes objects for Unobin.",
@@ -44,9 +47,8 @@ func Library() *runtime.Library {
 			"labels": runtime.MakeResource[
 				svc.LabelsResource, *svc.LabelsResourceOutput, *config.Configuration,
 			]((&svc.LabelsResource{}).ResourceDefinition()),
-			"object": runtime.MakeResource[
-				svc.ObjectResource, *svc.ObjectResourceOutput, *config.Configuration,
-			]((&svc.ObjectResource{}).ResourceDefinition()),
+			"object": svc.ObjectRegistration[svc.ObjectResource, *svc.ObjectResourceOutput](
+				object, object.Read, object.KnownReplacementReasons),
 		},
 	}
 }

@@ -17,19 +17,17 @@ import (
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 )
 
-func manifest() string {
-	return `{"apiVersion":"v1","kind":"ConfigMap","metadata":{"name":"example"},
-		"data":{"value":"first"}}`
+func manifest() map[string]any {
+	return map[string]any{
+		"apiVersion": "v1", "kind": "ConfigMap",
+		"metadata": map[string]any{"name": "example"},
+		"data":     map[string]any{"value": "first"},
+	}
 }
 
 func changeManifest(t *testing.T, r *ObjectResource, change func(map[string]any)) {
 	t.Helper()
-	obj, err := decodeManifest(r.Manifest)
-	require.NoError(t, err)
-	change(obj.Object)
-	encoded, err := obj.MarshalJSON()
-	require.NoError(t, err)
-	r.Manifest = string(encoded)
+	change(r.Manifest.(map[string]any))
 }
 
 func testAPI(t *testing.T, handle http.HandlerFunc) *config.Configuration {
@@ -102,6 +100,7 @@ func TestObjectLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "managed-uid", created.UID)
 	require.Equal(t, "team", created.Namespace)
+	require.Equal(t, manifest(), r.Manifest)
 	p := prior{Inputs: *r, Outputs: created, Configuration: c}
 	r.Manifest = manifest()
 	changeManifest(t, r, func(m map[string]any) {
@@ -119,6 +118,7 @@ func TestObjectLifecycle(t *testing.T) {
 	updated, err := r.Update(t.Context(), c, p)
 	require.NoError(t, err)
 	require.Equal(t, map[string]any{`["f:data","f:value"]`: "updated"}, updated.Values)
+	require.Equal(t, map[string]any{"name": "example"}, r.Manifest.(map[string]any)["metadata"])
 	stored.SetUID("replacement-uid")
 	_, err = r.Read(t.Context(), c, p)
 	require.ErrorContains(t, err, "UID")
@@ -152,7 +152,7 @@ func TestObjectValidation(t *testing.T) {
 		{name: "manager", change: func(r *ObjectResource) { r.FieldManager = new("") }},
 		{name: "timeout", change: func(r *ObjectResource) { r.DeleteTimeout = new("0s") }},
 		{name: "multiple documents", change: func(r *ObjectResource) {
-			r.Manifest += "\n---\n" + manifest()
+			r.Manifest = "apiVersion: v1\n---\nkind: Pod"
 		}},
 		{name: "duplicate keys", change: func(r *ObjectResource) {
 			r.Manifest = "apiVersion: v1\nkind: ConfigMap\nkind: Pod\nmetadata:\n  name: example\n"

@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
 )
@@ -56,7 +57,12 @@ func checkCompiledObjectsOnKubernetes(ctx context.Context) (result error) {
 	if err != nil {
 		return err
 	}
-	cleanupCRD, err := createLookupObject(ctx, strings.ReplaceAll(string(source), "GROUP", group))
+	var decoded map[string]any
+	data := []byte(strings.ReplaceAll(string(source), "GROUP", group))
+	if err := yaml.UnmarshalStrict(data, &decoded); err != nil {
+		return err
+	}
+	cleanupCRD, err := createLookupObject(ctx, decoded)
 	if err != nil {
 		return err
 	}

@@ -15,14 +15,12 @@ factory: {
       object: { metadata: { name: 'unobin-it-restart' } }
     }
     headless: objects.object {
-      manifest: @core.to-json(
-        {
-          apiVersion: 'v1'
-          kind:       'Service'
-          metadata:   { name: 'restart-headless', namespace: resource.scope.object.metadata.name }
-          spec:       { clusterIP: 'None', selector: { suite: 'restart' }, ports: [{ port: 80 }] }
-        },
-      )
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'Service'
+        metadata:   { name: 'restart-headless', namespace: resource.scope.object.metadata.name }
+        spec:       { clusterIP: 'None', selector: { suite: 'restart' }, ports: [{ port: 80 }] }
+      }
     }
     deployment: apps.deployment {
       metadata: {

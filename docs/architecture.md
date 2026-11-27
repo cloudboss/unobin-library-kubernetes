@@ -54,7 +54,8 @@ can use different cluster configurations.
 
 All Unobin fields use strict kebab case. Let the SDK derive names from Go fields;
 use struct tags for sensitivity. Conversion to Kubernetes objects handles native
-JSON names. Kubeconfig files and manifest text retain their Kubernetes formats.
+JSON names. Kubeconfig files retain their Kubernetes formats. Structured manifests retain
+native Kubernetes field names.
 Client-go loading rules, authentication, and standard environment variables
 remain the configuration contract.
 

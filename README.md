@@ -149,12 +149,12 @@ factory: {
   library-configs: { kubernetes: {} }
   resources: {
     settings: kubernetes.object {
-      manifest: @core.to-json({
+      manifest: {
         apiVersion: 'v1'
         kind: 'ConfigMap'
         metadata: { name: 'settings' }
         data: { greeting: 'hello' }
-      })
+      }
     }
   }
   outputs: {
@@ -163,8 +163,10 @@ factory: {
 }
 ```
 
-`manifest` accepts one JSON or YAML object with `apiVersion`, `kind`, and
-`metadata.name`. Namespaced objects use `metadata.namespace`, or the configured
+`manifest` accepts one structured object with `apiVersion`, `kind`, and
+`metadata.name`. The input is sensitive and has type `opaque`; JSON and YAML
+strings, lists, scalars, and null are rejected. Namespaced objects use
+`metadata.namespace`, or the configured
 namespace when it is absent. Cluster-scoped objects must omit the namespace.
 CRDs must be established and discoverable before their custom objects are applied.
 
@@ -185,8 +187,13 @@ Outputs include `server`, `api-version`, `kind`, `name`, `namespace`, and `uid`.
 The sensitive `fields` and `values` outputs store the applied field selection and
 its observed values for drift detection. Resource versions, timestamps, status,
 and other managers' fields are excluded. The saved selection also detects changes
-when another manager takes ownership of a field. Manifest text is sensitive too;
+when another manager takes ownership of a field. The manifest input is sensitive too;
 configure Unobin state encryption for manifests that contain secrets.
+
+Existing factories must pass object values directly: remove `@core.to-json(...)`
+from manifests built as objects and decode external text before use. Resource
+schema version 2 migrates saved JSON or YAML manifest inputs to objects without
+changing saved outputs. Regenerate saved plans after updating factory source.
 
 ## Development
 

@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
 	svc "github.com/cloudboss/unobin-library-kubernetes/internal/object"
@@ -134,7 +135,13 @@ func verifyChangingDiscovery(ctx context.Context, dir string) (result error) {
 	definitions := api.Resource(schema.GroupVersionResource{
 		Group: "apiextensions.k8s.io", Version: "v1", Resource: "customresourcedefinitions",
 	})
-	resource := &svc.ObjectResource{Manifest: strings.ReplaceAll(string(manifest), "GROUP", group)}
+	var decoded map[string]any
+	data := []byte(strings.ReplaceAll(string(manifest), "GROUP", group))
+	if err := yaml.UnmarshalStrict(data, &decoded); err != nil {
+		return err
+	}
+
+	resource := &svc.ObjectResource{Manifest: decoded}
 	created, err := resource.Create(ctx, nil)
 	if err != nil {
 		return err

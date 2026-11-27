@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -53,26 +52,15 @@ func configMap(ctx context.Context) (*svc.ObjectResource, error) {
 		"metadata": map[string]any{"name": "unobin-object-" + strings.ToLower(rand.Text()[:10])},
 		"data":     map[string]any{"value": "first", "removed": "initial"},
 	}
-	encoded, err := json.Marshal(manifest)
-	if err != nil {
-		return nil, fmt.Errorf("API check: %w", err)
-	}
-	return &svc.ObjectResource{Manifest: string(encoded), DeleteTimeout: new("5s")}, nil
+	return &svc.ObjectResource{Manifest: manifest, DeleteTimeout: new("5s")}, nil
 }
 
 func editManifest(
 	ctx context.Context, r *svc.ObjectResource, change func(map[string]any),
 ) (result error) {
-	var manifest map[string]any
-	if err := json.Unmarshal([]byte(r.Manifest), &manifest); err != nil {
-		return fmt.Errorf("API check: %w", err)
-	}
+	manifest := (&unstructured.Unstructured{Object: r.Manifest.(map[string]any)}).DeepCopy().Object
 	change(manifest)
-	encoded, err := json.Marshal(manifest)
-	if err != nil {
-		return fmt.Errorf("API check: %w", err)
-	}
-	r.Manifest = string(encoded)
+	r.Manifest = manifest
 
 	return nil
 }
@@ -204,10 +192,7 @@ func checkReplacementUIDProtection(ctx context.Context) (result error) {
 	if err := r.Delete(ctx, nil, p); err != nil {
 		return fmt.Errorf("API check: %w", err)
 	}
-	replacement := &unstructured.Unstructured{}
-	if err := replacement.UnmarshalJSON([]byte(r.Manifest)); err != nil {
-		return fmt.Errorf("API check: %w", err)
-	}
+	replacement := (&unstructured.Unstructured{Object: r.Manifest.(map[string]any)}).DeepCopy()
 	replacement, err = api.Create(ctx, replacement, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("API check: %w", err)

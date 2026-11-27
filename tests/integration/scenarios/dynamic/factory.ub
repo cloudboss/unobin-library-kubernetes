@@ -7,7 +7,18 @@ factory: {
   inputs: {
     temporary-envs: { type: map(boolean), default: { temporary: true } }
     value:          { type: string }
-    updated:        { type: boolean, default: false }
+    manifest: {
+      type: open(
+        object(
+          {
+            apiVersion: string
+            kind:       string
+            metadata:   open(object({ name: string }))
+          },
+        ),
+      )
+    }
+    updated: { type: boolean, default: false }
   }
   locals: {
     deployment-name:  'unobin-it-dynamic-env'
@@ -40,6 +51,9 @@ factory: {
     }
   }
   resources: {
+    open-object: dynamic.object {
+      manifest: input.manifest
+    }
     settings: core.config-map {
       object: {
         metadata: { name: 'unobin-it-dynamic-object-info', namespace: 'default' }
@@ -48,65 +62,57 @@ factory: {
     }
     deployment: dynamic.object {
       field-manager: 'scenario-workloads'
-      manifest: @core.to-json(
-        {
-          apiVersion: 'apps/v1'
-          kind:       'Deployment'
-          metadata: {
-            name:        local.deployment-name
-            namespace:   'default'
-            annotations: { 'unobin.cloudboss.dev/scenario': 'env' }
-          }
-          spec: local.deployment-spec
-        },
-      )
+      manifest: {
+        apiVersion: 'apps/v1'
+        kind:       'Deployment'
+        metadata: {
+          name:        local.deployment-name
+          namespace:   'default'
+          annotations: { 'unobin.cloudboss.dev/scenario': 'env' }
+        }
+        spec: local.deployment-spec
+      }
     }
     replacement: dynamic.object {
       field-manager: 'scenario-workloads'
-      manifest: @core.to-json(
-        {
-          apiVersion: 'apps/v1'
-          kind:       'Deployment'
-          metadata:   { name: local.replacement-name, namespace: 'default' }
-          spec:       local.deployment-spec
-        },
-      )
+      manifest: {
+        apiVersion: 'apps/v1'
+        kind:       'Deployment'
+        metadata:   { name: local.replacement-name, namespace: 'default' }
+        spec:       local.deployment-spec
+      }
     }
     cron: dynamic.object {
       field-manager: 'scenario-workloads'
-      manifest: @core.to-json(
-        {
-          apiVersion: 'batch/v1'
-          kind:       'CronJob'
-          metadata:   { name: local.cron-name, namespace: 'default' }
-          spec: {
-            schedule: '0 0 31 12 *'
-            suspend:  true
-            jobTemplate: {
-              spec: {
-                template: {
-                  spec: {
-                    restartPolicy:  'Never'
-                    containers:     local.containers
-                    initContainers: local.init-containers
-                  }
+      manifest: {
+        apiVersion: 'batch/v1'
+        kind:       'CronJob'
+        metadata:   { name: local.cron-name, namespace: 'default' }
+        spec: {
+          schedule: '0 0 31 12 *'
+          suspend:  true
+          jobTemplate: {
+            spec: {
+              template: {
+                spec: {
+                  restartPolicy:  'Never'
+                  containers:     local.containers
+                  initContainers: local.init-containers
                 }
               }
             }
           }
-        },
-      )
+        }
+      }
     }
     pod: dynamic.object {
       field-manager: 'scenario-workloads'
-      manifest: @core.to-json(
-        {
-          apiVersion: 'v1'
-          kind:       'Pod'
-          metadata:   { name: local.pod-name, namespace: 'default' }
-          spec:       { containers: local.containers, initContainers: local.init-containers }
-        },
-      )
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'Pod'
+        metadata:   { name: local.pod-name, namespace: 'default' }
+        spec:       { containers: local.containers, initContainers: local.init-containers }
+      }
     }
     deployment-env: dynamic.env {
       @depends-on: [resource.deployment]
@@ -194,9 +200,10 @@ factory: {
     }
   }
   outputs: {
-    config-map: { value: data-source.config-map.object }
-    namespace:  { value: data-source.namespace.object }
-    absent:     { value: data-source.absent.object }
+    requested-name: { value: input.manifest.metadata.name }
+    config-map:     { value: data-source.config-map.object }
+    namespace:      { value: data-source.namespace.object }
+    absent:         { value: data-source.absent.object }
     deployment-env: {
       value: [ for item in resource.deployment-env.env : { name: item.name, value: item.value } ]
     }

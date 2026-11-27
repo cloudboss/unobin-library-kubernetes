@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
 	svc "github.com/cloudboss/unobin-library-kubernetes/internal/object"
@@ -111,7 +112,13 @@ func verifyCustomWaits(ctx context.Context, api dynamic.Interface) (result error
 	if err != nil {
 		return err
 	}
-	resource := &svc.ObjectResource{Manifest: strings.ReplaceAll(string(manifest), "GROUP", group)}
+	var decoded map[string]any
+	data := []byte(strings.ReplaceAll(string(manifest), "GROUP", group))
+	if err := yaml.UnmarshalStrict(data, &decoded); err != nil {
+		return err
+	}
+
+	resource := &svc.ObjectResource{Manifest: decoded}
 	definition, err := resource.Create(ctx, nil)
 	if err != nil {
 		return err

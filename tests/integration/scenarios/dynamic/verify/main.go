@@ -42,6 +42,16 @@ func run() error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	openObject, openErr := api.CoreV1().ConfigMaps("default").Get(
+		ctx, "unobin-it-open-object", metav1.GetOptions{},
+	)
+	if phase == "destroyed" {
+		if !apierrors.IsNotFound(openErr) {
+			return fmt.Errorf("expected deleted open object: %v", openErr)
+		}
+	} else if openErr != nil {
+		return openErr
+	}
 	current, err := api.CoreV1().ConfigMaps("default").Get(ctx, name, metav1.GetOptions{})
 	if phase == "destroyed" {
 		if !apierrors.IsNotFound(err) {
@@ -72,6 +82,10 @@ func run() error {
 	snapshot, err := state.DecodeSnapshot(body)
 	if err != nil {
 		return err
+	}
+	if snapshot.Outputs["requested-name"] != "unobin-it-open-object" ||
+		openObject.Labels["example.com/open"] != "retained" || openObject.Data["value"] != value {
+		return fmt.Errorf("open input fields were not preserved")
 	}
 	liveNamespace, err := api.CoreV1().Namespaces().Get(ctx, "default", metav1.GetOptions{})
 	if err != nil {

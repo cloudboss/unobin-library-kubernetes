@@ -77,43 +77,76 @@ factory: {
       delete-timeout:                   '30s'
     }
     endpoints-lookup-fixture: dynamic.object {
-      manifest: '''|-
-        apiVersion: v1
-        kind: Endpoints
-        metadata:
-          name: unobin-it-core-v1-endpoints-lookup
-          namespace: default
-          labels:
-            example.com/fixture: endpoints
-          annotations:
-            example.com/fixture: standalone
-        subsets:
-        - addresses:
-          - ip: 192.0.2.12
-            hostname: primary
-            nodeName: worker-a
-          notReadyAddresses:
-          - ip: 192.0.2.11
-          ports:
-          - { name: dns, port: 53, protocol: UDP }
-          - { name: api, port: 8080, protocol: TCP }
-        - addresses:
-          - ip: "2001:db8::1"
-          ports:
-          - { name: alternate, port: 9090 }
-        '''
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'Endpoints'
+        metadata: {
+          name:      'unobin-it-core-v1-endpoints-lookup'
+          namespace: 'default'
+          labels: {
+            'example.com/fixture': 'endpoints'
+          }
+          annotations: {
+            'example.com/fixture': 'standalone'
+          }
+        }
+        subsets: [
+          {
+            addresses: [
+              {
+                ip:       '192.0.2.12'
+                hostname: 'primary'
+                nodeName: 'worker-a'
+              },
+            ]
+            notReadyAddresses: [
+              {
+                ip: '192.0.2.11'
+              },
+            ]
+            ports: [
+              {
+                name:     'dns'
+                port:     53
+                protocol: 'UDP'
+              },
+              {
+                name:     'api'
+                port:     8080
+                protocol: 'TCP'
+              },
+            ]
+          },
+          {
+            addresses: [
+              {
+                ip: '2001:db8::1'
+              },
+            ]
+            ports: [
+              {
+                name: 'alternate'
+                port: 9090
+              },
+            ]
+          },
+        ]
+      }
     }
     node-taint-fixture: dynamic.object {
-      manifest: '''|-
-        apiVersion: v1
-        kind: Node
-        metadata:
-          name: unobin-it-core-v1-node-taint
-          labels:
-            test.unobin.cloudboss.io/scenario: core-v1-node-taint
-        spec:
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'Node'
+        metadata: {
+          name: 'unobin-it-core-v1-node-taint'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'core-v1-node-taint'
+          }
+        }
+        spec: {
           unschedulable: true
-        '''
+        }
+      }
     }
     node-taint: core.node-taint {
       object: {

@@ -20,12 +20,13 @@ factory: {
       object: { metadata: { name: 'compile-typed' } }
     }
     object: dynamic.object {
-      manifest: '''|-
-        apiVersion: v1
-        kind: Namespace
-        metadata:
-          name: compile-unstructured
-        '''
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'Namespace'
+        metadata: {
+          name: 'compile-unstructured'
+        }
+      }
     }
   }
 }

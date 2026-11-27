@@ -14,11 +14,16 @@ import (
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 )
 
+// ObjectResource manages one structured Kubernetes object with server-side apply.
 type ObjectResource struct {
-	Manifest       string `ub:",sensitive"`
+	// Manifest is one structured object with apiVersion, kind, and metadata.name.
+	// Nested fields use native Kubernetes names. JSON and YAML strings are rejected.
+	Manifest       any `ub:",sensitive"`
 	FieldManager   *string
 	ForceConflicts *bool
 	DeleteTimeout  *string
+
+	capturePrior *prior `ub:"-"`
 }
 
 type ObjectResourceOutput struct {
@@ -52,6 +57,10 @@ func (r *ObjectResource) Create(
 func (r *ObjectResource) Read(
 	ctx context.Context, c *config.Configuration, p prior,
 ) (*ObjectResourceOutput, error) {
+	if r.capturePrior != nil {
+		*r.capturePrior = p
+		return p.Outputs, nil
+	}
 	target := p.Outputs.target()
 	connection, err := TargetClient(c, target)
 	if err != nil {

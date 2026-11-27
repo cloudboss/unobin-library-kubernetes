@@ -1,5 +1,19 @@
 stack: {
-  factory: { inputs: { value: 'first' } }
+  factory: {
+    inputs: {
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'ConfigMap'
+        metadata: {
+          name:      'unobin-it-open-object'
+          namespace: 'default'
+          labels:    { 'example.com/open': 'retained' }
+        }
+        data: { value: 'first' }
+      }
+      value: 'first'
+    }
+  }
   state: local {
     path: '.unobin/state'
   }

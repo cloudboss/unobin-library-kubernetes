@@ -3,9 +3,10 @@ package object
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
-	"reflect"
+	"maps"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	kjson "k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	yamlreader "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
@@ -24,16 +26,8 @@ func (r *ObjectResource) ResourceDefinition() runtime.ResourceDefinition[
 	ObjectResource, *ObjectResourceOutput, *config.Configuration,
 ] {
 	return runtime.ResourceDefinition[ObjectResource, *ObjectResourceOutput, *config.Configuration]{
-		SchemaVersion: 1,
-		Equality: []runtime.InputEqualityRule[ObjectResource]{
-			runtime.EqualBy(runtime.InputField(func(r *ObjectResource) *string {
-				return &r.Manifest
-			}), func(before, after string) bool {
-				left, leftErr := decodeManifest(before)
-				right, rightErr := decodeManifest(after)
-				return leftErr == nil && rightErr == nil && reflect.DeepEqual(left.Object, right.Object)
-			}),
-		},
+		SchemaVersion: 2,
+		Migrate:       migrateObject,
 		Validate: func(_ context.Context, input ObjectResource, _ *config.Configuration) error {
 			_, err := input.object()
 			return err
@@ -47,13 +41,6 @@ func (r *ObjectResource) ResourceDefinition() runtime.ResourceDefinition[
 		Replace: runtime.Replacement[ObjectResource, *ObjectResourceOutput, *config.Configuration]{
 			Fields: []runtime.AnyInputField[ObjectResource]{
 				runtime.InputField(func(r *ObjectResource) **string { return &r.FieldManager }),
-			},
-			Rules: []runtime.ReplacementRule[ObjectResource]{
-				runtime.ReplaceWhen(runtime.InputField(func(r *ObjectResource) *string {
-					return &r.Manifest
-				}), func(before, after string) bool {
-					return manifestIdentity(before) != manifestIdentity(after)
-				}),
 			},
 			ConfigurationFields: []runtime.AnyConfigurationField[*config.Configuration]{
 				runtime.ConfigurationField(func(c *config.Configuration) **string { return &c.Server }),
@@ -69,8 +56,8 @@ func (r *ObjectResource) ResourceDefinition() runtime.ResourceDefinition[
 	}
 }
 
-func manifestIdentity(manifest string) [4]string {
-	obj, err := decodeManifest(manifest)
+func manifestIdentity(manifest any) [4]string {
+	obj, err := structuredManifest(manifest)
 	if err != nil {
 		return [4]string{}
 	}
@@ -78,7 +65,7 @@ func manifestIdentity(manifest string) [4]string {
 }
 
 func (r *ObjectResource) object() (*unstructured.Unstructured, error) {
-	obj, err := decodeManifest(r.Manifest)
+	obj, err := structuredManifest(r.Manifest)
 	if err != nil {
 		return nil, err
 	}
@@ -151,4 +138,44 @@ func (r *ObjectResource) deleteTimeout() (time.Duration, error) {
 		return 0, fmt.Errorf("delete-timeout must be a positive Go duration")
 	}
 	return duration, nil
+}
+
+func structuredManifest(manifest any) (*unstructured.Unstructured, error) {
+	if _, ok := manifest.(map[string]any); !ok || manifest == nil {
+		return nil, fmt.Errorf("manifest must be one structured Kubernetes object")
+	}
+	encoded, err := json.Marshal(manifest)
+	if err != nil {
+		return nil, fmt.Errorf("encode Kubernetes manifest: %w", err)
+	}
+	var value map[string]any
+	if err := kjson.Unmarshal(encoded, &value); err != nil {
+		return nil, fmt.Errorf("decode Kubernetes manifest: %w", err)
+	}
+	if value == nil {
+		return nil, fmt.Errorf("manifest must be one structured Kubernetes object")
+	}
+	return &unstructured.Unstructured{Object: value}, nil
+}
+
+func migrateObject(version int, prior runtime.MigrationState) (runtime.MigrationState, error) {
+	if version != 1 {
+		return runtime.MigrationState{}, fmt.Errorf(
+			"migrate object: unsupported schema version %d", version,
+		)
+	}
+	text, ok := prior.Inputs["manifest"].(string)
+	if !ok {
+		return runtime.MigrationState{}, fmt.Errorf("migrate object manifest: expected saved text")
+	}
+	obj, err := decodeManifest(text)
+	if err != nil {
+		return runtime.MigrationState{}, fmt.Errorf("migrate object manifest: %w", err)
+	}
+	if _, err := (&ObjectResource{Manifest: obj.Object}).object(); err != nil {
+		return runtime.MigrationState{}, fmt.Errorf("migrate object manifest: %w", err)
+	}
+	inputs := maps.Clone(prior.Inputs)
+	inputs["manifest"] = obj.Object
+	return runtime.MigrationState{Inputs: inputs, Outputs: prior.Outputs}, nil
 }

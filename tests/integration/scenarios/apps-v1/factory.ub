@@ -150,52 +150,46 @@ factory: {
       delete-timeout:   '30s'
     }
     stateful-set-service: objects.object {
-      manifest: @core.to-json(
-        {
-          apiVersion: 'v1'
-          kind:       'Service'
-          metadata:   { name: input.stateful-set-name, namespace: 'default' }
-          spec: {
-            clusterIP: 'None'
-            selector:  { app: input.stateful-set-name }
-            ports:     [{ port: 80 }]
-          }
-        },
-      )
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'Service'
+        metadata:   { name: input.stateful-set-name, namespace: 'default' }
+        spec: {
+          clusterIP: 'None'
+          selector:  { app: input.stateful-set-name }
+          ports:     [{ port: 80 }]
+        }
+      }
     }
     stateful-set-storage-zero: objects.object {
-      manifest: @core.to-json(
-        {
-          apiVersion: 'v1'
-          kind:       'PersistentVolume'
-          metadata:   { name: 'unobin-it-stateful-set-pv-0' }
-          spec: {
-            capacity:                      { storage: '1Mi' }
-            accessModes:                   ['ReadWriteOnce']
-            persistentVolumeReclaimPolicy: 'Retain'
-            storageClassName:              'unobin-it-stateful-set'
-            claimRef: { namespace: 'default', name: 'data-unobin-it-stateful-set-0' }
-            hostPath: { path: '/var/lib/unobin-stateful-set-it/0', type: 'DirectoryOrCreate' }
-          }
-        },
-      )
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'PersistentVolume'
+        metadata:   { name: 'unobin-it-stateful-set-pv-0' }
+        spec: {
+          capacity:                      { storage: '1Mi' }
+          accessModes:                   ['ReadWriteOnce']
+          persistentVolumeReclaimPolicy: 'Retain'
+          storageClassName:              'unobin-it-stateful-set'
+          claimRef: { namespace: 'default', name: 'data-unobin-it-stateful-set-0' }
+          hostPath: { path: '/var/lib/unobin-stateful-set-it/0', type: 'DirectoryOrCreate' }
+        }
+      }
     }
     stateful-set-storage-one: objects.object {
-      manifest: @core.to-json(
-        {
-          apiVersion: 'v1'
-          kind:       'PersistentVolume'
-          metadata:   { name: 'unobin-it-stateful-set-pv-1' }
-          spec: {
-            capacity:                      { storage: '1Mi' }
-            accessModes:                   ['ReadWriteOnce']
-            persistentVolumeReclaimPolicy: 'Retain'
-            storageClassName:              'unobin-it-stateful-set'
-            claimRef: { namespace: 'default', name: 'data-unobin-it-stateful-set-1' }
-            hostPath: { path: '/var/lib/unobin-stateful-set-it/1', type: 'DirectoryOrCreate' }
-          }
-        },
-      )
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'PersistentVolume'
+        metadata:   { name: 'unobin-it-stateful-set-pv-1' }
+        spec: {
+          capacity:                      { storage: '1Mi' }
+          accessModes:                   ['ReadWriteOnce']
+          persistentVolumeReclaimPolicy: 'Retain'
+          storageClassName:              'unobin-it-stateful-set'
+          claimRef: { namespace: 'default', name: 'data-unobin-it-stateful-set-1' }
+          hostPath: { path: '/var/lib/unobin-stateful-set-it/1', type: 'DirectoryOrCreate' }
+        }
+      }
     }
     stateful-set-workload: apps.stateful-set {
       @depends-on: [resource.stateful-set-storage-zero, resource.stateful-set-storage-one]

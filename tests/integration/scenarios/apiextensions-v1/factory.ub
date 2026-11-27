@@ -46,17 +46,15 @@ factory: {
       }
     }
     widget: dynamic.object {
-      manifest: @core.to-json(
-        {
-          apiVersion: resource.definition.spec.group + '/v1'
-          kind:       resource.definition.spec.names.kind
-          metadata:   { name: 'example', namespace: resource.namespace.object.metadata.name }
-          spec: {
-            message: if input.updated then 'updated' else 'initial'
-            count:   if input.updated then 2 else 1
-          }
-        },
-      )
+      manifest: {
+        apiVersion: resource.definition.spec.group + '/v1'
+        kind:       resource.definition.spec.names.kind
+        metadata:   { name: 'example', namespace: resource.namespace.object.metadata.name }
+        spec: {
+          message: if input.updated then 'updated' else 'initial'
+          count:   if input.updated then 2 else 1
+        }
+      }
     }
   }
 }

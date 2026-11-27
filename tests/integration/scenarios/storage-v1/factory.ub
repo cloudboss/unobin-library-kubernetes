@@ -39,29 +39,35 @@ factory: {
       mount-options:          ['nosuid', 'noexec', 'nosuid']
     }
     storage-class-lookup-class: dynamic.object {
-      manifest: '''|-
-        apiVersion: storage.k8s.io/v1
-        kind: StorageClass
-        metadata:
-          name: unobin-it-storage-class-info
-          labels:
-            test.unobin.cloudboss.io/scenario: storage-class-info
-          annotations:
-            kubectl.kubernetes.io/last-applied-configuration: full
-        provisioner: kubernetes.io/no-provisioner
-        parameters:
-          tier: fast
+      manifest: {
+        apiVersion: 'storage.k8s.io/v1'
+        kind:       'StorageClass'
+        metadata: {
+          name: 'unobin-it-storage-class-info'
+          labels: {
+            'test.unobin.cloudboss.io/scenario': 'storage-class-info'
+          }
+          annotations: {
+            'kubectl.kubernetes.io/last-applied-configuration': 'full'
+          }
+        }
+        provisioner: 'kubernetes.io/no-provisioner'
+        parameters: {
+          tier: 'fast'
+        }
         allowVolumeExpansion: false
-        mountOptions:
-          - nosuid
-          - noexec
-        allowedTopologies:
-          - matchLabelExpressions:
-              - key: topology.kubernetes.io/zone
-                values:
-                  - west
-                  - east
-        '''
+        mountOptions:         ['nosuid', 'noexec']
+        allowedTopologies: [
+          {
+            matchLabelExpressions: [
+              {
+                key:    'topology.kubernetes.io/zone'
+                values: ['west', 'east']
+              },
+            ]
+          },
+        ]
+      }
     }
   }
   data-sources: {

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cloudboss/unobin-library-kubernetes/config"
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
@@ -34,7 +34,12 @@ func checkCustomObjectInfo(ctx context.Context) (result error) {
 	if err != nil {
 		return fmt.Errorf("API check: %w", err)
 	}
-	cleanupCRD, err := createLookupObject(ctx, strings.ReplaceAll(string(source), "GROUP", group))
+	var decoded map[string]any
+	data := []byte(strings.ReplaceAll(string(source), "GROUP", group))
+	if err := yaml.UnmarshalStrict(data, &decoded); err != nil {
+		return err
+	}
+	cleanupCRD, err := createLookupObject(ctx, decoded)
 	if err != nil {
 		return err
 	}
@@ -64,14 +69,11 @@ func checkCustomObjectInfo(ctx context.Context) (result error) {
 			"serial":  int64(9007199254740993),
 		},
 	}
-	manifest, err := json.Marshal(map[string]any{
+	manifest := map[string]any{
 		"apiVersion": version, "kind": "Widget", "spec": spec,
 		"metadata": map[string]any{"name": "example", "namespace": "default"},
-	})
-	if err != nil {
-		return fmt.Errorf("API check: %w", err)
 	}
-	cleanupObject, err := createLookupObject(ctx, string(manifest))
+	cleanupObject, err := createLookupObject(ctx, manifest)
 	if err != nil {
 		return err
 	}
@@ -98,7 +100,7 @@ func checkCustomObjectInfo(ctx context.Context) (result error) {
 	return nil
 }
 
-func createLookupObject(ctx context.Context, manifest string) (func() error, error) {
+func createLookupObject(ctx context.Context, manifest map[string]any) (func() error, error) {
 	resource := svc.ObjectResource{Manifest: manifest, DeleteTimeout: new("20s")}
 	out, err := resource.Create(ctx, nil)
 	if err != nil {

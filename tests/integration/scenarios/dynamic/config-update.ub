@@ -1,5 +1,21 @@
 stack: {
-  factory: { inputs: { value: 'updated', updated: true, temporary-envs: {} } }
+  factory: {
+    inputs: {
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'ConfigMap'
+        metadata: {
+          name:      'unobin-it-open-object'
+          namespace: 'default'
+          labels:    { 'example.com/open': 'retained' }
+        }
+        data: { value: 'updated' }
+      }
+      value:          'updated'
+      updated:        true
+      temporary-envs: {}
+    }
+  }
   state: local {
     path: '.unobin/state'
   }

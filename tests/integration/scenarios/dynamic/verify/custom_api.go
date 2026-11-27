@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -16,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cloudboss/unobin-library-kubernetes/internal/client"
 	svc "github.com/cloudboss/unobin-library-kubernetes/internal/object"
@@ -31,8 +31,14 @@ func checkCustomObject(ctx context.Context) (result error) {
 	if err != nil {
 		return fmt.Errorf("API check: %w", err)
 	}
+	var decoded map[string]any
+	data := []byte(strings.ReplaceAll(string(manifest), "GROUP", group))
+	if err := yaml.UnmarshalStrict(data, &decoded); err != nil {
+		return err
+	}
+
 	crd := &svc.ObjectResource{
-		Manifest: strings.ReplaceAll(string(manifest), "GROUP", group), DeleteTimeout: new("10s"),
+		Manifest: decoded, DeleteTimeout: new("10s"),
 	}
 	definition, err := crd.Create(ctx, nil)
 	if err != nil {
@@ -84,17 +90,14 @@ func checkCustomObject(ctx context.Context) (result error) {
 	if err != nil {
 		return fmt.Errorf("API check: %w", err)
 	}
-	encoded, err := json.Marshal(map[string]any{
+	instance := map[string]any{
 		"apiVersion": group + "/v1", "kind": "Widget",
 		"metadata": map[string]any{"name": "example"},
 		"spec": map[string]any{"value": "first", "members": []any{
 			map[string]any{"name": "app", "value": "managed"},
 		}},
-	})
-	if err != nil {
-		return fmt.Errorf("API check: %w", err)
 	}
-	r := &svc.ObjectResource{Manifest: string(encoded), DeleteTimeout: new("5s")}
+	r := &svc.ObjectResource{Manifest: instance, DeleteTimeout: new("5s")}
 	created, err := r.Create(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("API check: %w", err)

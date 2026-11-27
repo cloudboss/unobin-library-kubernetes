@@ -81,7 +81,7 @@ documentation comments next to the implementation.
 
 ## Dynamic objects
 
-The [dynamic library](reference/dynamic/index.md) accepts a JSON or YAML manifest
+The [dynamic library](reference/dynamic/index.md) accepts a structured manifest
 for a built-in or custom Kubernetes object. It uses server-side apply with field
 ownership, conflict controls, and UID protection. CRDs must be established and
 discoverable before their custom objects are applied.

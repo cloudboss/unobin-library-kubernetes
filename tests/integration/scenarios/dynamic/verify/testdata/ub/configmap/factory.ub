@@ -10,14 +10,12 @@ factory: {
   }
   resources: {
     settings: kubernetes.object {
-      manifest: @core.to-json(
-        {
-          apiVersion: 'v1'
-          kind:       'ConfigMap'
-          metadata:   { name: input.name }
-          data:       { value: input.value }
-        },
-      )
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'ConfigMap'
+        metadata:   { name: input.name }
+        data:       { value: input.value }
+      }
       force-conflicts: input.force-conflicts
       delete-timeout:  '5s'
     }
