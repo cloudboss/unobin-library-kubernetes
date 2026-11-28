@@ -25,6 +25,7 @@ func verifyAPI() error {
 		{"DeploymentLookupAPI", checkDeploymentLookupAPI},
 		{"DeploymentControllerRollout", checkDeploymentControllerRollout},
 		{"StatefulSetAPILifecycle", checkStatefulSetAPILifecycle},
+		{"StatefulSetLookupAPI", checkStatefulSetLookupAPI},
 	}
 	for _, check := range checks {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)

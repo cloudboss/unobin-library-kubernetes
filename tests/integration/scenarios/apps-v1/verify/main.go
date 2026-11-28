@@ -14,6 +14,7 @@ func main() {
 		{"deployment", verifyDeployment},
 		{"deployment-lookup", verifyDeploymentLookup},
 		{"stateful-set", verifyStatefulSet},
+		{"stateful-set-lookup", verifyStatefulSetLookup},
 	}
 	for _, check := range checks {
 		if err := check.run(); err != nil {

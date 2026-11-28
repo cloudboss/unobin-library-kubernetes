@@ -1,0 +1,28 @@
+factory: {
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: {} }
+  data-sources: {
+    lookup: apps.stateful-set {
+      metadata: { name: 'example.test' }
+    }
+  }
+  outputs: {
+    replicas: { value: data-source.lookup.spec?.replicas }
+    spec: {
+      value: {
+        policy:    data-source.lookup.spec?.pod-management-policy
+        service:   data-source.lookup.spec?.service-name
+        history:   data-source.lookup.spec?.revision-history-limit
+        strategy:  data-source.lookup.spec?.update-strategy
+        ordinals:  data-source.lookup.spec?.ordinals
+        retention: data-source.lookup.spec?.persistent-volume-claim-retention-policy
+        claims:    data-source.lookup.spec?.volume-claim-template
+        template:  data-source.lookup.spec?.template
+        selector:  data-source.lookup.spec?.selector
+      }
+    }
+    metadata:   { value: data-source.lookup.metadata }
+    status:     { value: data-source.lookup.status }
+    conditions: { value: data-source.lookup.status?.conditions }
+  }
+}

@@ -253,6 +253,15 @@ factory: {
     }
   }
   data-sources: {
+    stateful-set-live: apps.stateful-set {
+      metadata: {
+        name:      resource.stateful-set-workload.name
+        namespace: resource.stateful-set-workload.namespace
+      }
+    }
+    stateful-set-missing: apps.stateful-set {
+      metadata: { name: 'unobin-it-stateful-set-lookup-missing' }
+    }
     deployment-live: apps.deployment {
       metadata: {
         name:      resource.deployment-workload.name
@@ -261,6 +270,20 @@ factory: {
     }
   }
   outputs: {
+    stateful-set-lookup: {
+      value: {
+        metadata: data-source.stateful-set-live.metadata
+        spec:     data-source.stateful-set-live.spec
+        status:   data-source.stateful-set-live.status
+      }
+    }
+    stateful-set-missing: {
+      value: {
+        metadata: data-source.stateful-set-missing.metadata
+        spec:     data-source.stateful-set-missing.spec
+        status:   data-source.stateful-set-missing.status
+      }
+    }
     deployment-lookup: {
       value: {
         metadata: data-source.deployment-live.metadata
