@@ -89,7 +89,27 @@ factory: {
       ]
     }
   }
+  data-sources: {
+    role-reader: rbac.role {
+      metadata: {
+        name:      resource.role-reader.name
+        namespace: resource.role-reader.namespace
+      }
+    }
+    role-missing: rbac.role {
+      metadata: { name: 'unobin-it-role-lookup-absent' }
+    }
+  }
   outputs: {
+    role-lookup: {
+      value: {
+        metadata:         data-source.role-reader.metadata
+        rules:            data-source.role-reader.rules
+        missing-metadata: data-source.role-missing.metadata
+        missing-rules:    data-source.role-missing.rules
+      }
+    }
+
     cluster-role: {
       value: {
         name:           resource.cluster-role-reader.name

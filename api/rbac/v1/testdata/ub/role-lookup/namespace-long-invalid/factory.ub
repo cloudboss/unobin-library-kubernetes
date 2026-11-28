@@ -1,0 +1,16 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: {} }
+  data-sources: {
+    endpoint: rbac.role {
+      metadata: {
+        name:      'reader'
+        namespace: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      }
+    }
+  }
+  outputs: {
+    metadata: { value: data-source.endpoint.metadata }
+    rules:    { value: data-source.endpoint.rules }
+  }
+}

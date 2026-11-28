@@ -13,6 +13,7 @@ func main() {
 		{"cluster-role", verifyClusterRole},
 		{"cluster-role-binding", verifyClusterRoleBinding},
 		{"role", verifyRole},
+		{"role-lookup", verifyRoleLookup},
 		{"role-binding", verifyRoleBinding},
 	}
 	for _, check := range checks {

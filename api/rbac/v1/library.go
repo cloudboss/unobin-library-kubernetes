@@ -28,6 +28,11 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.1",
 		},
 		Configuration: config.LibraryConfiguration(),
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"role": runtime.MakeDataSource[
+				svc.RoleDataSource, *svc.RoleDataSourceOutput, *config.Configuration,
+			](),
+		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"cluster-role-binding": svc.ClusterRoleBindingRegistration[
 				svc.ClusterRoleBindingResource, *svc.ClusterRoleBindingResourceOutput,

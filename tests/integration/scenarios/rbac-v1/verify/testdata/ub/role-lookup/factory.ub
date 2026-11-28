@@ -1,0 +1,19 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: { namespace: 'ignored' } }
+  inputs:          { name: { type: string } }
+  data-sources: {
+    role: rbac.role {
+      metadata: { name: input.name }
+    }
+    absent: rbac.role {
+      metadata: { name: 'unobin-it-role-lookup-absent' }
+    }
+  }
+  outputs: {
+    metadata:         { value: data-source.role.metadata }
+    rules:            { value: data-source.role.rules }
+    missing-metadata: { value: data-source.absent.metadata }
+    missing-rules:    { value: data-source.absent.rules }
+  }
+}
