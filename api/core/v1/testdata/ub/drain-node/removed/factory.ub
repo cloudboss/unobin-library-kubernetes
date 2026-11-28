@@ -1,0 +1,9 @@
+factory: {
+  inputs: {
+    server:       { type: string }
+    name:         { type: string }
+    expected-uid: { type: string }
+    timeout:      { type: optional(string) }
+    trigger:      { type: string }
+  }
+}

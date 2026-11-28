@@ -31,6 +31,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		Actions: map[string]runtime.ActionRegistration{
+			"drain-node": runtime.MakeAction[
+				svc.DrainNodeAction, *svc.DrainNodeActionOutput, *config.Configuration,
+			](),
 			"cordon-node": runtime.MakeAction[
 				svc.CordonNodeAction, *svc.CordonNodeActionOutput, *config.Configuration,
 			](),

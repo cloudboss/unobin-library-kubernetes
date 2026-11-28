@@ -1,0 +1,25 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  actions: {
+    drain: core.drain-node {
+      name:         'example.test'
+      expected-uid: 'opaque UID'
+    }
+  }
+  outputs: {
+    result: {
+      value: {
+        server:        action.drain.server
+        api-version:   action.drain.api-version
+        kind:          action.drain.kind
+        name:          action.drain.name
+        uid:           action.drain.uid
+        unschedulable: action.drain.unschedulable
+        drained:       action.drain.drained
+        drained-pods:  action.drain.drained-pods
+        skipped-pods:  action.drain.skipped-pods
+      }
+    }
+  }
+}
