@@ -110,6 +110,9 @@ func verify() error {
 	if !reflect.DeepEqual(wantSpec, widget.Object["spec"]) {
 		return fmt.Errorf("unexpected Widget spec: %#v", widget.Object["spec"])
 	}
+	if err := verifyLookup(ctx, dir, phase, definition); err != nil {
+		return err
+	}
 	path := filepath.Join(dir, "crd-identities.json")
 	identities := map[string]string{
 		"definition": string(definition.UID), "widget": string(widget.GetUID()),

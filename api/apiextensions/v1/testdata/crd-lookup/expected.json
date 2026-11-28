@@ -1,0 +1,27 @@
+{
+ "metadata":{"name":"remote.example.test","uid":"live-uid","resource-version":"42","generation":7,
+  "labels":{"kubernetes.io/metadata.name":"remote","app":"live"},
+  "annotations":{"kubectl.kubernetes.io/last-applied-configuration":"retained","EXAMPLE.COM/Key":"live"}},
+ "spec":{"group":"example.test","scope":"Cluster","preserve-unknown-fields":false,
+  "names":{"plural":"widgets","singular":"widget","kind":"Widget","list-kind":"WidgetList",
+   "short-names":["z","a"],"categories":["two","one"]},
+  "versions":[
+   {"name":"v2","served":false,"storage":false,"deprecated":true,"deprecation-warning":"",
+    "schema":{"type":"object","properties":{"value":{"type":"integer","default":9007199254740993},
+     "free":{"x-kubernetes-preserve-unknown-fields":true},"data":{"default":{"a":[true,null,"text",7]}}},
+     "x-kubernetes-validations":[{"rule":"self == oldSelf","message":"retained"}]},
+    "subresources":{"status":{},"scale":{"spec-replicas-path":".spec.n","status-replicas-path":".status.n","label-selector-path":""}},
+    "additional-printer-columns":[{"name":"Z","type":"integer","format":"int64","description":"last","priority":3,"json-path":".spec.z"},
+     {"name":"A","type":"string","format":"","description":"","priority":0,"json-path":".spec.a"}],
+    "selectable-fields":[{"json-path":".spec.z"},{"json-path":".spec.a"}]},
+   {"name":"v1","served":true,"storage":true,"deprecated":false,"deprecation-warning":null,
+    "schema":null,"subresources":null,"additional-printer-columns":[],"selectable-fields":[]}
+  ],
+  "conversion":{"strategy":"Unvalidated","webhook":{"conversion-review-versions":["v2","v1"],
+   "client-config":{"url":"","service":{"namespace":"system","name":"convert","path":"","port":0},"ca-bundle":"AP+A"}}}
+ },
+ "status":{"conditions":[{"type":"Terminating","status":"True","last-transition-time":"","reason":"Deleting","message":"still readable"},
+   {"type":"NamesAccepted","status":"False","last-transition-time":"0001-01-01 00:00:00 +0000 UTC","reason":"Conflict","message":"not gated"}],
+  "accepted-names":{"plural":"accepted","singular":"","kind":"Accepted","list-kind":"","short-names":[],"categories":[]},
+  "stored-versions":["v2","v1"]}
+}

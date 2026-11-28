@@ -1,0 +1,11 @@
+factory: {
+  imports:         { crd: 'github.com/cloudboss/unobin-library-kubernetes//api/apiextensions/v1' }
+  library-configs: { crd: { server: input.server, namespace: 'ignored' } }
+  inputs:          { server: { type: string }, metadata: { type: opaque } }
+  data-sources: {
+    endpoint: crd.custom-resource-definition {
+      metadata: input.metadata
+    }
+  }
+  outputs: { value: { value: data-source.endpoint } }
+}

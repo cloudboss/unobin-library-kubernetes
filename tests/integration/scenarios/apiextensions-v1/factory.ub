@@ -57,4 +57,51 @@ factory: {
       }
     }
   }
+  data-sources: {
+    definition: crd.custom-resource-definition {
+      metadata: {
+        name:        resource.definition.metadata.name
+        labels:      { fallback: 'ignored-on-hit' }
+        annotations: { fallback: 'ignored-on-hit' }
+      }
+    }
+    missing-definition: crd.custom-resource-definition {
+      metadata: {
+        name:        'missing.unobin-it.example.test'
+        labels:      { fallback: if input.updated then 'updated' else 'initial', omitted: null }
+        annotations: { 'EXAMPLE.COM/Lookup': 'fallback', omitted: null }
+      }
+    }
+  }
+  outputs: {
+    lookup: {
+      value: {
+        hit: if data-source.definition.spec != null
+          then {
+            metadata:                data-source.definition.metadata
+            group:                   data-source.definition.spec.group
+            names:                   data-source.definition.spec.names
+            scope:                   data-source.definition.spec.scope
+            preserve-unknown-fields: data-source.definition.spec.preserve-unknown-fields
+            versions: [
+              for version in data-source.definition.spec.versions :
+              {
+                name:    version.name
+                served:  version.served
+                storage: version.storage
+                schema:  version.schema
+              }
+            ]
+            conversion: data-source.definition.spec.conversion
+            status:     data-source.definition.status
+          }
+          else null
+        missing: {
+          metadata: data-source.missing-definition.metadata
+          spec:     data-source.missing-definition.spec
+          status:   data-source.missing-definition.status
+        }
+      }
+    }
+  }
 }

@@ -16,6 +16,12 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.1",
 		},
 		Configuration: config.LibraryConfiguration(),
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"custom-resource-definition": runtime.MakeDataSource[
+				crd.CustomResourceDefinitionDataSource, *crd.CustomResourceDefinitionDataSourceOutput,
+				*config.Configuration,
+			](),
+		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"custom-resource-definition": runtime.MakeResource[
 				crd.CustomResourceDefinitionResource, *crd.CustomResourceDefinitionResourceOutput,

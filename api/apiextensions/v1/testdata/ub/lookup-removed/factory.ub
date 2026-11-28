@@ -1,0 +1,9 @@
+factory: {
+  imports:         { crd: 'github.com/cloudboss/unobin-library-kubernetes//api/apiextensions/v1' }
+  library-configs: { crd: { server: input.server } }
+  resources: {
+    stable: crd.stable {
+      value: 'unchanged'
+    }
+  }
+}
