@@ -1,7 +1,8 @@
 stack: {
   factory: {
     inputs: {
-      ingress-replacement-name: 'unobin-it-ingress-first'
+      temporary-network-policy-lookups: { temporary: true }
+      ingress-replacement-name:         'unobin-it-ingress-first'
       ingress-spec: {
         default-backend: { service: { name: 'app', port: { number: 80 } } }
         rule: [

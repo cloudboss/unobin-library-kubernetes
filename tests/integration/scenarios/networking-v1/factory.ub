@@ -8,6 +8,7 @@ factory: {
     networking-ingress-class: { namespace: 'unused-namespace' }
   }
   inputs: {
+    temporary-network-policy-lookups: { type: map(boolean), default: {} }
     ingress-spec: {
       type: object(
         {
@@ -220,6 +221,22 @@ factory: {
     }
   }
   data-sources: {
+    network-policy-lookup: networking.network-policy {
+      metadata: {
+        name:      resource.network-policy-policy.name
+        namespace: resource.network-policy-policy.namespace
+      }
+    }
+    network-policy-lookup-temporary: networking.network-policy {
+      @for-each: input.temporary-network-policy-lookups
+      metadata: {
+        name:      resource.network-policy-policy.name
+        namespace: resource.network-policy-policy.namespace
+      }
+    }
+    network-policy-lookup-missing: networking.network-policy {
+      metadata: { name: 'unobin-it-policy-info-missing' }
+    }
     ingress-lookup-route: networking.ingress {
       metadata: {
         name:   resource.ingress-lookup-route.name
@@ -234,6 +251,20 @@ factory: {
     }
   }
   outputs: {
+    network-policy-lookup: {
+      value: {
+        metadata:         data-source.network-policy-lookup.metadata
+        spec:             data-source.network-policy-lookup.spec
+        missing-metadata: data-source.network-policy-lookup-missing.metadata
+        missing-spec:     data-source.network-policy-lookup-missing.spec
+        temporary: if @core.length(input.temporary-network-policy-lookups) == 0
+          then {}
+          else {
+            for key, enabled in input.temporary-network-policy-lookups :
+            key => data-source.network-policy-lookup-temporary[key]
+          }
+      }
+    }
     ingress: {
       value: {
         name:   resource.ingress-routing.name

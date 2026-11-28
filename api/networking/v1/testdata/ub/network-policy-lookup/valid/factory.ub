@@ -1,0 +1,20 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: {} }
+  data-sources: {
+    lookup: networking.network-policy {
+      metadata: { name: 'example.test' }
+    }
+  }
+  resources: {
+    managed: networking.network-policy {
+      metadata: { name: 'managed' }
+      spec:     { pod-selector: {}, policy-types: ['Ingress'] }
+    }
+  }
+  outputs: {
+    policies: { value: data-source.lookup.spec?.policy-types }
+    ingress:  { value: data-source.lookup.spec?.ingress }
+    metadata: { value: data-source.lookup.metadata }
+  }
+}

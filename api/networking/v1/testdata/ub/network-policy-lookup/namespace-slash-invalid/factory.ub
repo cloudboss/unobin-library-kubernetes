@@ -1,0 +1,9 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: {} }
+  data-sources: {
+    lookup: networking.network-policy {
+      metadata: { name: 'example', namespace: 'bad/name' }
+    }
+  }
+}

@@ -14,6 +14,7 @@ func main() {
 		{"ingress-class", verifyIngressClass},
 		{"ingress-lookup", verifyIngressLookup},
 		{"network-policy", verifyNetworkPolicy},
+		{"network-policy-lookup", verifyNetworkPolicyLookup},
 	}
 	for _, check := range checks {
 		if err := check.run(); err != nil {

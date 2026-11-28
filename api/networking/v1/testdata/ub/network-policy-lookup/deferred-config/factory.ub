@@ -1,0 +1,17 @@
+factory: {
+  imports: {
+    networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1'
+    helper:     'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1'
+  }
+  library-configs: { networking: { server: action.seed.resolved.server }, helper: {} }
+  actions: {
+    seed: helper.seed {
+      values: { server: input.server }
+    }
+  }
+  data-sources: {
+    lookup: networking.network-policy {
+      metadata: input.metadata
+    }
+  }
+}

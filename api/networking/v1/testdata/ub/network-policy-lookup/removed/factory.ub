@@ -1,0 +1,9 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: { server: input.server, namespace: 'elsewhere' } }
+  resources: {
+    anchor: networking.anchor {
+      value: 'stable'
+    }
+  }
+}
