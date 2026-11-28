@@ -12,6 +12,7 @@ func main() {
 	}{
 		{"daemon-set", verifyDaemonSet},
 		{"deployment", verifyDeployment},
+		{"deployment-lookup", verifyDeploymentLookup},
 		{"stateful-set", verifyStatefulSet},
 	}
 	for _, check := range checks {

@@ -1,0 +1,14 @@
+factory: {
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: { server: input.server } }
+  actions: {
+    seed: apps.seed {
+      values: input.metadata
+    }
+  }
+  data-sources: {
+    lookup: apps.deployment {
+      metadata: action.seed.resolved
+    }
+  }
+}

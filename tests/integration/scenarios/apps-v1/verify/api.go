@@ -22,6 +22,7 @@ func verifyAPI() error {
 		{"DaemonSetControllerRollout", checkDaemonSetControllerRollout},
 		{"DaemonSetOnDeleteProjection", checkDaemonSetOnDeleteProjection},
 		{"DeploymentAPILifecycle", checkDeploymentAPILifecycle},
+		{"DeploymentLookupAPI", checkDeploymentLookupAPI},
 		{"DeploymentControllerRollout", checkDeploymentControllerRollout},
 		{"StatefulSetAPILifecycle", checkStatefulSetAPILifecycle},
 	}

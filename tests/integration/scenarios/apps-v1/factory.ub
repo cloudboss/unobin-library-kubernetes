@@ -252,7 +252,22 @@ factory: {
       delete-timeout:   '30s'
     }
   }
+  data-sources: {
+    deployment-live: apps.deployment {
+      metadata: {
+        name:      resource.deployment-workload.name
+        namespace: resource.deployment-workload.namespace
+      }
+    }
+  }
   outputs: {
+    deployment-lookup: {
+      value: {
+        metadata: data-source.deployment-live.metadata
+        spec:     data-source.deployment-live.spec
+        status:   data-source.deployment-live.status
+      }
+    }
     daemon-set: {
       value: {
         name:            resource.daemon-set-workload.name

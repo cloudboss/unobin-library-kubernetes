@@ -19,6 +19,11 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.1",
 		},
 		Configuration: config.LibraryConfiguration(),
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"deployment": runtime.MakeDataSource[
+				svc.DeploymentDataSource, *svc.DeploymentDataSourceOutput, *config.Configuration,
+			](),
+		},
 		Actions: map[string]runtime.ActionRegistration{
 			"rollout-status": runtime.MakeAction[
 				svc.RolloutStatusAction, *svc.RolloutStatusActionOutput, *config.Configuration,
