@@ -1,0 +1,16 @@
+factory: {
+  imports: { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' }
+  library-configs: {
+    batch: { server: input.server, insecure-skip-tls-verify: true, namespace: 'configured' }
+  }
+  resources: {
+    anchor: batch.anchor {
+      value: 'unchanged'
+    }
+  }
+  data-sources: {
+    lookup: batch.job {
+      metadata: input.metadata
+    }
+  }
+}

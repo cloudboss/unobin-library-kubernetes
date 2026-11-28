@@ -97,7 +97,22 @@ factory: {
       delete-timeout:      '30s'
     }
   }
+  data-sources: {
+    job-lookup: batch.job {
+      metadata: {
+        name:      resource.job-completion-job.name
+        namespace: resource.job-completion-job.namespace
+      }
+    }
+  }
   outputs: {
+    job-lookup: {
+      value: {
+        metadata: data-source.job-lookup.metadata
+        spec:     data-source.job-lookup.spec
+        status:   data-source.job-lookup.status
+      }
+    }
     cron-job: {
       value: {
         mutable-uid:  resource.cron-job-mutable.uid

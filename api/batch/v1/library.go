@@ -22,6 +22,11 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.1",
 		},
 		Configuration: config.LibraryConfiguration(),
+		DataSources: map[string]runtime.DataSourceRegistration{
+			"job": runtime.MakeDataSource[
+				svc.JobDataSource, *svc.JobDataSourceOutput, *config.Configuration,
+			](),
+		},
 		Actions: map[string]runtime.ActionRegistration{
 			"run-cron-job": runtime.MakeAction[
 				svc.RunCronJobAction, *svc.RunCronJobActionOutput, *config.Configuration,
