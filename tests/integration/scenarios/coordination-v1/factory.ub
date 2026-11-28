@@ -1,0 +1,35 @@
+factory: {
+  imports: {
+    core:         'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    coordination: 'github.com/cloudboss/unobin-library-kubernetes//api/coordination/v1'
+  }
+  library-configs: { core: {}, coordination: {} }
+  inputs:          { updated: { type: boolean, default: false } }
+  resources: {
+    namespace: core.namespace {
+      object:                           { metadata: { name: 'unobin-it-coordination' } }
+      wait-for-default-service-account: false
+    }
+    explicit: coordination.lease {
+      metadata: {
+        name:      'explicit'
+        namespace: resource.namespace.object.metadata.name
+        labels: {
+          'test.unobin.cloudboss.io/revision': if input.updated then 'updated' else 'initial'
+        }
+      }
+      spec: {
+        holder-identity:        if input.updated then 'second' else 'first'
+        lease-duration-seconds: 1
+      }
+    }
+    generated: coordination.lease {
+      metadata: {
+        generate-name: 'generated.prefix-'
+        namespace:     resource.namespace.object.metadata.name
+        labels:        { 'test.unobin.cloudboss.io/generated': 'true' }
+      }
+      spec: { lease-transitions: if input.updated then 1 else 0 }
+    }
+  }
+}

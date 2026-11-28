@@ -1,0 +1,10 @@
+factory: {
+  imports:         { lease: 'github.com/cloudboss/unobin-library-kubernetes//api/coordination/v1' }
+  library-configs: { lease: {} }
+  resources: {
+    subject: lease.lease {
+      metadata:       { name: 'example' }
+      delete-timeout: 'invalid'
+    }
+  }
+}

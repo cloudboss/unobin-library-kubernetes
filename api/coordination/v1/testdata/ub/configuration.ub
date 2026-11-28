@@ -1,0 +1,22 @@
+factory: {
+  imports:         { lease: 'github.com/cloudboss/unobin-library-kubernetes//api/coordination/v1' }
+  library-configs: { lease: input.cluster }
+  inputs: {
+    cluster:        { type: opaque }
+    server:         { type: string }
+    metadata:       { type: opaque }
+    spec:           { type: optional(opaque), default: null }
+    create-timeout: { type: optional(string), default: null }
+    update-timeout: { type: optional(string), default: null }
+    delete-timeout: { type: optional(string), default: null }
+  }
+  resources: {
+    subject: lease.lease {
+      metadata:       input.metadata
+      spec:           input.spec
+      create-timeout: input.create-timeout
+      update-timeout: input.update-timeout
+      delete-timeout: input.delete-timeout
+    }
+  }
+}

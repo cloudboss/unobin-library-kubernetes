@@ -1,0 +1,9 @@
+factory: {
+  imports:         { lease: 'github.com/cloudboss/unobin-library-kubernetes//api/coordination/v1' }
+  library-configs: { lease: {} }
+  resources: {
+    subject: lease.lease {
+      metadata: { name: 'example', annotations: { 'bad/key/extra': 'x' } }
+    }
+  }
+}

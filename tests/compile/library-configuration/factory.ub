@@ -8,14 +8,19 @@ factory: {
   imports: {
     authorization: 'github.com/cloudboss/unobin-library-kubernetes//api/authorization/v1'
     core:          'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    coordination:  'github.com/cloudboss/unobin-library-kubernetes//api/coordination/v1'
     dynamic:       'github.com/cloudboss/unobin-library-kubernetes//dynamic'
   }
   library-configs: {
     authorization: input.cluster
     core:          input.cluster
+    coordination:  input.cluster
     dynamic:       input.cluster
   }
   resources: {
+    lease: coordination.lease {
+      metadata: { name: 'compile-lease' }
+    }
     namespace: core.namespace {
       object: { metadata: { name: 'compile-typed' } }
     }

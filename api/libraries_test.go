@@ -17,6 +17,7 @@ import (
 	authorization "github.com/cloudboss/unobin-library-kubernetes/api/authorization/v1"
 	autoscaling "github.com/cloudboss/unobin-library-kubernetes/api/autoscaling/v2"
 	batch "github.com/cloudboss/unobin-library-kubernetes/api/batch/v1"
+	coordination "github.com/cloudboss/unobin-library-kubernetes/api/coordination/v1"
 	core "github.com/cloudboss/unobin-library-kubernetes/api/core/v1"
 	networking "github.com/cloudboss/unobin-library-kubernetes/api/networking/v1"
 	policy "github.com/cloudboss/unobin-library-kubernetes/api/policy/v1"
@@ -38,6 +39,7 @@ func TestLibraryConfiguration(t *testing.T) {
 		new  func() *runtime.Library
 	}{
 		{path: "core/v1", new: core.Library},
+		{path: "coordination/v1", new: coordination.Library},
 		{path: "apps/v1", new: apps.Library},
 		{path: "batch/v1", new: batch.Library},
 		{path: "networking/v1", new: networking.Library},

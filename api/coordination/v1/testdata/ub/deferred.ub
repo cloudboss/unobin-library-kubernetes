@@ -1,0 +1,18 @@
+factory: {
+  imports:         { lease: 'github.com/cloudboss/unobin-library-kubernetes//api/coordination/v1' }
+  library-configs: { lease: { server: input.server } }
+  inputs:          { server: { type: string }, valid: { type: boolean } }
+  resources: {
+    seed: lease.lease {
+      metadata: { name: 'seed' }
+    }
+    subject: lease.lease {
+      metadata: { name: 'replacement' }
+      spec: {
+        renew-time: if resource.seed.metadata.uid != ''
+          then if input.valid then '2026-01-01T00:00:00Z' else 'invalid'
+          else '2026-01-01T00:00:00Z'
+      }
+    }
+  }
+}

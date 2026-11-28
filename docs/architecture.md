@@ -19,6 +19,7 @@ separate part of the public contract.
 | `api/storage/v1` | Storage configuration | `storage-class`, `csi-driver` |
 | `api/autoscaling/v2` | Autoscaling | `horizontal-pod-autoscaler` |
 | `api/policy/v1` | Disruption policy | `pod-disruption-budget` |
+| `api/coordination/v1` | Lease objects | `lease` |
 | `api/apiextensions/v1` | Custom resource definitions | `custom-resource-definition` |
 
 The example exports define the destination for future constructs. A typed library

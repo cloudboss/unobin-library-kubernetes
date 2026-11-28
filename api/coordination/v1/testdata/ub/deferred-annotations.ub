@@ -1,0 +1,16 @@
+factory: {
+  imports:         { lease: 'github.com/cloudboss/unobin-library-kubernetes//api/coordination/v1' }
+  library-configs: { lease: { server: input.server } }
+  inputs:          { server: { type: string }, annotations: { type: opaque } }
+  resources: {
+    seed: lease.lease {
+      metadata: { name: 'seed' }
+    }
+    subject: lease.lease {
+      metadata: {
+        name:        'replacement'
+        annotations: if resource.seed.metadata.uid != '' then input.annotations else {}
+      }
+    }
+  }
+}

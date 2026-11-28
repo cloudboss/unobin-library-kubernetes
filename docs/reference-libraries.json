@@ -78,6 +78,13 @@
       "alias": "kubernetes-apiextensions-v1"
     },
     {
+      "title": "Coordination v1",
+      "slug": "coordination-v1",
+      "package": "api/coordination/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/coordination/v1",
+      "alias": "kubernetes-coordination-v1"
+    },
+    {
       "title": "Dynamic objects",
       "slug": "dynamic",
       "package": "dynamic",
