@@ -1,0 +1,10 @@
+factory: {
+  imports:         { policy: 'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1' }
+  library-configs: { policy: {} }
+  actions: {
+    evict: policy.evict-pod {
+      name:         'example'
+      expected-uid: ''
+    }
+  }
+}

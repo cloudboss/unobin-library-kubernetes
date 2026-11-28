@@ -16,6 +16,10 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.1",
 		},
 		Configuration: config.LibraryConfiguration(),
+		Actions: map[string]runtime.ActionRegistration{
+			"evict-pod": runtime.MakeAction[policy.EvictPodAction,
+				*policy.EvictPodActionOutput, *config.Configuration](),
+		},
 		Resources: map[string]runtime.ResourceRegistration{
 			"pod-disruption-budget": runtime.MakeResource[
 				policy.PodDisruptionBudgetResource, *policy.PodDisruptionBudgetResourceOutput,

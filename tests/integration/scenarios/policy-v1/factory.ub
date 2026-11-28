@@ -1,12 +1,36 @@
 factory: {
-  description:     'Updates PodDisruptionBudget metadata and replaces immutable specifications.'
-  imports:         { policy: 'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1' }
-  library-configs: { policy: {} }
+  description: 'Updates PodDisruptionBudget metadata and replaces immutable specifications.'
+  imports: {
+    policy: 'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1'
+    core:   'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+  }
+  library-configs: { policy: {}, core: {} }
   inputs: {
     revision: { type: string }
     minimum:  { type: string }
   }
   resources: {
+    eviction-namespace: core.namespace {
+      object: {
+        metadata: {
+          generate-name: 'unobin-it-eviction-'
+          labels:        { 'test.unobin.cloudboss.io/scenario': 'policy-v1-evict-pod' }
+        }
+      }
+    }
+    disposable: core.pod {
+      metadata: {
+        name:      'disposable'
+        namespace: resource.eviction-namespace.object.metadata.name
+      }
+      spec: {
+        node-selector:                   { 'test.unobin.cloudboss.io/unscheduled': 'true' }
+        automount-service-account-token: false
+        container:                       [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }]
+      }
+      target-state:   ['Pending']
+      create-timeout: '30s'
+    }
     mutable: policy.pod-disruption-budget {
       metadata: {
         generate-name: 'unobin-it-pdb-metadata-'
@@ -29,10 +53,20 @@ factory: {
       spec: { min-available: input.minimum, selector: { match-labels: { app: 'pdb-test' } } }
     }
   }
+  actions: {
+    evict: policy.evict-pod {
+      name:                 resource.disposable.name
+      namespace:            resource.disposable.namespace
+      expected-uid:         resource.disposable.uid
+      grace-period-seconds: 0
+      timeout:              '30s'
+    }
+  }
   outputs: {
-    mutable-name:   { value: resource.mutable.name }
-    mutable-uid:    { value: resource.mutable.uid }
-    immutable-name: { value: resource.immutable.name }
-    immutable-uid:  { value: resource.immutable.uid }
+    eviction-deleted: { value: action.evict.deleted }
+    mutable-name:     { value: resource.mutable.name }
+    mutable-uid:      { value: resource.mutable.uid }
+    immutable-name:   { value: resource.immutable.name }
+    immutable-uid:    { value: resource.immutable.uid }
   }
 }

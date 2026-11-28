@@ -16,6 +16,7 @@ func verifyAPI() error {
 		run  func(context.Context) error
 	}{
 		{"PodDisruptionBudgetLifecycle", checkPodDisruptionBudgetLifecycle},
+		{"EvictPod", checkEvictPod},
 	}
 	for _, check := range checks {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)

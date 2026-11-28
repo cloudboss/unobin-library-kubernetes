@@ -1,0 +1,35 @@
+factory: {
+  imports: { policy: 'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1' }
+  inputs: {
+    server:               { type: string }
+    name:                 { type: string }
+    namespace:            { type: optional(string) }
+    expected-uid:         { type: string }
+    grace-period-seconds: { type: optional(integer) }
+    timeout:              { type: optional(string) }
+  }
+  library-configs: { policy: { server: input.server, insecure-skip-tls-verify: true } }
+  actions: {
+    seed: policy.seed {
+      name:                 input.name
+      namespace:            input.namespace
+      expected-uid:         input.expected-uid
+      grace-period-seconds: input.grace-period-seconds
+      timeout:              input.timeout
+    }
+    evict: policy.evict-pod {
+      name:                 action.seed.resolved-name
+      namespace:            action.seed.resolved-namespace
+      expected-uid:         action.seed.resolved-uid
+      grace-period-seconds: action.seed.resolved-grace
+      timeout:              action.seed.resolved-timeout
+      wait-for-deletion:    false
+    }
+  }
+  outputs: {
+    accepted: { value: action.evict.accepted }
+    deleted:  { value: action.evict.deleted }
+    waited:   { value: action.evict.waited }
+    uid:      { value: action.evict.uid }
+  }
+}

@@ -1,0 +1,17 @@
+factory: {
+  imports:         { policy: 'github.com/cloudboss/unobin-library-kubernetes//api/policy/v1' }
+  inputs:          { server: { type: string } }
+  library-configs: { policy: { server: input.server } }
+  actions: {
+    evict: policy.evict-pod {
+      name:         'example'
+      expected-uid: 'opaque'
+    }
+  }
+  outputs: {
+    accepted: { value: action.evict.accepted }
+    deleted:  { value: action.evict.deleted }
+    waited:   { value: action.evict.waited }
+    uid:      { value: action.evict.uid }
+  }
+}

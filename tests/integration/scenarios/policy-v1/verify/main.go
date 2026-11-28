@@ -31,6 +31,9 @@ func verify() error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	if err := verifyEvictionFactory(ctx); err != nil {
+		return err
+	}
 	list, err := api.PolicyV1().PodDisruptionBudgets("default").List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set{
 			"test.unobin.cloudboss.io/scenario": "policy-v1-pod-disruption-budget",
