@@ -1,0 +1,23 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  actions: {
+    cordon: core.cordon-node {
+      name:         true
+      expected-uid: 'uid'
+    }
+  }
+  outputs: {
+    result: {
+      value: {
+        server:           action.cordon.server
+        api-version:      action.cordon.api-version
+        kind:             action.cordon.kind
+        name:             action.cordon.name
+        uid:              action.cordon.uid
+        resource-version: action.cordon.resource-version
+        unschedulable:    action.cordon.unschedulable
+      }
+    }
+  }
+}

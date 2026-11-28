@@ -133,6 +133,21 @@ factory: {
         ]
       }
     }
+    cordon-node-fixture: dynamic.object {
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'Node'
+        metadata: {
+          name:        'unobin-it-core-v1-cordon'
+          labels:      { 'test.unobin.cloudboss.io/scenario': 'core-v1-cordon' }
+          annotations: { 'test.unobin.cloudboss.io/preserve': 'yes' }
+        }
+        spec: {
+          providerID: 'unobin://cordon'
+          taints: [{ key: 'test.unobin.cloudboss.io/preserve', value: 'yes', effect: 'NoSchedule' }]
+        }
+      }
+    }
     node-taint-fixture: dynamic.object {
       manifest: {
         apiVersion: 'v1'
@@ -549,7 +564,24 @@ factory: {
       metadata: { name: 'unobin-it-service-info-absent', namespace: 'default' }
     }
   }
+  actions: {
+    cordon-node: core.cordon-node {
+      name:         resource.cordon-node-fixture.name
+      expected-uid: resource.cordon-node-fixture.uid
+    }
+  }
   outputs: {
+    cordon-node: {
+      value: {
+        server:           action.cordon-node.server
+        api-version:      action.cordon-node.api-version
+        kind:             action.cordon-node.kind
+        name:             action.cordon-node.name
+        uid:              action.cordon-node.uid
+        resource-version: action.cordon-node.resource-version
+        unschedulable:    action.cordon-node.unschedulable
+      }
+    }
     config-map: {
       value: {
         name:        resource.config-map-settings.object.metadata.name

@@ -1,0 +1,32 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server:       { type: string }
+    name:         { type: string }
+    expected-uid: { type: string }
+    timeout:      { type: optional(string) }
+    trigger:      { type: string }
+  }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  actions: {
+    cordon: core.cordon-node {
+      @trigger:     input.trigger
+      name:         input.name
+      expected-uid: input.expected-uid
+      timeout:      input.timeout
+    }
+  }
+  outputs: {
+    result: {
+      value: {
+        server:           action.cordon.server
+        api-version:      action.cordon.api-version
+        kind:             action.cordon.kind
+        name:             action.cordon.name
+        uid:              action.cordon.uid
+        resource-version: action.cordon.resource-version
+        unschedulable:    action.cordon.unschedulable
+      }
+    }
+  }
+}

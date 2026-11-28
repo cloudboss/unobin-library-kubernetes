@@ -30,6 +30,11 @@ func Library() *runtime.Library {
 			SuggestedUnobinVersion: "v0.13.1",
 		},
 		Configuration: config.LibraryConfiguration(),
+		Actions: map[string]runtime.ActionRegistration{
+			"cordon-node": runtime.MakeAction[
+				svc.CordonNodeAction, *svc.CordonNodeActionOutput, *config.Configuration,
+			](),
+		},
 		DataSources: map[string]runtime.DataSourceRegistration{
 			"config-map": runtime.MakeDataSource[
 				svc.ConfigMapDataSource, *svc.ConfigMapDataSourceOutput, *config.Configuration,
