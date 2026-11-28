@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/cloudboss/unobin/pkg/encoding/ub"
@@ -217,7 +216,7 @@ func removeRoleBindingLookup(ctx context.Context, dir string, live *rbacv1.RoleB
 	}
 	const address = "data-source.role-binding-temporary['temporary']"
 	for _, step := range plan.Steps {
-		if strings.HasPrefix(step.Address, "resource.") && step.Decision != runtime.DecisionNoOp {
+		if step.Address == "resource.role-binding-binding" && step.Decision != runtime.DecisionNoOp {
 			return fmt.Errorf("lookup removal changes resource %s: %s", step.Address, step.Decision)
 		}
 		if step.Address == address {

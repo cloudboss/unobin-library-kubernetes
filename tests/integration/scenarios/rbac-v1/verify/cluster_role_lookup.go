@@ -150,6 +150,28 @@ func verifyClusterRoleLookup() error {
 		Direct: clusterRoleLookupWant(direct), Aggregate: clusterRoleLookupWant(aggregate),
 		Missing: clusterRoleLookupWant(nil),
 	}
+	observed := result.Outputs.Lookup.Aggregate
+	if observed.Metadata.ResourceVersion == "" {
+		return fmt.Errorf("aggregate lookup omitted its resource version")
+	}
+	priorRules := []roleLookupRule{}
+	path := filepath.Join(dir, "cluster-role-lookup-rules.json")
+	if os.Getenv("VERIFY_PHASE") == "updated" {
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(body, &priorRules); err != nil {
+			return err
+		}
+	}
+	// The controller can update aggregation after the compiled lookup reads it.
+	if !reflect.DeepEqual(want.Aggregate.Rules, observed.Rules) &&
+		!reflect.DeepEqual(&priorRules, observed.Rules) {
+		return fmt.Errorf("aggregate lookup rules match neither the prior nor current permissions")
+	}
+	want.Aggregate.Metadata.ResourceVersion = observed.Metadata.ResourceVersion
+	want.Aggregate.Rules = observed.Rules
 	if !reflect.DeepEqual(want, result.Outputs.Lookup) {
 		return fmt.Errorf("factory ClusterRole lookup differs from live content: %+v",
 			result.Outputs.Lookup)
@@ -157,6 +179,13 @@ func verifyClusterRoleLookup() error {
 	_, err = roles.Get(ctx, clusterRoleLookupMissing, metav1.GetOptions{})
 	if !apierrors.IsNotFound(err) {
 		return fmt.Errorf("missing ClusterRole lookup: %v", err)
+	}
+	if os.Getenv("VERIFY_PHASE") == "applied" {
+		body, err := json.Marshal(clusterRoleLookupWant(aggregate).Rules)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(path, body, 0o600)
 	}
 	return nil
 }

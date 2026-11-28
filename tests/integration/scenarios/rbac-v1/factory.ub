@@ -105,6 +105,7 @@ factory: {
       metadata: { name: resource.cluster-role-reader.name }
     }
     cluster-role-aggregate: rbac-cluster-role.cluster-role {
+      @depends-on: [resource.cluster-role-reader]
       metadata: { name: resource.cluster-role-aggregate.name }
     }
     cluster-role-missing: rbac-cluster-role.cluster-role {
