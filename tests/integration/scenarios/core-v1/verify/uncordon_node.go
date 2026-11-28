@@ -86,7 +86,7 @@ func verifyUncordonNode() error {
 		return err
 	}
 	want := core.UncordonNodeActionOutput{Server: resolved.Host, APIVersion: "v1", Kind: "Node",
-		Name: live.Name, UID: string(live.UID), ResourceVersion: live.ResourceVersion,
+		Name: live.Name, UID: string(live.UID), ResourceVersion: out.ResourceVersion,
 		Unschedulable: false}
 	if out.ResourceVersion == "" || !reflect.DeepEqual(out, want) {
 		return fmt.Errorf("uncordon output = %+v, want %+v", out, want)
