@@ -88,12 +88,6 @@ func checkEvictPod(ctx context.Context) (result error) {
 	if err != nil {
 		return err
 	}
-	budget.Status = policyv1.PodDisruptionBudgetStatus{ObservedGeneration: budget.Generation,
-		DisruptionsAllowed: 0, CurrentHealthy: 1, DesiredHealthy: 1, ExpectedPods: 1}
-	budget, err = budgets.UpdateStatus(ctx, budget, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
 	action.Name = pod.Name
 	action.ExpectedUID = string(pod.UID)
 	action.Timeout = new("200ms")
