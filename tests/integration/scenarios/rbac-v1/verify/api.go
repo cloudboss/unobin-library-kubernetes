@@ -19,6 +19,7 @@ func verifyAPI() error {
 		{"RoleBindingLifecycle", checkRoleBindingLifecycle},
 		{"RoleLifecycle", checkRoleLifecycle},
 		{"RoleLookup", checkRoleLookupAPI},
+		{"RoleBindingLookup", checkRoleBindingLookupAPI},
 	}
 	for _, check := range checks {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)

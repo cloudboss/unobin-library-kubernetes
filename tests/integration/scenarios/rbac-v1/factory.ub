@@ -8,14 +8,15 @@ factory: {
     rbac:              {}
   }
   inputs: {
-    cluster-role-verb:            { type: string }
-    cluster-role-resource-name:   { type: string }
-    cluster-role-binding-user:    { type: string }
-    cluster-role-binding-account: { type: string }
-    role-verbs:                   { type: list(string) }
-    role-resource-names:          { type: list(string) }
-    role-binding-user:            { type: string }
-    role-binding-account:         { type: string }
+    temporary-role-binding-lookups: { type: map(boolean), default: {} }
+    cluster-role-verb:              { type: string }
+    cluster-role-resource-name:     { type: string }
+    cluster-role-binding-user:      { type: string }
+    cluster-role-binding-account:   { type: string }
+    role-verbs:                     { type: list(string) }
+    role-resource-names:            { type: list(string) }
+    role-binding-user:              { type: string }
+    role-binding-account:           { type: string }
   }
   resources: {
     cluster-role-reader: rbac-cluster-role.cluster-role {
@@ -90,6 +91,22 @@ factory: {
     }
   }
   data-sources: {
+    role-binding-reader: rbac.role-binding {
+      metadata: {
+        name:      resource.role-binding-binding.name
+        namespace: resource.role-binding-binding.namespace
+      }
+    }
+    role-binding-temporary: rbac.role-binding {
+      @for-each: input.temporary-role-binding-lookups
+      metadata: {
+        name:      resource.role-binding-binding.name
+        namespace: resource.role-binding-binding.namespace
+      }
+    }
+    role-binding-missing: rbac.role-binding {
+      metadata: { name: 'unobin-it-role-binding-lookup-absent' }
+    }
     role-reader: rbac.role {
       metadata: {
         name:      resource.role-reader.name
@@ -101,6 +118,26 @@ factory: {
     }
   }
   outputs: {
+    role-binding-lookup: {
+      value: {
+        metadata:         data-source.role-binding-reader.metadata
+        role-ref:         data-source.role-binding-reader.role-ref
+        subjects:         data-source.role-binding-reader.subjects
+        missing-metadata: data-source.role-binding-missing.metadata
+        missing-role-ref: data-source.role-binding-missing.role-ref
+        missing-subjects: data-source.role-binding-missing.subjects
+        temporary: if @core.length(input.temporary-role-binding-lookups) == 0
+          then {}
+          else {
+            for key, enabled in input.temporary-role-binding-lookups :
+            key => {
+              metadata: data-source.role-binding-temporary[key].metadata
+              role-ref: data-source.role-binding-temporary[key].role-ref
+              subjects: data-source.role-binding-temporary[key].subjects
+            }
+          }
+      }
+    }
     role-lookup: {
       value: {
         metadata:         data-source.role-reader.metadata

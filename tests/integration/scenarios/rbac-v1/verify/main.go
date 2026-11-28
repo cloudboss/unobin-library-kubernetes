@@ -15,6 +15,7 @@ func main() {
 		{"role", verifyRole},
 		{"role-lookup", verifyRoleLookup},
 		{"role-binding", verifyRoleBinding},
+		{"role-binding-lookup", verifyRoleBindingLookup},
 	}
 	for _, check := range checks {
 		if err := check.run(); err != nil {

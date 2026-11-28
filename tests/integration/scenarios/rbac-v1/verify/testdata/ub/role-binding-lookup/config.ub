@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { name: 'ROLE_BINDING_LOOKUP_NAME' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

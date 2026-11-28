@@ -1,0 +1,25 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: { server: input.server, namespace: 'ignored' } }
+  inputs: {
+    server:   { type: string }
+    metadata: { type: object({ name: { type: string }, namespace: { type: string } }) }
+  }
+  resources: {
+    fixed: rbac.fixed {
+      value: input.value
+    }
+  }
+
+  data-sources: {
+    endpoint: rbac.role-binding {
+      @depends-on: [resource.fixed]
+      metadata:    input.metadata
+    }
+  }
+  outputs: {
+    metadata: { value: data-source.endpoint.metadata }
+    role-ref: { value: data-source.endpoint.role-ref }
+    subjects: { value: data-source.endpoint.subjects }
+  }
+}
