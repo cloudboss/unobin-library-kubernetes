@@ -18,6 +18,7 @@ func main() {
 		{"namespace-lookup", verifyNamespaceLookup},
 		{"namespaces", verifyNamespaceList},
 		{"nodes", verifyNodes},
+		{"node-lookup", verifyNodeLookup},
 		{"node-taint", verifyNodeTaint},
 		{"persistent-volume", verifyPersistentVolume},
 		{"persistent-volume-lookup", verifyPersistentVolumeLookup},

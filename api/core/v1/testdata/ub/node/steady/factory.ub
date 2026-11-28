@@ -1,0 +1,15 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: { server: input.server, namespace: 'ignored' } }
+  resources: {
+    stable: core.stable {
+      value: 'unchanged'
+    }
+  }
+  data-sources: {
+    subject: core.node {
+      @depends-on: [resource.stable]
+      metadata:    input.metadata
+    }
+  }
+}

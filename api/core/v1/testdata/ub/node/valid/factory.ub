@@ -1,0 +1,19 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    subject: core.node {
+      metadata: { name: 'worker.example' }
+    }
+  }
+  outputs: {
+    metadata:  { value: data-source.subject.metadata }
+    spec:      { value: data-source.subject.spec }
+    status:    { value: data-source.subject.status }
+    pod-cidrs: { value: data-source.subject.spec?.pod-cidrs }
+    swap:      { value: data-source.subject.status?.node-info.swap?.capacity }
+    features: {
+      value: data-source.subject.status?.features?.supplemental-groups-policy
+    }
+  }
+}

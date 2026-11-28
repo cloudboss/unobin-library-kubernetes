@@ -1,0 +1,17 @@
+factory: {
+  imports: {
+    core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1'
+    seed: 'test/seed'
+  }
+  library-configs: { core: { server: action.seed.result } }
+  actions: {
+    seed: seed.seed {
+      value: input.server
+    }
+  }
+  data-sources: {
+    subject: core.node {
+      metadata: { name: 'worker.example' }
+    }
+  }
+}

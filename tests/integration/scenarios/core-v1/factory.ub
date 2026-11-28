@@ -489,6 +489,13 @@ factory: {
     namespaces: core.namespaces {
       @depends-on: [resource.namespace-project]
     }
+    node-present: core.node {
+      @depends-on: [resource.node-taint]
+      metadata:    { name: resource.node-taint-fixture.name }
+    }
+    node-missing: core.node {
+      metadata: { name: 'unobin-it-core-v1-node-absent' }
+    }
     nodes-selected: core.nodes {
       metadata: {
         labels: { 'unobin.cloudboss.com/nodes-integration-absent': input.nodes-selector }
@@ -601,6 +608,23 @@ factory: {
         api-version:  resource.node-taint.api-version
         kind:         resource.node-taint.kind
         taints:       resource.node-taint.object.spec.taints
+      }
+    }
+    node-lookup: {
+      value: {
+        present: {
+          metadata: data-source.node-present.metadata
+          spec:     data-source.node-present.spec
+          status:   data-source.node-present.status
+        }
+        missing: {
+          metadata: data-source.node-missing.metadata
+          spec:     data-source.node-missing.spec
+          status:   data-source.node-missing.status
+        }
+        pod-cidrs:                  data-source.node-present.spec?.pod-cidrs
+        swap-capacity:              data-source.node-present.status?.node-info.swap?.capacity
+        supplemental-groups-policy: data-source.node-present.status?.features?.supplemental-groups-policy
       }
     }
     nodes: {

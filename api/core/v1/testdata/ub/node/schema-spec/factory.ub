@@ -1,0 +1,10 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  data-sources: {
+    subject: core.node {
+      metadata: { name: 'worker' }
+      spec:     {}
+    }
+  }
+}
