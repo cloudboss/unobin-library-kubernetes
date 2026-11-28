@@ -8,6 +8,7 @@ factory: {
     networking-ingress-class: { namespace: 'unused-namespace' }
   }
   inputs: {
+    temporary-ingress-class-lookups:  { type: map(boolean), default: {} }
     temporary-network-policy-lookups: { type: map(boolean), default: {} }
     ingress-spec: {
       type: object(
@@ -221,6 +222,16 @@ factory: {
     }
   }
   data-sources: {
+    ingress-class-lookup: networking-ingress-class.ingress-class {
+      metadata: { name: resource.ingress-class-class.name }
+    }
+    ingress-class-lookup-temporary: networking-ingress-class.ingress-class {
+      @for-each: input.temporary-ingress-class-lookups
+      metadata:  { name: resource.ingress-class-class.name }
+    }
+    ingress-class-lookup-missing: networking-ingress-class.ingress-class {
+      metadata: { name: 'unobin-it-class-info-missing' }
+    }
     network-policy-lookup: networking.network-policy {
       metadata: {
         name:      resource.network-policy-policy.name
@@ -251,6 +262,23 @@ factory: {
     }
   }
   outputs: {
+    ingress-class-lookup: {
+      value: {
+        metadata:         data-source.ingress-class-lookup.metadata
+        spec:             data-source.ingress-class-lookup.spec
+        missing-metadata: data-source.ingress-class-lookup-missing.metadata
+        missing-spec:     data-source.ingress-class-lookup-missing.spec
+        temporary: if @core.length(input.temporary-ingress-class-lookups) == 0
+          then {}
+          else {
+            for key, enabled in input.temporary-ingress-class-lookups :
+            key => {
+              metadata: data-source.ingress-class-lookup-temporary[key].metadata
+              spec:     data-source.ingress-class-lookup-temporary[key].spec
+            }
+          }
+      }
+    }
     network-policy-lookup: {
       value: {
         metadata:         data-source.network-policy-lookup.metadata

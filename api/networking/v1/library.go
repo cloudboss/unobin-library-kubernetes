@@ -17,6 +17,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		DataSources: map[string]runtime.DataSourceRegistration{
+			"ingress-class": runtime.MakeDataSource[
+				svc.IngressClassDataSource, *svc.IngressClassDataSourceOutput, *config.Configuration,
+			](),
 			"network-policy": runtime.MakeDataSource[
 				svc.NetworkPolicyDataSource, *svc.NetworkPolicyDataSourceOutput, *config.Configuration,
 			](),

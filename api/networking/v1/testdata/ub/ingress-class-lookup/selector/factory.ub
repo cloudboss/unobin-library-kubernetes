@@ -1,0 +1,24 @@
+factory: {
+  imports: { networking: 'github.com/cloudboss/unobin-library-kubernetes//api/networking/v1' }
+  library-configs: { networking: { namespace: 'unrelated' } }
+  data-sources: {
+    lookup: networking.ingress-class {
+      metadata: { name: 'example.test' }
+      selector: {}
+    }
+  }
+  resources: {
+    managed: networking.ingress-class {
+      metadata: { name: 'managed' }
+      spec:     { controller: 'example.com/controller' }
+    }
+  }
+  outputs: {
+    metadata:   { value: data-source.lookup.metadata }
+    controller: { value: data-source.lookup.spec?.controller }
+    parameters: { value: data-source.lookup.spec?.parameters }
+    api-group:  { value: data-source.lookup.spec?.parameters?.api-group }
+    namespace:  { value: data-source.lookup.spec?.parameters?.namespace }
+    managed:    { value: resource.managed.spec }
+  }
+}

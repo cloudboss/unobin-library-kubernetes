@@ -1,6 +1,7 @@
 stack: {
   factory: {
     inputs: {
+      temporary-ingress-class-lookups:  { temporary: true }
       temporary-network-policy-lookups: { temporary: true }
       ingress-replacement-name:         'unobin-it-ingress-first'
       ingress-spec: {

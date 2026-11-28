@@ -12,6 +12,7 @@ func main() {
 	}{
 		{"ingress", verifyIngress},
 		{"ingress-class", verifyIngressClass},
+		{"ingress-class-lookup", verifyIngressClassLookup},
 		{"ingress-lookup", verifyIngressLookup},
 		{"network-policy", verifyNetworkPolicy},
 		{"network-policy-lookup", verifyNetworkPolicyLookup},
