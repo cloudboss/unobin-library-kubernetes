@@ -1,0 +1,95 @@
+{
+  "libraries": [
+    {
+      "title": "Core v1",
+      "slug": "core-v1",
+      "package": "api/core/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/core/v1",
+      "alias": "kubernetes-core-v1"
+    },
+    {
+      "title": "Admission registration v1",
+      "slug": "admissionregistration-v1",
+      "package": "api/admissionregistration/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/admissionregistration/v1",
+      "alias": "kubernetes-admissionregistration-v1"
+    },
+    {
+      "title": "Authorization v1",
+      "slug": "authorization-v1",
+      "package": "api/authorization/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/authorization/v1",
+      "alias": "kubernetes-authorization-v1"
+    },
+    {
+      "title": "Apps v1",
+      "slug": "apps-v1",
+      "package": "api/apps/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/apps/v1",
+      "alias": "kubernetes-apps-v1"
+    },
+    {
+      "title": "Batch v1",
+      "slug": "batch-v1",
+      "package": "api/batch/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/batch/v1",
+      "alias": "kubernetes-batch-v1"
+    },
+    {
+      "title": "Networking v1",
+      "slug": "networking-v1",
+      "package": "api/networking/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/networking/v1",
+      "alias": "kubernetes-networking-v1"
+    },
+    {
+      "title": "RBAC v1",
+      "slug": "rbac-v1",
+      "package": "api/rbac/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1",
+      "alias": "kubernetes-rbac-v1"
+    },
+    {
+      "title": "Storage v1",
+      "slug": "storage-v1",
+      "package": "api/storage/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/storage/v1",
+      "alias": "kubernetes-storage-v1"
+    },
+    {
+      "title": "Autoscaling v2",
+      "slug": "autoscaling-v2",
+      "package": "api/autoscaling/v2",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/autoscaling/v2",
+      "alias": "kubernetes-autoscaling-v2"
+    },
+    {
+      "title": "Policy v1",
+      "slug": "policy-v1",
+      "package": "api/policy/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/policy/v1",
+      "alias": "kubernetes-policy-v1"
+    },
+    {
+      "title": "API extensions v1",
+      "slug": "apiextensions-v1",
+      "package": "api/apiextensions/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/apiextensions/v1",
+      "alias": "kubernetes-apiextensions-v1"
+    },
+    {
+      "title": "Coordination v1",
+      "slug": "coordination-v1",
+      "package": "api/coordination/v1",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//api/coordination/v1",
+      "alias": "kubernetes-coordination-v1"
+    },
+    {
+      "title": "Dynamic objects",
+      "slug": "dynamic",
+      "package": "dynamic",
+      "module": "github.com/cloudboss/unobin-library-kubernetes//dynamic",
+      "alias": "kubernetes-dynamic"
+    }
+  ]
+}
