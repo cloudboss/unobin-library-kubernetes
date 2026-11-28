@@ -12,6 +12,7 @@ func main() {
 	}{
 		{"daemon-set", verifyDaemonSet},
 		{"daemon-set-lookup", verifyDaemonSetLookup},
+		{"scale", verifyScale},
 		{"deployment", verifyDeployment},
 		{"deployment-lookup", verifyDeploymentLookup},
 		{"stateful-set", verifyStatefulSet},

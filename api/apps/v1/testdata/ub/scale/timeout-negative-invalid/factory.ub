@@ -1,0 +1,12 @@
+factory: {
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: {} }
+  actions: {
+    scale: apps.scale {
+      kind:     'Deployment'
+      name:     'example.test'
+      replicas: 0
+      timeout:  '-1s'
+    }
+  }
+}

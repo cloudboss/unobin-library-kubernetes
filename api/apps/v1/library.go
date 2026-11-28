@@ -31,6 +31,9 @@ func Library() *runtime.Library {
 			](),
 		},
 		Actions: map[string]runtime.ActionRegistration{
+			"scale": runtime.MakeAction[
+				svc.ScaleAction, *svc.ScaleActionOutput, *config.Configuration,
+			](),
 			"rollout-status": runtime.MakeAction[
 				svc.RolloutStatusAction, *svc.RolloutStatusActionOutput, *config.Configuration,
 			](),

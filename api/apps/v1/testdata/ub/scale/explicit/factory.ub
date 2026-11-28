@@ -1,0 +1,25 @@
+factory: {
+  imports: { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  inputs: {
+    trigger:      { type: string }
+    server:       { type: string }
+    kind:         { type: string }
+    name:         { type: string }
+    namespace:    { type: optional(string) }
+    expected-uid: { type: optional(string) }
+    replicas:     { type: integer }
+    timeout:      { type: optional(string) }
+  }
+  library-configs: { apps: { server: input.server, insecure-skip-tls-verify: true } }
+  actions: {
+    scale: apps.scale {
+      @trigger:     input.trigger
+      kind:         input.kind
+      name:         input.name
+      namespace:    input.namespace
+      expected-uid: input.expected-uid
+      replicas:     input.replicas
+      timeout:      input.timeout
+    }
+  }
+}

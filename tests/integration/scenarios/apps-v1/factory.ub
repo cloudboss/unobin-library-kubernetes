@@ -23,6 +23,55 @@ factory: {
     stateful-set-wait-for-rollout: { type: boolean, default: true }
   }
   resources: {
+    scale-deployment-target: objects.object {
+      manifest: {
+        apiVersion: 'apps/v1'
+        kind:       'Deployment'
+        metadata:   { name: 'unobin-it-scale-deployment', namespace: 'default' }
+        spec: {
+          replicas: 0
+          paused:   true
+          selector: { matchLabels: { app: 'unobin-it-scale-deployment' } }
+          template: {
+            metadata: { labels: { app: 'unobin-it-scale-deployment' } }
+            spec:     { containers: [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }] }
+          }
+        }
+      }
+    }
+    scale-stateful-set-target: objects.object {
+      manifest: {
+        apiVersion: 'apps/v1'
+        kind:       'StatefulSet'
+        metadata:   { name: 'unobin-it-scale-stateful-set', namespace: 'default' }
+        spec: {
+          replicas:       0
+          serviceName:    'unobin-it-scale-stateful-set'
+          updateStrategy: { type: 'OnDelete' }
+          selector:       { matchLabels: { app: 'unobin-it-scale-stateful-set' } }
+          template: {
+            metadata: { labels: { app: 'unobin-it-scale-stateful-set' } }
+            spec:     { containers: [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }] }
+          }
+        }
+      }
+    }
+    scale-replica-set-target: objects.object {
+      manifest: {
+        apiVersion: 'apps/v1'
+        kind:       'ReplicaSet'
+        metadata:   { name: 'unobin-it-scale-replica-set', namespace: 'default' }
+        spec: {
+          replicas: 0
+
+          selector: { matchLabels: { app: 'unobin-it-scale-replica-set' } }
+          template: {
+            metadata: { labels: { app: 'unobin-it-scale-replica-set' } }
+            spec:     { containers: [{ name: 'app', image: 'registry.k8s.io/pause:3.9' }] }
+          }
+        }
+      }
+    }
     daemon-set-workload: apps.daemon-set {
       metadata: {
         name:      'unobin-it-daemon-set'
@@ -252,6 +301,32 @@ factory: {
       delete-timeout:   '30s'
     }
   }
+  actions: {
+    scale-deployment: apps.scale {
+      kind:         'Deployment'
+      name:         resource.scale-deployment-target.name
+      namespace:    resource.scale-deployment-target.namespace
+      expected-uid: resource.scale-deployment-target.uid
+      replicas:     0
+      timeout:      '30s'
+    }
+    scale-stateful-set: apps.scale {
+      kind:         'StatefulSet'
+      name:         resource.scale-stateful-set-target.name
+      namespace:    resource.scale-stateful-set-target.namespace
+      expected-uid: resource.scale-stateful-set-target.uid
+      replicas:     0
+      timeout:      '30s'
+    }
+    scale-replica-set: apps.scale {
+      kind:         'ReplicaSet'
+      name:         resource.scale-replica-set-target.name
+      namespace:    resource.scale-replica-set-target.namespace
+      expected-uid: resource.scale-replica-set-target.uid
+      replicas:     0
+      timeout:      '30s'
+    }
+  }
   data-sources: {
     daemon-set-live: apps.daemon-set {
       metadata: {
@@ -279,6 +354,40 @@ factory: {
     }
   }
   outputs: {
+    scale: {
+      value: {
+        deployment: {
+          server:           action.scale-deployment.server
+          api-version:      action.scale-deployment.api-version
+          kind:             action.scale-deployment.kind
+          name:             action.scale-deployment.name
+          namespace:        action.scale-deployment.namespace
+          uid:              action.scale-deployment.uid
+          resource-version: action.scale-deployment.resource-version
+          replicas:         action.scale-deployment.replicas
+        }
+        stateful-set: {
+          server:           action.scale-stateful-set.server
+          api-version:      action.scale-stateful-set.api-version
+          kind:             action.scale-stateful-set.kind
+          name:             action.scale-stateful-set.name
+          namespace:        action.scale-stateful-set.namespace
+          uid:              action.scale-stateful-set.uid
+          resource-version: action.scale-stateful-set.resource-version
+          replicas:         action.scale-stateful-set.replicas
+        }
+        replica-set: {
+          server:           action.scale-replica-set.server
+          api-version:      action.scale-replica-set.api-version
+          kind:             action.scale-replica-set.kind
+          name:             action.scale-replica-set.name
+          namespace:        action.scale-replica-set.namespace
+          uid:              action.scale-replica-set.uid
+          resource-version: action.scale-replica-set.resource-version
+          replicas:         action.scale-replica-set.replicas
+        }
+      }
+    }
     daemon-set-lookup: {
       value: {
         metadata: data-source.daemon-set-live.metadata
