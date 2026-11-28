@@ -13,6 +13,7 @@ func main() {
 		{"cron-job", verifyCronJob},
 		{"job", verifyJob},
 		{"job-lookup", verifyJobLookup},
+		{"cron-job-lookup", verifyCronJobLookup},
 	}
 	for _, check := range checks {
 		if err := check.run(); err != nil {

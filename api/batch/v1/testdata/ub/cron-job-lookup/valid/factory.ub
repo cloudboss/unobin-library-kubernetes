@@ -1,0 +1,35 @@
+factory: {
+  imports: { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' }
+  resources: {
+    job: batch.cron-job {
+      metadata: { name: 'example' }
+      spec: {
+        schedule: '@hourly'
+        job-template: {
+          metadata: {}
+          spec: {
+            template: { metadata: {}, spec: { container: [{ name: 'app', image: 'busybox' }] } }
+          }
+        }
+      }
+    }
+  }
+  library-configs: { batch: {} }
+  data-sources: {
+    lookup: batch.cron-job {
+      metadata: { name: 'a.b' }
+    }
+  }
+  outputs: {
+    job: {
+      value: {
+        name:     data-source.lookup.metadata.name
+        spec:     data-source.lookup.spec
+        status:   data-source.lookup.status
+        template: data-source.lookup.spec?.job-template.spec.template.spec?.container
+        policy:   data-source.lookup.spec?.job-template.spec.success-policy?.rule
+        active:   data-source.lookup.status?.active
+      }
+    }
+  }
+}

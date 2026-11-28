@@ -1,0 +1,9 @@
+factory: {
+  imports:         { batch: 'github.com/cloudboss/unobin-library-kubernetes//api/batch/v1' }
+  library-configs: { batch: {} }
+  data-sources: {
+    lookup: batch.cron-job {
+      metadata: { name: 'a/b' }
+    }
+  }
+}

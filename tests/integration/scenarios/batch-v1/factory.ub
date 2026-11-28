@@ -98,6 +98,12 @@ factory: {
     }
   }
   data-sources: {
+    cron-job-lookup: batch.cron-job {
+      metadata: {
+        name:      resource.cron-job-replaced.name
+        namespace: resource.cron-job-replaced.namespace
+      }
+    }
     job-lookup: batch.job {
       metadata: {
         name:      resource.job-completion-job.name
@@ -106,6 +112,13 @@ factory: {
     }
   }
   outputs: {
+    cron-job-lookup: {
+      value: {
+        metadata: data-source.cron-job-lookup.metadata
+        spec:     data-source.cron-job-lookup.spec
+        status:   data-source.cron-job-lookup.status
+      }
+    }
     job-lookup: {
       value: {
         metadata: data-source.job-lookup.metadata

@@ -23,6 +23,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		DataSources: map[string]runtime.DataSourceRegistration{
+			"cron-job": runtime.MakeDataSource[
+				svc.CronJobDataSource, *svc.CronJobDataSourceOutput, *config.Configuration,
+			](),
 			"job": runtime.MakeDataSource[
 				svc.JobDataSource, *svc.JobDataSourceOutput, *config.Configuration,
 			](),
