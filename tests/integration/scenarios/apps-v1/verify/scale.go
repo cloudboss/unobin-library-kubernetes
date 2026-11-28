@@ -122,18 +122,20 @@ func checkScaleTarget(ctx context.Context, api typedappsv1.AppsV1Interface,
 		return fmt.Errorf("expected lagging observed replicas before scale")
 	}
 	a := &svc.ScaleAction{Kind: kind, Name: name, Namespace: new("default"),
-		Replicas: 0, ExpectedUID: new("wrong-uid"), Timeout: new("30s")}
-	if _, err := a.Run(ctx, nil); err == nil {
-		return fmt.Errorf("expected UID mismatch to fail")
+		Replicas: before.Spec.Replicas + 1, ExpectedUID: new("wrong-uid"), Timeout: new("30s")}
+	rejected, err := a.Run(ctx, nil)
+	if err == nil || rejected != nil || !strings.Contains(err.Error(), "expected UID") {
+		return fmt.Errorf("expected UID mismatch without output, got %+v: %v", rejected, err)
 	}
 	unchanged, err := endpoint.GetScale(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if before.ResourceVersion != unchanged.ResourceVersion {
-		return fmt.Errorf("UID mismatch changed resource version")
+	if before.UID != unchanged.UID || before.Spec.Replicas != unchanged.Spec.Replicas {
+		return fmt.Errorf("UID mismatch changed target identity or desired replicas")
 	}
 	a.ExpectedUID = new(string(before.UID))
+	a.Replicas = 0
 	out, err := a.Run(ctx, nil)
 	if err != nil {
 		return err
