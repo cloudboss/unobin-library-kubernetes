@@ -99,13 +99,20 @@ A factory scenario uses these files.
 - `verify/main.go`: API checks selected by `VERIFY_PHASE=applied`, `updated`, or
   `destroyed`, with the compiled directory in `VERIFY_BUILD_DIR`.
 
-The driver compiles the factory and builds the verifier once per scenario.
-It pins both configurations, plans and applies the initial inputs, verifies them,
-then repeats with the updated inputs. Both configurations use the basename
-`config.ub` so they use the same stack state. After an apply attempt, destroy
-uses the last attempted inputs even if a later operation fails. Failed factory
-runs keep their state under `_output/integration/<name>-*/` for diagnosis and
-manual cleanup.
+The driver compiles the factory, pins both configurations, plans and applies the
+initial inputs, and runs the verifier. It then repeats with the updated inputs.
+Both configurations use the basename `config.ub` so they use the same stack
+state. Verifiers execute with `go run .` from their `verify/` directories.
+
+A failed scenario does not stop later scenarios. The driver keeps its first
+failed step and attempts destroy after any apply attempt, using the last
+attempted inputs. A failed destroy is appended to the earlier failure. The final
+`FAIL:` line lists failed scenarios and steps, and the command exits nonzero.
+A successful run ends with `OK: N scenario(s)`.
+
+Failed or interrupted runs retain state under
+`_output/integration/run-*/<name>/` for diagnosis and manual cleanup. Successful
+runs remove their work directory.
 
 Set `SCENARIO=<name>` to run one scenario. Unknown names and invalid environments
 fail before any scenario runs.
