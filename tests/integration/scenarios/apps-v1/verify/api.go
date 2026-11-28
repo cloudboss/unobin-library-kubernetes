@@ -19,6 +19,7 @@ func verifyAPI() error {
 		run  func(context.Context) error
 	}{
 		{"DaemonSetAPILifecycle", checkDaemonSetAPILifecycle},
+		{"DaemonSetLookupAPI", checkDaemonSetLookupAPI},
 		{"DaemonSetControllerRollout", checkDaemonSetControllerRollout},
 		{"DaemonSetOnDeleteProjection", checkDaemonSetOnDeleteProjection},
 		{"DeploymentAPILifecycle", checkDeploymentAPILifecycle},

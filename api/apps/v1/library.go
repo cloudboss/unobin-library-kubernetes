@@ -20,6 +20,9 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		DataSources: map[string]runtime.DataSourceRegistration{
+			"daemon-set": runtime.MakeDataSource[
+				svc.DaemonSetDataSource, *svc.DaemonSetDataSourceOutput, *config.Configuration,
+			](),
 			"stateful-set": runtime.MakeDataSource[
 				svc.StatefulSetDataSource, *svc.StatefulSetDataSourceOutput, *config.Configuration,
 			](),

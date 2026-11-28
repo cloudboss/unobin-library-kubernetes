@@ -253,6 +253,15 @@ factory: {
     }
   }
   data-sources: {
+    daemon-set-live: apps.daemon-set {
+      metadata: {
+        name:      resource.daemon-set-workload.name
+        namespace: resource.daemon-set-workload.namespace
+      }
+    }
+    daemon-set-missing: apps.daemon-set {
+      metadata: { name: 'unobin-it-daemon-set-lookup-missing' }
+    }
     stateful-set-live: apps.stateful-set {
       metadata: {
         name:      resource.stateful-set-workload.name
@@ -270,6 +279,20 @@ factory: {
     }
   }
   outputs: {
+    daemon-set-lookup: {
+      value: {
+        metadata: data-source.daemon-set-live.metadata
+        spec:     data-source.daemon-set-live.spec
+        status:   data-source.daemon-set-live.status
+      }
+    }
+    daemon-set-missing: {
+      value: {
+        metadata: data-source.daemon-set-missing.metadata
+        spec:     data-source.daemon-set-missing.spec
+        status:   data-source.daemon-set-missing.status
+      }
+    }
     stateful-set-lookup: {
       value: {
         metadata: data-source.stateful-set-live.metadata

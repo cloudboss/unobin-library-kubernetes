@@ -1,0 +1,17 @@
+factory: {
+  imports: {
+    apps:   'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1'
+    remote: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1'
+  }
+  library-configs: { apps: {}, remote: { server: action.seed.resolved.server } }
+  actions: {
+    seed: apps.seed {
+      values: { server: input.server }
+    }
+  }
+  data-sources: {
+    lookup: remote.daemon-set {
+      metadata: input.metadata
+    }
+  }
+}

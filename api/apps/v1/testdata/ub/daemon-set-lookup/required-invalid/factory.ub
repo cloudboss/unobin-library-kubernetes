@@ -1,0 +1,13 @@
+factory: {
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: {} }
+  data-sources: {
+    lookup: apps.daemon-set {
+      metadata: {}
+    }
+  }
+  outputs: {
+    min-ready:  { value: data-source.lookup.spec?.min-ready-seconds }
+    conditions: { value: data-source.lookup.status?.conditions }
+  }
+}

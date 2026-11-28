@@ -11,6 +11,7 @@ func main() {
 		run  func() error
 	}{
 		{"daemon-set", verifyDaemonSet},
+		{"daemon-set-lookup", verifyDaemonSetLookup},
 		{"deployment", verifyDeployment},
 		{"deployment-lookup", verifyDeploymentLookup},
 		{"stateful-set", verifyStatefulSet},

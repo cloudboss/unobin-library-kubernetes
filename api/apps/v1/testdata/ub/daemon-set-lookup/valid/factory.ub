@@ -1,0 +1,45 @@
+factory: {
+  imports:         { apps: 'github.com/cloudboss/unobin-library-kubernetes//api/apps/v1' }
+  library-configs: { apps: {} }
+  resources: {
+    workload: apps.daemon-set {
+      metadata: { name: 'example.test' }
+      spec: {
+        selector: { match-labels: { app: 'example' } }
+        template: {
+          metadata: { labels: { app: 'example' } }
+          spec:     { container: [{ name: 'app', image: 'image' }] }
+        }
+      }
+    }
+  }
+  data-sources: {
+    lookup: apps.daemon-set {
+      metadata: { name: 'example.test' }
+    }
+  }
+  outputs: {
+    metadata: { value: data-source.lookup.metadata }
+    spec: {
+      value: {
+        min-ready: data-source.lookup.spec?.min-ready-seconds
+        history:   data-source.lookup.spec?.revision-history-limit
+        strategy:  data-source.lookup.spec?.update-strategy
+        selector:  data-source.lookup.spec?.selector
+        template:  data-source.lookup.spec?.template
+        pod: {
+          container: data-source.lookup.spec?.template.spec?.container
+          init:      data-source.lookup.spec?.template.spec?.init-container
+          volume:    data-source.lookup.spec?.template.spec?.volume
+          affinity:  data-source.lookup.spec?.template.spec?.affinity
+          topology:  data-source.lookup.spec?.template.spec?.topology-spread-constraint
+          security:  data-source.lookup.spec?.template.spec?.security-context
+          dns:       data-source.lookup.spec?.template.spec?.dns-config
+          os:        data-source.lookup.spec?.template.spec?.os
+        }
+      }
+    }
+    status:     { value: data-source.lookup.status }
+    conditions: { value: data-source.lookup.status?.conditions }
+  }
+}
