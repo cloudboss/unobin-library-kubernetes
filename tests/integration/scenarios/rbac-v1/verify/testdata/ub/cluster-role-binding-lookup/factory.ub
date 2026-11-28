@@ -1,0 +1,48 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: { namespace: 'ignored' } }
+  inputs: {
+    name:      { type: string }
+    temporary: { type: map(boolean) }
+  }
+  data-sources: {
+    direct: rbac.cluster-role-binding {
+      metadata: { name: input.name }
+    }
+    missing: rbac.cluster-role-binding {
+      metadata: { name: 'unobin-it-cluster-role-binding-lookup-absent' }
+    }
+    temporary: rbac.cluster-role-binding {
+      @for-each: input.temporary
+      metadata:  { name: input.name }
+    }
+  }
+  outputs: {
+    direct: {
+      value: {
+        metadata: data-source.direct.metadata
+        role-ref: data-source.direct.role-ref
+        subjects: data-source.direct.subjects
+      }
+    }
+    missing: {
+      value: {
+        metadata: data-source.missing.metadata
+        role-ref: data-source.missing.role-ref
+        subjects: data-source.missing.subjects
+      }
+    }
+    temporary: {
+      value: if @core.length(input.temporary) == 0
+        then {}
+        else {
+          for key, enabled in input.temporary :
+          key => {
+            metadata: data-source.temporary[key].metadata
+            role-ref: data-source.temporary[key].role-ref
+            subjects: data-source.temporary[key].subjects
+          }
+        }
+    }
+  }
+}

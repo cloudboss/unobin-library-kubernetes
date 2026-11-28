@@ -13,6 +13,7 @@ func main() {
 		{"cluster-role", verifyClusterRole},
 		{"cluster-role-lookup", verifyClusterRoleLookup},
 		{"cluster-role-binding", verifyClusterRoleBinding},
+		{"cluster-role-binding-lookup", verifyClusterRoleBindingLookup},
 		{"role", verifyRole},
 		{"role-lookup", verifyRoleLookup},
 		{"role-binding", verifyRoleBinding},

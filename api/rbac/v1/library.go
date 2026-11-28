@@ -29,6 +29,10 @@ func Library() *runtime.Library {
 		},
 		Configuration: config.LibraryConfiguration(),
 		DataSources: map[string]runtime.DataSourceRegistration{
+			"cluster-role-binding": runtime.MakeDataSource[
+				svc.ClusterRoleBindingDataSource, *svc.ClusterRoleBindingDataSourceOutput,
+				*config.Configuration,
+			](),
 			"cluster-role": runtime.MakeDataSource[
 				svc.ClusterRoleDataSource, *svc.ClusterRoleDataSourceOutput, *config.Configuration,
 			](),

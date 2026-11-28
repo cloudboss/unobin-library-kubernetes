@@ -20,6 +20,7 @@ func verifyAPI() error {
 		{"RoleLifecycle", checkRoleLifecycle},
 		{"RoleLookup", checkRoleLookupAPI},
 		{"ClusterRoleLookup", checkClusterRoleLookupAPI},
+		{"ClusterRoleBindingLookup", checkClusterRoleBindingLookupAPI},
 		{"RoleBindingLookup", checkRoleBindingLookupAPI},
 	}
 	for _, check := range checks {

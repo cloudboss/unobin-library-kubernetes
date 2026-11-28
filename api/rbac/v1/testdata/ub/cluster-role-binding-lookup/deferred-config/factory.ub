@@ -1,0 +1,22 @@
+factory: {
+  imports: {
+    rbac:   'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1'
+    helper: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1'
+  }
+  library-configs: { rbac: { server: action.seed.resolved-server }, helper: {} }
+  actions: {
+    seed: helper.connection {
+      server: input.server
+    }
+  }
+  data-sources: {
+    endpoint: rbac.cluster-role-binding {
+      metadata: input.metadata
+    }
+  }
+  outputs: {
+    metadata: { value: data-source.endpoint.metadata }
+    role-ref: { value: data-source.endpoint.role-ref }
+    subjects: { value: data-source.endpoint.subjects }
+  }
+}

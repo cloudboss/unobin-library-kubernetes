@@ -94,6 +94,13 @@ factory: {
     }
   }
   data-sources: {
+    cluster-role-binding-reader: rbac-cluster-role.cluster-role-binding {
+      metadata: { name: resource.cluster-role-binding-binding.name }
+    }
+    cluster-role-binding-missing: rbac-cluster-role.cluster-role-binding {
+      metadata: { name: 'unobin-it-cluster-role-binding-lookup-absent' }
+    }
+
     cluster-role-reader: rbac-cluster-role.cluster-role {
       metadata: { name: resource.cluster-role-reader.name }
     }
@@ -130,6 +137,21 @@ factory: {
     }
   }
   outputs: {
+    cluster-role-binding-lookup: {
+      value: {
+        direct: {
+          metadata: data-source.cluster-role-binding-reader.metadata
+          role-ref: data-source.cluster-role-binding-reader.role-ref
+          subjects: data-source.cluster-role-binding-reader.subjects
+        }
+        missing: {
+          metadata: data-source.cluster-role-binding-missing.metadata
+          role-ref: data-source.cluster-role-binding-missing.role-ref
+          subjects: data-source.cluster-role-binding-missing.subjects
+        }
+      }
+    }
+
     cluster-role-lookup: {
       value: {
         direct: {

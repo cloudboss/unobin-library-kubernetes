@@ -1,0 +1,12 @@
+stack: {
+  factory: {
+    inputs: {
+      name:      'CLUSTER_ROLE_BINDING_LOOKUP_NAME'
+      temporary: {}
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}
