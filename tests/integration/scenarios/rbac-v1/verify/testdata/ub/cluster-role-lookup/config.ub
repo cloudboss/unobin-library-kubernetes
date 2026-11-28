@@ -1,0 +1,13 @@
+stack: {
+  factory: {
+    inputs: {
+      name:           'CLUSTER_ROLE_LOOKUP_NAME'
+      aggregate-name: 'CLUSTER_ROLE_AGGREGATE_NAME'
+      temporary:      { selected: true }
+    }
+  }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

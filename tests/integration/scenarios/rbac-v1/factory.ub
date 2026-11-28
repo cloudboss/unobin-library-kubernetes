@@ -45,6 +45,9 @@ factory: {
         cluster-role-selectors: [
           {
             match-labels: { 'test.unobin.cloudboss.io/aggregate': 'reader' }
+            match-expressions: [
+              { key: 'test.unobin.cloudboss.io/aggregate', operator: 'In', values: ['reader'] },
+            ]
           },
         ]
       }
@@ -91,6 +94,15 @@ factory: {
     }
   }
   data-sources: {
+    cluster-role-reader: rbac-cluster-role.cluster-role {
+      metadata: { name: resource.cluster-role-reader.name }
+    }
+    cluster-role-aggregate: rbac-cluster-role.cluster-role {
+      metadata: { name: resource.cluster-role-aggregate.name }
+    }
+    cluster-role-missing: rbac-cluster-role.cluster-role {
+      metadata: { name: 'unobin-it-cluster-role-lookup-absent' }
+    }
     role-binding-reader: rbac.role-binding {
       metadata: {
         name:      resource.role-binding-binding.name
@@ -118,6 +130,25 @@ factory: {
     }
   }
   outputs: {
+    cluster-role-lookup: {
+      value: {
+        direct: {
+          metadata:         data-source.cluster-role-reader.metadata
+          rules:            data-source.cluster-role-reader.rules
+          aggregation-rule: data-source.cluster-role-reader.aggregation-rule
+        }
+        aggregate: {
+          metadata:         data-source.cluster-role-aggregate.metadata
+          rules:            data-source.cluster-role-aggregate.rules
+          aggregation-rule: data-source.cluster-role-aggregate.aggregation-rule
+        }
+        missing: {
+          metadata:         data-source.cluster-role-missing.metadata
+          rules:            data-source.cluster-role-missing.rules
+          aggregation-rule: data-source.cluster-role-missing.aggregation-rule
+        }
+      }
+    }
     role-binding-lookup: {
       value: {
         metadata:         data-source.role-binding-reader.metadata

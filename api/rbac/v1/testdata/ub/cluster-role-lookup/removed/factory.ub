@@ -1,0 +1,13 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: { server: input.server, namespace: 'ignored' } }
+  inputs: {
+    server:   { type: string }
+    metadata: { type: object({ name: { type: string } }) }
+  }
+  resources: {
+    fixed: rbac.fixed {
+      value: 'unchanged'
+    }
+  }
+}

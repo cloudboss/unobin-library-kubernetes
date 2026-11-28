@@ -11,6 +11,7 @@ func main() {
 		run  func() error
 	}{
 		{"cluster-role", verifyClusterRole},
+		{"cluster-role-lookup", verifyClusterRoleLookup},
 		{"cluster-role-binding", verifyClusterRoleBinding},
 		{"role", verifyRole},
 		{"role-lookup", verifyRoleLookup},

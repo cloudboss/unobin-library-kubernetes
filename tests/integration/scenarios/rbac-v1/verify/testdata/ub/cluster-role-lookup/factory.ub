@@ -1,0 +1,59 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: { namespace: 'ignored' } }
+  inputs: {
+    name:           { type: string }
+    aggregate-name: { type: string }
+    temporary:      { type: map(boolean) }
+  }
+  data-sources: {
+    direct: rbac.cluster-role {
+      metadata: { name: input.name }
+    }
+    aggregate: rbac.cluster-role {
+      metadata: { name: input.aggregate-name }
+    }
+    missing: rbac.cluster-role {
+      metadata: { name: 'unobin-it-cluster-role-lookup-absent' }
+    }
+    temporary: rbac.cluster-role {
+      @for-each: input.temporary
+      metadata:  { name: input.name }
+    }
+  }
+  outputs: {
+    direct: {
+      value: {
+        metadata:         data-source.direct.metadata
+        rules:            data-source.direct.rules
+        aggregation-rule: data-source.direct.aggregation-rule
+      }
+    }
+    aggregate: {
+      value: {
+        metadata:         data-source.aggregate.metadata
+        rules:            data-source.aggregate.rules
+        aggregation-rule: data-source.aggregate.aggregation-rule
+      }
+    }
+    missing: {
+      value: {
+        metadata:         data-source.missing.metadata
+        rules:            data-source.missing.rules
+        aggregation-rule: data-source.missing.aggregation-rule
+      }
+    }
+    temporary: {
+      value: if @core.length(input.temporary) == 0
+        then {}
+        else {
+          for key, enabled in input.temporary :
+          key => {
+            metadata:         data-source.temporary[key].metadata
+            rules:            data-source.temporary[key].rules
+            aggregation-rule: data-source.temporary[key].aggregation-rule
+          }
+        }
+    }
+  }
+}

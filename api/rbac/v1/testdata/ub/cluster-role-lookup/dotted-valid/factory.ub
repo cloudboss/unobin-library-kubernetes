@@ -1,0 +1,14 @@
+factory: {
+  imports:         { rbac: 'github.com/cloudboss/unobin-library-kubernetes//api/rbac/v1' }
+  library-configs: { rbac: {} }
+  data-sources: {
+    endpoint: rbac.cluster-role {
+      metadata: { name: 'a..b' }
+    }
+  }
+  outputs: {
+    metadata:         { value: data-source.endpoint.metadata }
+    rules:            { value: data-source.endpoint.rules }
+    aggregation-rule: { value: data-source.endpoint.aggregation-rule }
+  }
+}
