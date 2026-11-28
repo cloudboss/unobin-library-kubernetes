@@ -34,6 +34,9 @@ func Library() *runtime.Library {
 			"cordon-node": runtime.MakeAction[
 				svc.CordonNodeAction, *svc.CordonNodeActionOutput, *config.Configuration,
 			](),
+			"uncordon-node": runtime.MakeAction[
+				svc.UncordonNodeAction, *svc.UncordonNodeActionOutput, *config.Configuration,
+			](),
 		},
 		DataSources: map[string]runtime.DataSourceRegistration{
 			"config-map": runtime.MakeDataSource[

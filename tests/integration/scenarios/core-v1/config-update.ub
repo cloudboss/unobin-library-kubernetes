@@ -1,6 +1,7 @@
 stack: {
   factory: {
     inputs: {
+      uncordon-node-unschedulable:    false
       config-map-value:               'updated'
       config-map-binary-value:        'AgM='
       config-map-immutable:           true

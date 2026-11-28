@@ -10,6 +10,7 @@ factory: {
     core-namespace-lookup: { namespace: 'ignored' }
   }
   inputs: {
+    uncordon-node-unschedulable:    { type: boolean }
     config-map-value:               { type: string }
     config-map-binary-value:        { type: string }
     config-map-immutable:           { type: boolean }
@@ -144,6 +145,23 @@ factory: {
         }
         spec: {
           providerID: 'unobin://cordon'
+          taints: [{ key: 'test.unobin.cloudboss.io/preserve', value: 'yes', effect: 'NoSchedule' }]
+        }
+      }
+    }
+    uncordon-node-fixture: dynamic.object {
+      force-conflicts: true
+      manifest: {
+        apiVersion: 'v1'
+        kind:       'Node'
+        metadata: {
+          name:        'unobin-it-core-v1-uncordon'
+          labels:      { 'test.unobin.cloudboss.io/scenario': 'core-v1-uncordon' }
+          annotations: { 'test.unobin.cloudboss.io/preserve': 'yes' }
+        }
+        spec: {
+          providerID:    'unobin://uncordon'
+          unschedulable: input.uncordon-node-unschedulable
           taints: [{ key: 'test.unobin.cloudboss.io/preserve', value: 'yes', effect: 'NoSchedule' }]
         }
       }
@@ -569,6 +587,10 @@ factory: {
       name:         resource.cordon-node-fixture.name
       expected-uid: resource.cordon-node-fixture.uid
     }
+    uncordon-node: core.uncordon-node {
+      name:         resource.uncordon-node-fixture.name
+      expected-uid: resource.uncordon-node-fixture.uid
+    }
   }
   outputs: {
     cordon-node: {
@@ -580,6 +602,17 @@ factory: {
         uid:              action.cordon-node.uid
         resource-version: action.cordon-node.resource-version
         unschedulable:    action.cordon-node.unschedulable
+      }
+    }
+    uncordon-node: {
+      value: {
+        server:           action.uncordon-node.server
+        api-version:      action.uncordon-node.api-version
+        kind:             action.uncordon-node.kind
+        name:             action.uncordon-node.name
+        uid:              action.uncordon-node.uid
+        resource-version: action.uncordon-node.resource-version
+        unschedulable:    action.uncordon-node.unschedulable
       }
     }
     config-map: {

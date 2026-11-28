@@ -21,6 +21,7 @@ func main() {
 		{"node-lookup", verifyNodeLookup},
 		{"node-taint", verifyNodeTaint},
 		{"cordon-node", verifyCordonNode},
+		{"uncordon-node", verifyUncordonNode},
 		{"persistent-volume", verifyPersistentVolume},
 		{"persistent-volume-lookup", verifyPersistentVolumeLookup},
 		{"persistent-volume-claim", verifyPersistentVolumeClaim},

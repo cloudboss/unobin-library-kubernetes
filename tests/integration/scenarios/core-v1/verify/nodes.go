@@ -49,7 +49,8 @@ func verifyNodes() error {
 	}
 	current := make(map[string]string, len(nodes.Items))
 	for _, node := range nodes.Items {
-		if node.Name != nodeTaintFixtureName && node.Name != cordonNodeFixtureName {
+		if node.Name != nodeTaintFixtureName && node.Name != cordonNodeFixtureName &&
+			node.Name != uncordonNodeFixtureName {
 			current[node.Name] = string(node.UID)
 		}
 	}

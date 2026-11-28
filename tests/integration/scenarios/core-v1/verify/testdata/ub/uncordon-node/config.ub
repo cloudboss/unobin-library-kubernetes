@@ -1,0 +1,7 @@
+stack: {
+  factory: { inputs: { name: 'UNCORDON_NAME', uid: 'UNCORDON_UID' } }
+  state: local {
+    path: '.unobin/state'
+  }
+  encryption: noop {}
+}

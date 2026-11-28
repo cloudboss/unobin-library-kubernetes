@@ -1,0 +1,27 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  actions: {
+    uncordon: core.uncordon-node {
+      name: '''\-
+        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        '''
+      expected-uid: 'uid'
+    }
+  }
+  outputs: {
+    result: {
+      value: {
+        server:           action.uncordon.server
+        api-version:      action.uncordon.api-version
+        kind:             action.uncordon.kind
+        name:             action.uncordon.name
+        uid:              action.uncordon.uid
+        resource-version: action.uncordon.resource-version
+        unschedulable:    action.uncordon.unschedulable
+      }
+    }
+  }
+}

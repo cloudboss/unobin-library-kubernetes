@@ -1,6 +1,7 @@
 stack: {
   factory: {
     inputs: {
+      uncordon-node-unschedulable:    true
       config-map-value:               'first'
       config-map-binary-value:        'AAE='
       config-map-immutable:           true
