@@ -1,0 +1,25 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server:             { type: string }
+    metadata:           { type: opaque }
+    create-timeout:     { type: string, default: '10m' }
+    update-timeout:     { type: string, default: '10m' }
+    delete-timeout:     { type: string, default: '10m' }
+    spec:               { type: opaque }
+    ignore-labels:      { type: list(string), default: [] }
+    ignore-annotations: { type: list(string), default: [] }
+  }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    subject: core.replication-controller {
+      create-timeout:     input.create-timeout
+      update-timeout:     input.update-timeout
+      delete-timeout:     input.delete-timeout
+      metadata:           input.metadata
+      spec:               input.spec
+      ignore-labels:      input.ignore-labels
+      ignore-annotations: input.ignore-annotations
+    }
+  }
+}

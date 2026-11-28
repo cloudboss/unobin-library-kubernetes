@@ -1,0 +1,20 @@
+factory: {
+  imports: { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs: {
+    server: { type: string }
+  }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    seed: core.replication-controller {
+      metadata: { name: 'seed' }
+      spec:     { selector: {}, template: { metadata: {}, spec: {} } }
+    }
+    subject: core.replication-controller {
+      metadata: {
+        name:   'subject'
+        labels: { 'bad key': 'x', good: resource.seed.metadata.annotations['value'] }
+      }
+      spec: { selector: {}, template: { metadata: {}, spec: {} } }
+    }
+  }
+}

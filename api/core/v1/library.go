@@ -18,6 +18,10 @@ func Library() *runtime.Library {
 	pod := runtime.MakeResource[
 		svc.PodResource, *svc.PodResourceOutput, *config.Configuration,
 	]((&svc.PodResource{}).ResourceDefinition())
+	rc := runtime.MakeResource[
+		svc.ReplicationControllerResource, *svc.ReplicationControllerResourceOutput,
+		*config.Configuration,
+	]((&svc.ReplicationControllerResource{}).ResourceDefinition())
 	return &runtime.Library{
 		Name:        "kubernetes-core-v1",
 		Description: "Kubernetes core/v1 objects for Unobin.",
@@ -103,6 +107,9 @@ func Library() *runtime.Library {
 			"secret": runtime.MakeResource[
 				svc.SecretResource, *svc.SecretResourceOutput, *config.Configuration,
 			]((&svc.SecretResource{}).ResourceDefinition()),
+			"replication-controller": svc.ReplicationControllerRegistration[
+				svc.ReplicationControllerResource, *svc.ReplicationControllerResourceOutput,
+			](rc, rc.Read, rc.KnownReplacementReasons),
 			"pod": svc.PodRegistration[svc.PodResource, *svc.PodResourceOutput](
 				pod, pod.Read, pod.KnownReplacementReasons),
 			"service": runtime.MakeResource[

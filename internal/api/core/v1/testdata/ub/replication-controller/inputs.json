@@ -1,0 +1,3675 @@
+[
+  {
+    "name": "invalid-affinity-operator",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "affinity": {
+              "node-affinity": {
+                "required-during-scheduling-ignored-during-execution": {
+                  "node-selector-term": [
+                    {
+                      "match-expressions": [
+                        {
+                          "operator": "bad"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-bad-name",
+    "input": {
+      "metadata": {
+        "name": "BAD"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-bad-prefix",
+    "input": {
+      "metadata": {
+        "generate-name": "bad.prefix-"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-both-identities",
+    "input": {
+      "metadata": {
+        "name": "subject",
+        "generate-name": "subject-"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-claim-access",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "ephemeral": {
+                  "volume-claim-template": {
+                    "spec": {
+                      "access-modes": [
+                        "bad"
+                      ],
+                      "resources": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-claim-annotation-key",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "ephemeral": {
+                  "volume-claim-template": {
+                    "metadata": {
+                      "annotations": {
+                        "bad key": "value"
+                      }
+                    },
+                    "spec": {
+                      "access-modes": [
+                        "ReadWriteOnce"
+                      ],
+                      "resources": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-claim-label-key",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "ephemeral": {
+                  "volume-claim-template": {
+                    "metadata": {
+                      "labels": {
+                        "bad key": "value"
+                      }
+                    },
+                    "spec": {
+                      "access-modes": [
+                        "ReadWriteOnce"
+                      ],
+                      "resources": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-claim-label-value",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "ephemeral": {
+                  "volume-claim-template": {
+                    "metadata": {
+                      "labels": {
+                        "key": "bad value"
+                      }
+                    },
+                    "spec": {
+                      "access-modes": [
+                        "ReadWriteOnce"
+                      ],
+                      "resources": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-claim-mode",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "ephemeral": {
+                  "volume-claim-template": {
+                    "spec": {
+                      "volume-mode": "bad",
+                      "access-modes": [
+                        "ReadWriteOnce"
+                      ],
+                      "resources": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-failure",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "liveness-probe": {
+                  "failure-threshold": 0
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-grpc-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "liveness-probe": {
+                  "grpc": {
+                    "port": 65536
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-host-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "port": [
+                  {
+                    "host-port": 65536,
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-http-name",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "readiness-probe": {
+                  "http-get": {
+                    "port": "bad_name"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-http-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "liveness-probe": {
+                  "http-get": {
+                    "port": "65536"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-http-scheme",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "lifecycle": {
+                  "post-start": {
+                    "http-get": {
+                      "scheme": "bad"
+                    }
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-mount",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "volume-mount": [
+                  {
+                    "mount-propagation": "bad",
+                    "name": "data",
+                    "mount-path": "/data"
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-period",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "readiness-probe": {
+                  "period-seconds": 0
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "port": [
+                  {
+                    "container-port": 0
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-port-name",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "port": [
+                  {
+                    "name": "65536",
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-protocol",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "port": [
+                  {
+                    "protocol": "SCTP",
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-restart",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "restart-policy": "Never",
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-signed",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "security-context": {
+                  "run-as-group": "9223372036854775808"
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-success",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "startup-probe": {
+                  "success-threshold": 0
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-tcp-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "startup-probe": {
+                  "tcp-socket": {
+                    "port": "12345678901234567890"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-termination",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "termination-message-policy": "bad",
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-container-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "liveness-probe": {
+                  "timeout-seconds": 0
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-create-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "create-timeout": "0s"
+    }
+  },
+  {
+    "name": "invalid-deadline",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "active-deadline-seconds": 0
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-delete-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "delete-timeout": "0s"
+    }
+  },
+  {
+    "name": "invalid-dns",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "dns-policy": "bad"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-dns-search",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "dns-config": {
+              "searches": [
+                "bad_"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-dns-server",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "dns-config": {
+              "nameservers": [
+                "bad"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-empty-medium",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "empty-dir": {
+                  "medium": "bad"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-empty-name",
+    "input": {
+      "metadata": {
+        "name": ""
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-fs-policy",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "security-context": {
+              "fs-group-change-policy": "bad"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-git-path",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "git-repo": {
+                  "directory": "..bad"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-grace",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "termination-grace-period-seconds": -1
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-host-ip",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "host-aliases": [
+              {
+                "ip": "bad",
+                "hostnames": [
+                  "host"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-host-type",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "host-path": {
+                  "type": "bad"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-ignore-annotations",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "ignore-annotations": [
+        "["
+      ]
+    }
+  },
+  {
+    "name": "invalid-ignore-labels",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "ignore-labels": [
+        "["
+      ]
+    }
+  },
+  {
+    "name": "invalid-init-container-failure",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "liveness-probe": {
+                  "failure-threshold": 0
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-grpc-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "liveness-probe": {
+                  "grpc": {
+                    "port": 65536
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-host-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "port": [
+                  {
+                    "host-port": 65536,
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-http-name",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "readiness-probe": {
+                  "http-get": {
+                    "port": "bad_name"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-http-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "liveness-probe": {
+                  "http-get": {
+                    "port": "65536"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-http-scheme",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "lifecycle": {
+                  "post-start": {
+                    "http-get": {
+                      "scheme": "bad"
+                    }
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-mount",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "volume-mount": [
+                  {
+                    "mount-propagation": "bad",
+                    "name": "data",
+                    "mount-path": "/data"
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-period",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "readiness-probe": {
+                  "period-seconds": 0
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "port": [
+                  {
+                    "container-port": 0
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-port-name",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "port": [
+                  {
+                    "name": "65536",
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-protocol",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "port": [
+                  {
+                    "protocol": "SCTP",
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-restart",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "restart-policy": "Never",
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-signed",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "security-context": {
+                  "run-as-group": "9223372036854775808"
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-success",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "startup-probe": {
+                  "success-threshold": 0
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-tcp-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "startup-probe": {
+                  "tcp-socket": {
+                    "port": "12345678901234567890"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-termination",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "termination-message-policy": "bad",
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-init-container-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "liveness-probe": {
+                  "timeout-seconds": 0
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-item-path",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "config-map": {
+                  "items": [
+                    {
+                      "path": "a/../b"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-missing-name",
+    "input": {
+      "metadata": {},
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-mode",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "config-map": {
+                  "default-mode": "0788"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-mode-overflow",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "secret": {
+                  "default-mode": "1000"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-os",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "os": {
+              "name": "Linux"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-preferred-operator",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "affinity": {
+              "node-affinity": {
+                "preferred-during-scheduling-ignored-during-execution": [
+                  {
+                    "preference": {
+                      "match-expressions": [
+                        {
+                          "operator": "bad"
+                        }
+                      ]
+                    },
+                    "weight": 1
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-projected-count",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "projected": {
+                  "sources": []
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-restart",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "restart-policy": "always"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-root-annotation-key",
+    "input": {
+      "metadata": {
+        "name": "subject",
+        "annotations": {
+          "bad key": "value"
+        }
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-root-label-key",
+    "input": {
+      "metadata": {
+        "name": "subject",
+        "labels": {
+          "bad key": "value"
+        }
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-root-label-value",
+    "input": {
+      "metadata": {
+        "name": "subject",
+        "labels": {
+          "key": "bad value"
+        }
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-seccomp",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "security-context": {
+              "seccomp-profile": {
+                "type": "bad"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-signed",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "security-context": {
+              "fs-group": "9223372036854775808"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-signed-sign",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "security-context": {
+              "run-as-user": "bad"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-spread-affinity",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "node-affinity-policy": "bad"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-spread-max",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "max-skew": 0
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-spread-min",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "min-domains": 0
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-spread-policy",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "when-unsatisfiable": "bad"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-spread-taints",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "node-taints-policy": "bad"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-template-annotation-key",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {
+            "annotations": {
+              "bad key": "value"
+            }
+          },
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-template-identities",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {
+            "name": "app",
+            "generate-name": "app-"
+          },
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-template-label-key",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {
+            "labels": {
+              "bad key": "value"
+            }
+          },
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-template-label-value",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {
+            "labels": {
+              "key": "bad value"
+            }
+          },
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-token-expiry",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "projected": {
+                  "sources": [
+                    {
+                      "service-account-token": {
+                        "path": "token",
+                        "expiration-seconds": 599
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-toleration-effect",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "toleration": [
+              {
+                "effect": "bad"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-toleration-operator",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "toleration": [
+              {
+                "operator": "bad"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-toleration-seconds",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "toleration": [
+              {
+                "toleration-seconds": "-9223372036854775809"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "invalid-update-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "update-timeout": "0s"
+    }
+  },
+  {
+    "name": "valid-affinity-operator",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "affinity": {
+              "node-affinity": {
+                "required-during-scheduling-ignored-during-execution": {
+                  "node-selector-term": [
+                    {
+                      "match-expressions": [
+                        {
+                          "operator": "Exists"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-claim-access",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "ephemeral": {
+                  "volume-claim-template": {
+                    "spec": {
+                      "access-modes": [
+                        "ReadWriteOncePod"
+                      ],
+                      "resources": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-claim-mode",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "ephemeral": {
+                  "volume-claim-template": {
+                    "spec": {
+                      "volume-mode": "Filesystem",
+                      "access-modes": [
+                        "ReadWriteOnce"
+                      ],
+                      "resources": {}
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-failure",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "liveness-probe": {
+                  "failure-threshold": 1
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-grpc-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "liveness-probe": {
+                  "grpc": {
+                    "port": 1
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-host-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "port": [
+                  {
+                    "host-port": 1,
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-http-name",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "readiness-probe": {
+                  "http-get": {
+                    "port": "http"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-http-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "liveness-probe": {
+                  "http-get": {
+                    "port": "8080"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-http-scheme",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "lifecycle": {
+                  "post-start": {
+                    "http-get": {
+                      "scheme": "HTTPS"
+                    }
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-mount",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "volume-mount": [
+                  {
+                    "mount-propagation": "Bidirectional",
+                    "name": "data",
+                    "mount-path": "/data"
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-period",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "readiness-probe": {
+                  "period-seconds": 1
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "port": [
+                  {
+                    "container-port": 65535
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-port-name",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "port": [
+                  {
+                    "name": "http",
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-protocol",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "port": [
+                  {
+                    "protocol": "UDP",
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-restart",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "restart-policy": "Always",
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-signed",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "security-context": {
+                  "run-as-group": "+0001"
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-success",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "startup-probe": {
+                  "success-threshold": 1
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-tcp-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "startup-probe": {
+                  "tcp-socket": {
+                    "port": "8080"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-termination",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "termination-message-policy": "File",
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-container-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "container": [
+              {
+                "liveness-probe": {
+                  "timeout-seconds": 1
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-create-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "create-timeout": "1m"
+    }
+  },
+  {
+    "name": "valid-deadline",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "active-deadline-seconds": 1
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-delete-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "delete-timeout": "1m"
+    }
+  },
+  {
+    "name": "valid-dns",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "dns-policy": "None"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-dns-search",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "dns-config": {
+              "searches": [
+                "example.test"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-dns-server",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "dns-config": {
+              "nameservers": [
+                "127.0.0.1",
+                "::1"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-empty-medium",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "empty-dir": {
+                  "medium": "Memory"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-fs-policy",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "security-context": {
+              "fs-group-change-policy": "Always"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-generated",
+    "input": {
+      "metadata": {
+        "generate-name": "subject-"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-git-path",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "git-repo": {
+                  "directory": "relative"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-grace",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "termination-grace-period-seconds": 0
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-host-ip",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "host-aliases": [
+              {
+                "ip": "2001:db8::1",
+                "hostnames": [
+                  "host"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-host-type",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "host-path": {
+                  "type": "Directory"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-ignore-annotations",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "ignore-annotations": [
+        "^ignored"
+      ]
+    }
+  },
+  {
+    "name": "valid-ignore-labels",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "ignore-labels": [
+        "^ignored"
+      ]
+    }
+  },
+  {
+    "name": "valid-init-container-failure",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "liveness-probe": {
+                  "failure-threshold": 1
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-grpc-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "liveness-probe": {
+                  "grpc": {
+                    "port": 1
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-host-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "port": [
+                  {
+                    "host-port": 1,
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-http-name",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "readiness-probe": {
+                  "http-get": {
+                    "port": "http"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-http-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "liveness-probe": {
+                  "http-get": {
+                    "port": "8080"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-http-scheme",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "lifecycle": {
+                  "post-start": {
+                    "http-get": {
+                      "scheme": "HTTPS"
+                    }
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-mount",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "volume-mount": [
+                  {
+                    "mount-propagation": "Bidirectional",
+                    "name": "data",
+                    "mount-path": "/data"
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-period",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "readiness-probe": {
+                  "period-seconds": 1
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "port": [
+                  {
+                    "container-port": 65535
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-port-name",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "port": [
+                  {
+                    "name": "http",
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-protocol",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "port": [
+                  {
+                    "protocol": "UDP",
+                    "container-port": 8080
+                  }
+                ],
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-restart",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "restart-policy": "Always",
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-signed",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "security-context": {
+                  "run-as-group": "+0001"
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-success",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "startup-probe": {
+                  "success-threshold": 1
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-tcp-port",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "startup-probe": {
+                  "tcp-socket": {
+                    "port": "8080"
+                  }
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-termination",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "termination-message-policy": "File",
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-init-container-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "init-container": [
+              {
+                "liveness-probe": {
+                  "timeout-seconds": 1
+                },
+                "name": "app"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-item-path",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "config-map": {
+                  "items": [
+                    {
+                      "path": "a/b"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-minimal",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-mode",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "config-map": {
+                  "default-mode": "0000"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-mode-overflow",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "secret": {
+                  "default-mode": "0777"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-os",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "os": {
+              "name": "linux"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-preferred-operator",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "affinity": {
+              "node-affinity": {
+                "preferred-during-scheduling-ignored-during-execution": [
+                  {
+                    "preference": {
+                      "match-expressions": [
+                        {
+                          "operator": "In"
+                        }
+                      ]
+                    },
+                    "weight": 1
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-projected-count",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "projected": {
+                  "sources": [
+                    {
+                      "service-account-token": {
+                        "path": "token"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-restart",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "restart-policy": "Never"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-seccomp",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "security-context": {
+              "seccomp-profile": {
+                "type": "Unconfined"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-signed",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "security-context": {
+              "fs-group": "-9223372036854775808"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-signed-sign",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "security-context": {
+              "run-as-user": "+0001"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-spread-affinity",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "node-affinity-policy": "Honor"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-spread-max",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "max-skew": 1
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-spread-min",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "min-domains": 1
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-spread-policy",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "when-unsatisfiable": "ScheduleAnyway"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-spread-taints",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "topology-spread-constraint": [
+              {
+                "node-taints-policy": "Ignore"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-token-expiry",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "volume": [
+              {
+                "projected": {
+                  "sources": [
+                    {
+                      "service-account-token": {
+                        "path": "token",
+                        "expiration-seconds": 600
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-toleration-effect",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "toleration": [
+              {
+                "effect": "NoExecute"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-toleration-operator",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "toleration": [
+              {
+                "operator": "Exists"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-toleration-seconds",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {
+            "toleration": [
+              {
+                "toleration-seconds": ""
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "valid-update-timeout",
+    "input": {
+      "metadata": {
+        "name": "subject"
+      },
+      "spec": {
+        "selector": {},
+        "template": {
+          "metadata": {},
+          "spec": {}
+        }
+      },
+      "update-timeout": "1m"
+    }
+  }
+]

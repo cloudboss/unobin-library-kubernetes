@@ -1,0 +1,29 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  resources: {
+    subject: core.replication-controller {
+      metadata: {
+        name: 'subject'
+      }
+      spec: {
+        selector: {}
+        template: {
+          metadata: {}
+          spec: {
+            container: [
+              {
+                startup-probe: {
+                  tcp-socket: {
+                    port: '8080'
+                  }
+                }
+                name: 'app'
+              },
+            ]
+          }
+        }
+      }
+    }
+  }
+}

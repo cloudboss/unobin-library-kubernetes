@@ -1,0 +1,20 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  inputs:          { server: { type: string }, choices: { type: opaque } }
+  library-configs: { core: { server: input.server, insecure-skip-tls-verify: true } }
+  resources: {
+    seed: core.replication-controller {
+      metadata: { name: 'seed' }
+      spec:     { selector: {}, template: { metadata: {}, spec: {} } }
+    }
+    subject: core.replication-controller {
+      metadata:           input.choices[resource.seed.metadata.annotations.value].metadata
+      spec:               input.choices[resource.seed.metadata.annotations.value].spec
+      create-timeout:     input.choices[resource.seed.metadata.annotations.value].create-timeout
+      update-timeout:     input.choices[resource.seed.metadata.annotations.value].update-timeout
+      delete-timeout:     input.choices[resource.seed.metadata.annotations.value].delete-timeout
+      ignore-labels:      input.choices[resource.seed.metadata.annotations.value].ignore-labels
+      ignore-annotations: input.choices[resource.seed.metadata.annotations.value].ignore-annotations
+    }
+  }
+}

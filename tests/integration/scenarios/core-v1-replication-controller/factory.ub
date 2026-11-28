@@ -1,0 +1,22 @@
+factory: {
+  imports:         { core: 'github.com/cloudboss/unobin-library-kubernetes//api/core/v1' }
+  library-configs: { core: {} }
+  inputs:          { replicas: { type: integer }, image: { type: string } }
+  resources: {
+    controller: core.replication-controller {
+      metadata: { name: 'unobin-it-replication-controller' }
+      spec: {
+        replicas: input.replicas
+        selector: { app: 'unobin-it-replication-controller' }
+        template: {
+          metadata: { labels: { app: 'unobin-it-replication-controller' } }
+          spec:     { container: [{ name: 'app', image: input.image }] }
+        }
+      }
+      create-timeout: '3m'
+      update-timeout: '3m'
+      delete-timeout: '3m'
+    }
+  }
+  outputs: { controller: { value: resource.controller } }
+}
